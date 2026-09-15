@@ -62,9 +62,12 @@ export async function exportFlightsCSV(req, res, next) {
 export async function getNewFlightForm(req, res, next) {
   try {
     const customers = await getAllCustomers();
+    const { activeCurrency, exchangeRates } = res.locals;
     res.render('admin/flights/new', {
       title: 'New Flight Booking',
-      customers
+      customers,
+      activeCurrency,
+      exchangeRates
     });
   } catch (error) {
     next(error);
@@ -73,15 +76,20 @@ export async function getNewFlightForm(req, res, next) {
 
 export async function postCreateFlight(req, res, next) {
   try {
-    const { customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount, pay_now, pay_amount, pay_reference, pay_notes } = req.body;
+    const { customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount, total_amount_usd, pay_now, pay_amount, pay_amount_usd, pay_reference, pay_notes } = req.body;
     if (!customer_id || !airline || !flight_number || !origin || !destination) {
       const customers = await getAllCustomers();
+      const { activeCurrency, exchangeRates } = res.locals;
       return res.status(400).render('admin/flights/new', {
         title: 'New Flight Booking',
         customers,
+        activeCurrency,
+        exchangeRates,
         error: 'Please fill in all mandatory flight fields.'
       });
     }
+
+    const finalAmount = total_amount_usd ? Number(total_amount_usd) : Number(total_amount);
 
     const booking = await createFlightBooking({
       customer_id,
@@ -92,16 +100,17 @@ export async function postCreateFlight(req, res, next) {
       departure_date,
       arrival_date,
       cabin_class,
-      total_amount,
+      total_amount: finalAmount,
       created_by: req.session.user.id
     });
 
     // Record initial payment if provided
     if (pay_now && pay_now !== 'no' && pay_amount && Number(pay_amount) > 0) {
+      const finalPayAmount = pay_amount_usd ? Number(pay_amount_usd) : Number(pay_amount);
       await addPayment({
         booking_type: 'flight',
         booking_id: booking.id,
-        amount: Number(pay_amount),
+        amount: finalPayAmount,
         payment_method: pay_now,
         payment_reference: pay_reference,
         notes: pay_notes,
@@ -178,10 +187,13 @@ export async function viewFlightDetail(req, res, next) {
       return res.status(404).render('errors/404', { title: 'Flight Booking Not Found' });
     }
     const liveStatus = getFlightLiveStatus(flight);
+    const { activeCurrency, exchangeRates } = res.locals;
     res.render('admin/flights/show', {
       title: `Flight PNR: ${flight.booking_ref}`,
       flight,
-      liveStatus
+      liveStatus,
+      activeCurrency,
+      exchangeRates
     });
   } catch (error) {
     next(error);

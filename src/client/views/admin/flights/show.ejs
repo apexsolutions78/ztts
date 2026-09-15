@@ -173,8 +173,9 @@
         <h4 style="margin-bottom: 1rem;">Record New Payment</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div>
-            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Amount</label>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Amount (<%= exchangeRates[activeCurrency]?.symbol || '$' %> <%= activeCurrency %>)</label>
             <input type="number" id="payAmount" step="0.01" min="0.01" class="form-control" placeholder="0.00" style="width: 100%;">
+            <input type="hidden" id="payAmountUSD">
           </div>
           <div>
             <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Payment Method</label>
@@ -229,9 +230,22 @@
       const BOOKING_TYPE = 'flight';
       const BOOKING_ID = ${flight.id};
       const BOOKING_TOTAL = ${flight.total_amount};
+      const EXCHANGE_RATES = <%- JSON.stringify(exchangeRates) %>;
+      const ACTIVE_CURRENCY = '<%= activeCurrency %>';
+      const CURRENCY_RATE = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
 
       function formatPrice(amount) {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+      }
+
+      function toUSD(localAmount) {
+        return (Number(localAmount) / CURRENCY_RATE).toFixed(2);
+      }
+
+      function fmtLocal(amountInUSD) {
+        const curr = EXCHANGE_RATES[ACTIVE_CURRENCY] || { symbol: '$', rate: 1 };
+        const converted = Number(amountInUSD || 0) * curr.rate;
+        return curr.symbol + converted.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
       }
 
       async function generateShareLink(id) {
@@ -312,9 +326,9 @@
           const data = await res.json();
           if (!data.success) return;
           const s = data.data;
-          document.getElementById('payTotalAmount').textContent = formatPrice(s.totalAmount);
-          document.getElementById('payTotalPaid').textContent = formatPrice(s.totalPaid);
-          document.getElementById('payBalance').textContent = formatPrice(s.balance);
+          document.getElementById('payTotalAmount').textContent = fmtLocal(s.totalAmount);
+          document.getElementById('payTotalPaid').textContent = fmtLocal(s.totalPaid);
+          document.getElementById('payBalance').textContent = fmtLocal(s.balance);
           const statusEl = document.getElementById('payStatus');
           if (s.isFullyPaid) {
             statusEl.textContent = 'PAID IN FULL';
@@ -337,7 +351,7 @@
             '<td><strong>' + (p.invoice_no || '-') + '</strong></td>' +
             '<td>' + (methodLabels[p.payment_method] || p.payment_method) + '</td>' +
             '<td>' + (p.payment_reference || '-') + '</td>' +
-            '<td><strong style="color: var(--primary);">' + formatPrice(p.amount) + '</strong></td>' +
+            '<td><strong style="color: var(--primary);">' + fmtLocal(p.amount) + '</strong></td>' +
             '<td><span class="badge badge-' + p.payment_status + '">' + p.payment_status.toUpperCase() + '</span></td>' +
             '<td><button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Void</button></td>' +
             '</tr>').join('');
@@ -352,18 +366,21 @@
         form.style.display = isVisible ? 'none' : 'block';
         if (!isVisible) {
           const balance = parseFloat(document.getElementById('payBalance').textContent.replace(/[^0-9.-]/g, '')) || 0;
+          const localBalance = (balance * CURRENCY_RATE).toFixed(2);
+          const symbol = EXCHANGE_RATES[ACTIVE_CURRENCY]?.symbol || '$';
           const input = document.getElementById('payAmount');
-          input.placeholder = 'Amount (remaining: ' + formatPrice(balance) + ')';
-          input.value = balance > 0 ? balance.toFixed(2) : '';
+          input.placeholder = symbol + localBalance + ' remaining';
+          input.value = balance > 0 ? localBalance : '';
         }
       }
 
       async function submitPayment() {
-        const amount = document.getElementById('payAmount').value;
+        const localAmount = document.getElementById('payAmount').value;
         const payment_method = document.getElementById('payMethod').value;
         const payment_reference = document.getElementById('payReference').value;
         const notes = document.getElementById('payNotes').value;
-        if (!amount || Number(amount) <= 0) { alert('Please enter a valid amount'); return; }
+        if (!localAmount || Number(localAmount) <= 0) { alert('Please enter a valid amount'); return; }
+        const amount = toUSD(localAmount);
         const btn = document.getElementById('submitPayBtn');
         btn.textContent = 'Saving...'; btn.disabled = true;
         try {
