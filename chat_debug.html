@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -153,7 +153,68 @@
   </style>
 </head>
 <body>
-  <%- include('../../layout', { body: `
+  <!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Travel Assistant | Zahabia Travel & Tourism</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  
+    <nav class="navbar">
+      <a href="/admin" class="brand-logo">
+        <img src="/brand/LOGO123.png" alt="Zahabia Travel" onerror="this.onerror=null; this.src='/brand/Golden_airplane_circling_globe_20260914222838.gif';">
+        <div>
+          <span class="logo-title">ZAHABIA</span>
+          <span class="logo-sub">Travel & Tourism</span>
+        </div>
+      </a>
+
+      <button class="hamburger" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle menu">&#9776;</button>
+
+      <ul class="nav-links" id="navMenu">
+        <li><a href="/admin" class="nav-link ">Dashboard</a></li>
+        <li><a href="/admin/flights" class="nav-link ">Flights</a></li>
+        <li><a href="/admin/tours" class="nav-link ">Tours</a></li>
+        <li><a href="/admin/chat" class="nav-link active" style="color: var(--accent-gold);">🤖 AI Chat</a></li>
+        <li><a href="/admin/customers" class="nav-link ">Customers</a></li>
+        <li><a href="/admin/finance" class="nav-link ">Finance</a></li>
+        
+          <li><a href="/admin/audit-logs" class="nav-link ">Audit</a></li>
+          <li><a href="/admin/settings/rates" class="nav-link ">Rates</a></li>
+          <li><a href="/admin/users" class="nav-link ">Users</a></li>
+        
+      </ul>
+
+      <div class="nav-right">
+        <div class="currency-switcher">
+          <label>Currency:</label>
+          <select onchange="location.href='?currency=' + this.value">
+            <option value="PKR" selected>PKR (Rs)</option>
+            <option value="USD" >USD ($)</option>
+            <option value="AED" >AED</option>
+            <option value="EUR" >EUR</option>
+            <option value="GBP" >GBP</option>
+            <option value="SAR" >SAR</option>
+          </select>
+        </div>
+
+        <div class="user-badge">
+          <span>Zahabia Admin</span>
+          <span class="role-pill">admin</span>
+          <form method="post" action="/auth/logout" style="margin: 0;">
+            <button class="btn btn-secondary btn-sm" type="submit">Sign Out</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+  
+
+  <main class="app-container">
+    
     <div class="chat-wrap">
       <div class="chat-hdr">
         <img src="/brand/LOGO123.png" alt="AI">
@@ -198,7 +259,100 @@
         </button>
       </div>
     </div>
-  ` }) %>
-  <script src="/static/js/chat.js"></script>
+
+    <script>
+      var chatBody = document.getElementById('chatBody');
+      var chatInput = document.getElementById('chatInput');
+      var sendBtn = document.getElementById('sendBtn');
+      var btnLabel = document.getElementById('btnLabel');
+      var btnSpinner = document.getElementById('btnSpinner');
+      var typingDots = document.getElementById('typingDots');
+      var quickBar = document.getElementById('quickBar');
+      var history = [];
+      var busy = false;
+
+      chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); }
+      });
+      chatInput.focus();
+
+      function addBubble(text, who, meta) {
+        var d = document.createElement('div');
+        d.className = 'bubble bubble-' + who;
+        var html = text
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\n/g, '<br>')
+          .replace(/**(.*?)**/g, '<strong>$1</strong>')
+          .replace(/
+/g, '<br>');
+        if (meta) html += '<div class="bubble-meta">' + meta + '</div>';
+        d.innerHTML = html;
+        chatBody.appendChild(d);
+        chatBody.scrollTop = chatBody.scrollHeight;
+        return d;
+      }
+
+      function setLoading(on) {
+        busy = on;
+        sendBtn.disabled = on;
+        if (on) {
+          btnLabel.style.display = 'none';
+          btnSpinner.style.display = 'inline-block';
+          typingDots.style.display = 'block';
+          chatBody.scrollTop = chatBody.scrollHeight;
+        } else {
+          btnLabel.style.display = '';
+          btnSpinner.style.display = 'none';
+          typingDots.style.display = 'none';
+        }
+      }
+
+      function go(text) {
+        if (busy) return;
+        var msg = text || chatInput.value.trim();
+        if (!msg) return;
+
+        quickBar.style.display = 'none';
+        addBubble(msg, 'user');
+        history.push({ role: 'user', content: msg });
+        chatInput.value = '';
+        setLoading(true);
+
+        fetch('/admin/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg, history: history })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          setLoading(false);
+          if (data.success) {
+            addBubble(data.response, 'bot', 'Intent: ' + data.intent + ' | Model: ' + data.provider);
+            history.push({ role: 'assistant', content: data.response });
+          } else {
+            addBubble('Sorry, something went wrong. ' + (data.error || ''), 'bot');
+          }
+          chatInput.focus();
+        })
+        .catch(function(err) {
+          setLoading(false);
+          addBubble('Network error. Please check your connection and try again.', 'bot');
+          console.error('Chat error:', err);
+          chatInput.focus();
+        });
+      }
+    </script>
+  
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Zahabia Travel & Tourism. Powered by Apex Solutions.</p>
+  </footer>
 </body>
 </html>
+
+</body>
+</html>
+
