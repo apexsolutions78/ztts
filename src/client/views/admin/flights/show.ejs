@@ -36,10 +36,18 @@
     <!-- Share Link Toast / Alert -->
     <div id="shareBox" style="display: none;" class="alert alert-success">
       <strong>Customer Portal Access Link Generated:</strong>
-      <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
-        <input type="text" id="shareUrlInput" readonly class="form-control" style="background: #fff;">
-        <button onclick="copyShareUrl()" class="btn btn-secondary btn-sm">Copy Link</button>
-        <a id="openPortalLink" href="#" target="_blank" class="btn btn-primary btn-sm">Open Portal →</a>
+      <div style="margin-top: 0.5rem; display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="shareUrlInput" readonly class="form-control" style="background: #fff;">
+            <button onclick="copyShareUrl()" class="btn btn-secondary btn-sm">Copy Link</button>
+            <a id="openPortalLink" href="#" target="_blank" class="btn btn-primary btn-sm">Open Portal →</a>
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <img id="shareQR" src="" alt="Portal QR Code" style="width: 130px; height: 130px; border: 2px solid var(--primary); border-radius: 8px; padding: 4px; background: #fff; display: none;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.3rem;">Scan to open portal</div>
+        </div>
       </div>
     </div>
 
@@ -234,6 +242,9 @@
             document.getElementById('shareBox').style.display = 'block';
             document.getElementById('shareUrlInput').value = data.shareUrl;
             document.getElementById('openPortalLink').href = data.shareUrl;
+            const qrImg = document.getElementById('shareQR');
+            qrImg.src = '/t/' + data.token + '/qr';
+            qrImg.style.display = 'block';
           }
         } catch (err) {
           alert('Failed to generate portal link');
