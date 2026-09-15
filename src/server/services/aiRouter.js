@@ -39,7 +39,11 @@ export async function routeQuery(query, context = {}) {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
   try {
-    let fullPrompt = `${SYSTEM_PROMPTS[intent]}\n\nUser: ${query}`;
+    let fullPrompt = SYSTEM_PROMPTS[intent] + '\n\n';
+    if (context.databaseContext) {
+      fullPrompt += '## LIVE DATABASE DATA (use this to answer the user)\n' + context.databaseContext + '\n\n';
+    }
+    fullPrompt += 'User: ' + query;
     if (context.booking) {
       fullPrompt += `\n\nCustomer's booking:\n- Ref: ${context.booking.ref_code}\n- Route: ${context.booking.origin_city || 'N/A'} → ${context.booking.destination_city || 'N/A'}\n- Status: ${context.booking.status}`;
     }
