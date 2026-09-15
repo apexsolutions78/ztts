@@ -20,6 +20,7 @@ import notificationRoutes from './routes/notifications.js';
 import userRoutes from './routes/users.js';
 import homeRoutes from './routes/home.js';
 import chatRoutes from './routes/chat.js';
+import paymentRoutes from './routes/payments.js';
 import { requireAuth, requireAdmin } from './middleware/auth.js';
 import { currencyMiddleware } from './middleware/currency.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -87,6 +88,7 @@ app.use('/t', portalRoutes);
 app.use('/api', apiRoutes);
 app.use('/admin', requireAuth, notificationRoutes);
 app.use('/admin/chat', requireAuth, chatRoutes);
+app.use('/admin/payments', requireAuth, paymentRoutes);
 
 app.use('/', homeRoutes);
 app.get('/', (_req, res) => res.redirect('/auth/login'));

@@ -133,7 +133,99 @@
       <div id="notificationList" style="color: var(--text-muted); font-size: 0.9rem;">Loading...</div>
     </div>
 
+    <!-- Payment Management -->
+    <div class="card" style="margin-top: 2rem;" id="paymentSection">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>Payment Management</h3>
+        <button onclick="togglePaymentForm()" class="btn btn-primary btn-sm" id="addPaymentBtn">+ Record Payment</button>
+      </div>
+
+      <!-- Payment Summary -->
+      <div id="paymentSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: #edf4f2; padding: 1rem; border-radius: var(--radius-sm); text-align: center;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Amount</div>
+          <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary);" id="payTotalAmount">--</div>
+        </div>
+        <div style="background: #edf7ed; padding: 1rem; border-radius: var(--radius-sm); text-align: center;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Paid</div>
+          <div style="font-size: 1.4rem; font-weight: 800; color: #38a169;" id="payTotalPaid">--</div>
+        </div>
+        <div style="background: #fef3cd; padding: 1rem; border-radius: var(--radius-sm); text-align: center;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Balance Due</div>
+          <div style="font-size: 1.4rem; font-weight: 800; color: #d69e2e;" id="payBalance">--</div>
+        </div>
+        <div style="background: #f0f4f8; padding: 1rem; border-radius: var(--radius-sm); text-align: center;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Status</div>
+          <div style="font-size: 1.4rem; font-weight: 800;" id="payStatus">--</div>
+        </div>
+      </div>
+
+      <!-- Add Payment Form (hidden by default) -->
+      <div id="paymentForm" style="display: none; background: #f8fafb; padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border-light);">
+        <h4 style="margin-bottom: 1rem;">Record New Payment</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Amount</label>
+            <input type="number" id="payAmount" step="0.01" min="0.01" class="form-control" placeholder="0.00" style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Payment Method</label>
+            <select id="payMethod" class="form-control" style="width: 100%;">
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Deposit / Transfer</option>
+              <option value="cheque">Cheque</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="debit_card">Debit Card</option>
+              <option value="online">Online Payment</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Reference / Cheque No.</label>
+            <input type="text" id="payReference" class="form-control" placeholder="e.g. Cheque #12345, Transfer Ref" style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Notes</label>
+            <input type="text" id="payNotes" class="form-control" placeholder="Optional notes" style="width: 100%;">
+          </div>
+        </div>
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+          <button onclick="submitPayment()" class="btn btn-primary" id="submitPayBtn">Save Payment</button>
+          <button onclick="togglePaymentForm()" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Payment History Table -->
+      <h4 style="margin-bottom: 0.75rem;">Payment History</h4>
+      <div class="table-responsive">
+        <table class="data-table" id="paymentTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Invoice</th>
+              <th>Method</th>
+              <th>Reference</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="paymentTableBody">
+            <tr><td colspan="7" class="muted" style="text-align: center;">Loading payments...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <script>
+      const BOOKING_TYPE = 'flight';
+      const BOOKING_ID = ${flight.id};
+      const BOOKING_TOTAL = ${flight.total_amount};
+
+      function formatPrice(amount) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+      }
+
       async function generateShareLink(id) {
         try {
           const res = await fetch('/admin/flights/' + id + '/share', { method: 'POST' });
@@ -160,7 +252,6 @@
         const originalText = btn.textContent;
         btn.textContent = 'Sending...';
         btn.disabled = true;
-
         try {
           const res = await fetch('/admin/flights/' + flightId + '/notify/' + channel, { method: 'POST' });
           const data = await res.json();
@@ -204,6 +295,99 @@
         }
       }
 
+      async function loadPayments() {
+        try {
+          const res = await fetch('/admin/payments/' + BOOKING_TYPE + '/' + BOOKING_ID + '/payments');
+          const data = await res.json();
+          if (!data.success) return;
+          const s = data.summary;
+          document.getElementById('payTotalAmount').textContent = formatPrice(s.totalAmount);
+          document.getElementById('payTotalPaid').textContent = formatPrice(s.totalPaid);
+          document.getElementById('payBalance').textContent = formatPrice(s.balance);
+          const statusEl = document.getElementById('payStatus');
+          if (s.isFullyPaid) {
+            statusEl.textContent = 'PAID IN FULL';
+            statusEl.style.color = '#38a169';
+          } else if (s.paymentCount > 0) {
+            statusEl.textContent = 'PARTIAL';
+            statusEl.style.color = '#d69e2e';
+          } else {
+            statusEl.textContent = 'UNPAID';
+            statusEl.style.color = '#e53e3e';
+          }
+          const tbody = document.getElementById('paymentTableBody');
+          if (!s.payments || s.payments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="muted" style="text-align: center;">No payments recorded yet.</td></tr>';
+            return;
+          }
+          const methodLabels = { cash: 'Cash', bank_transfer: 'Bank Transfer', cheque: 'Cheque', credit_card: 'Credit Card', debit_card: 'Debit Card', online: 'Online', other: 'Other' };
+          tbody.innerHTML = s.payments.map(p => '<tr>' +
+            '<td>' + new Date(p.created_at).toLocaleDateString() + '</td>' +
+            '<td><strong>' + (p.invoice_no || '-') + '</strong></td>' +
+            '<td>' + (methodLabels[p.payment_method] || p.payment_method) + '</td>' +
+            '<td>' + (p.payment_reference || '-') + '</td>' +
+            '<td><strong style="color: var(--primary);">' + formatPrice(p.amount) + '</strong></td>' +
+            '<td><span class="badge badge-' + p.payment_status + '">' + p.payment_status.toUpperCase() + '</span></td>' +
+            '<td><button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Void</button></td>' +
+            '</tr>').join('');
+        } catch (err) {
+          console.error('Failed to load payments:', err);
+        }
+      }
+
+      function togglePaymentForm() {
+        const form = document.getElementById('paymentForm');
+        const isVisible = form.style.display !== 'none';
+        form.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) {
+          const balance = document.getElementById('payBalance').textContent;
+          document.getElementById('payAmount').placeholder = balance;
+        }
+      }
+
+      async function submitPayment() {
+        const amount = document.getElementById('payAmount').value;
+        const payment_method = document.getElementById('payMethod').value;
+        const payment_reference = document.getElementById('payReference').value;
+        const notes = document.getElementById('payNotes').value;
+        if (!amount || Number(amount) <= 0) { alert('Please enter a valid amount'); return; }
+        const btn = document.getElementById('submitPayBtn');
+        btn.textContent = 'Saving...'; btn.disabled = true;
+        try {
+          const res = await fetch('/admin/payments/' + BOOKING_TYPE + '/' + BOOKING_ID + '/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount, payment_method, payment_reference, notes })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert(data.message);
+            document.getElementById('payAmount').value = '';
+            document.getElementById('payReference').value = '';
+            document.getElementById('payNotes').value = '';
+            togglePaymentForm();
+            loadPayments();
+          } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+          }
+        } catch (err) {
+          alert('Failed to record payment');
+        } finally {
+          btn.textContent = 'Save Payment'; btn.disabled = false;
+        }
+      }
+
+      async function voidPayment(paymentId) {
+        if (!confirm('Void this payment? This cannot be undone.')) return;
+        try {
+          const res = await fetch('/admin/payments/payments/' + paymentId, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) { alert(data.message); loadPayments(); }
+          else { alert('Error: ' + (data.error || 'Unknown error')); }
+        } catch (err) { alert('Failed to void payment'); }
+      }
+
+      loadPayments();
       loadNotifications(${flight.id});
     </script>
   ` }) %>

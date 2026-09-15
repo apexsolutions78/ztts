@@ -560,6 +560,120 @@ export async function createInvoiceForBooking({ booking_type, booking_id, amount
   return newInvoice;
 }
 
+// --- SPLIT PAYMENT MODEL ---
+export async function getPaymentsByBooking(booking_type, booking_id) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM payments WHERE booking_type = ? AND booking_id = ? ORDER BY created_at ASC',
+      [booking_type, booking_id]
+    );
+    return rows;
+  }
+  return memoryStore.payments.filter(p => p.booking_type === booking_type && p.booking_id === Number(booking_id));
+}
+
+export async function getBookingTotalAmount(booking_type, booking_id) {
+  if (isUsingMySQL()) {
+    const table = booking_type === 'flight' ? 'flight_bookings' : 'tour_bookings';
+    const [rows] = await pool.query(`SELECT total_amount FROM ${table} WHERE id = ?`, [booking_id]);
+    return rows[0] ? Number(rows[0].total_amount) : 0;
+  }
+  if (booking_type === 'flight') {
+    const fb = memoryStore.flight_bookings.find(f => f.id === Number(booking_id));
+    return fb ? Number(fb.total_amount) : 0;
+  }
+  const tb = memoryStore.tour_bookings.find(t => t.id === Number(booking_id));
+  return tb ? Number(tb.total_amount) : 0;
+}
+
+export async function getBookingPaymentSummary(booking_type, booking_id) {
+  const payments = await getPaymentsByBooking(booking_type, booking_id);
+  const totalAmount = await getBookingTotalAmount(booking_type, booking_id);
+  const totalPaid = payments
+    .filter(p => p.payment_status === 'paid' || p.payment_status === 'partial')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const pendingAmount = payments
+    .filter(p => p.payment_status === 'pending')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const balance = totalAmount - totalPaid;
+  return {
+    totalAmount,
+    totalPaid,
+    pendingAmount,
+    balance: Math.max(0, balance),
+    isFullyPaid: balance <= 0,
+    paymentCount: payments.length,
+    payments
+  };
+}
+
+export async function addPayment({ booking_type, booking_id, amount, payment_method, payment_reference, notes, recorded_by }) {
+  const invoice_no = 'INV-2026-' + Math.floor(1000 + Math.random() * 9000);
+  const transaction_id = 'TXN-' + Math.floor(1000000 + Math.random() * 9000000);
+
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      `INSERT INTO payments (invoice_no, booking_type, booking_id, amount, payment_method, payment_reference, notes, payment_status, transaction_id, recorded_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'paid', ?, ?)`,
+      [invoice_no, booking_type, booking_id, amount, payment_method || 'cash', payment_reference || null, notes || null, transaction_id, recorded_by || null]
+    );
+    return { id: result.insertId, invoice_no, transaction_id };
+  }
+  const newPayment = {
+    id: memoryStore.payments.length + 1,
+    invoice_no,
+    booking_type,
+    booking_id: Number(booking_id),
+    amount: Number(amount),
+    payment_method: payment_method || 'cash',
+    payment_reference: payment_reference || null,
+    notes: notes || null,
+    payment_status: 'paid',
+    transaction_id,
+    recorded_by: recorded_by || null,
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.payments.unshift(newPayment);
+  return newPayment;
+}
+
+export async function updatePayment(id, { amount, payment_method, payment_reference, notes, payment_status }) {
+  if (isUsingMySQL()) {
+    const fields = [];
+    const values = [];
+    if (amount !== undefined) { fields.push('amount = ?'); values.push(amount); }
+    if (payment_method !== undefined) { fields.push('payment_method = ?'); values.push(payment_method); }
+    if (payment_reference !== undefined) { fields.push('payment_reference = ?'); values.push(payment_reference); }
+    if (notes !== undefined) { fields.push('notes = ?'); values.push(notes); }
+    if (payment_status !== undefined) { fields.push('payment_status = ?'); values.push(payment_status); }
+    if (fields.length === 0) return null;
+    values.push(id);
+    await pool.query(`UPDATE payments SET ${fields.join(', ')} WHERE id = ?`, values);
+    const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [id]);
+    return rows[0] || null;
+  }
+  const idx = memoryStore.payments.findIndex(p => p.id === Number(id));
+  if (idx === -1) return null;
+  if (amount !== undefined) memoryStore.payments[idx].amount = Number(amount);
+  if (payment_method !== undefined) memoryStore.payments[idx].payment_method = payment_method;
+  if (payment_reference !== undefined) memoryStore.payments[idx].payment_reference = payment_reference;
+  if (notes !== undefined) memoryStore.payments[idx].notes = notes;
+  if (payment_status !== undefined) memoryStore.payments[idx].payment_status = payment_status;
+  return memoryStore.payments[idx];
+}
+
+export async function deletePayment(id) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [id]);
+    await pool.query('DELETE FROM payments WHERE id = ?', [id]);
+    return rows[0] || null;
+  }
+  const idx = memoryStore.payments.findIndex(p => p.id === Number(id));
+  if (idx === -1) return null;
+  const [removed] = memoryStore.payments.splice(idx, 1);
+  return removed;
+}
+
 // --- LIVE FLIGHT STATUS ENGINE ---
 export function getFlightLiveStatus(flight) {
   if (!flight) return { status: 'UNKNOWN', statusClass: 'muted', gate: 'TBA', terminal: '1' };
