@@ -2,9 +2,7 @@ import { Ollama } from 'ollama';
 import axios from 'axios';
 
 const ollama = new Ollama({ host: 'http://localhost:11434' });
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const INTENT_PATTERNS = {
@@ -39,6 +37,9 @@ export async function routeQuery(query, context = {}) {
   const strategy = MODEL_STRATEGY[intent] || 'local';
   let response, provider;
 
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
   try {
     let fullPrompt = `${SYSTEM_PROMPTS[intent]}\n\nUser: ${query}`;
     if (context.booking) {
@@ -46,11 +47,11 @@ export async function routeQuery(query, context = {}) {
     }
 
     if (strategy === 'gemini' && GEMINI_API_KEY) {
-      response = await queryGemini(fullPrompt);
+      response = await queryGemini(fullPrompt, GEMINI_API_KEY);
       provider = 'Gemini (Free)';
     } else if (strategy === 'groq' && GROQ_API_KEY) {
-      const model = intent === 'flight_status' || intent === 'booking_query' ? 'llama-3.2-3b-preview' : 'llama-3.1-8b-instant';
-      response = await queryGroq(fullPrompt, model);
+      const model = intent === 'flight_status' || intent === 'booking_query' ? 'allam-2-7b' : 'qwen/qwen3.8-27b';
+      response = await queryGroq(fullPrompt, model, GROQ_API_KEY);
       provider = `Groq ${model}`;
     } else {
       const model = intent === 'flight_status' || intent === 'booking_query' ? 'llama3.2:3b' : 'mistral:7b';
@@ -62,11 +63,11 @@ export async function routeQuery(query, context = {}) {
     try {
       // Fallback chain: try providers that weren't already attempted
       if (provider !== 'Groq' && GROQ_API_KEY) {
-        const fbModel = intent === 'flight_status' || intent === 'booking_query' ? 'llama-3.2-3b-preview' : 'llama-3.1-8b-instant';
-        response = await queryGroq(`${SYSTEM_PROMPTS[intent]}\n\n${query}`, fbModel);
+        const fbModel = intent === 'flight_status' || intent === 'booking_query' ? 'allam-2-7b' : 'qwen/qwen3.8-27b';
+        response = await queryGroq(`${SYSTEM_PROMPTS[intent]}\n\n${query}`, fbModel, GROQ_API_KEY);
         provider = `Groq ${fbModel} (Fallback)`;
       } else if (provider !== 'Gemini' && GEMINI_API_KEY) {
-        response = await queryGemini(`${SYSTEM_PROMPTS[intent]}\n\n${query}`);
+        response = await queryGemini(`${SYSTEM_PROMPTS[intent]}\n\n${query}`, GEMINI_API_KEY);
         provider = 'Gemini (Fallback)';
       } else {
         response = await queryHuggingFace(`${SYSTEM_PROMPTS[intent]}\n\n${query}`);
@@ -89,15 +90,15 @@ function classifyIntent(query) {
   return 'general';
 }
 
-async function queryGemini(prompt) {
-  const response = await axios.post(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+async function queryGemini(prompt, apiKey) {
+  const response = await axios.post(`${GEMINI_URL}?key=${apiKey}`, {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
   }, { headers: { 'Content-Type': 'application/json' }, timeout: 10000 });
   return response.data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
 }
 
-async function queryGroq(prompt, model = 'llama-3.1-8b-instant') {
+async function queryGroq(prompt, model = 'allam-2-7b', apiKey) {
   const response = await axios.post(GROQ_URL, {
     model,
     messages: [
@@ -107,7 +108,7 @@ async function queryGroq(prompt, model = 'llama-3.1-8b-instant') {
     temperature: 0.7,
     max_tokens: 1024
   }, {
-    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     timeout: 8000
   });
   return response.data.choices?.[0]?.message?.content || 'No response';
