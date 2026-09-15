@@ -367,3 +367,187 @@ HF_API_KEY=
 - **CSS Responsive Breakpoints:** 3 (1100px, 860px, 480px)
 - **External JS Files:** 1 (chat.js)
 - **AI Providers:** 4 (Groq, Gemini, Ollama, HuggingFace)
+
+---
+
+## M10 — Advanced Payment System (Split Payments & Multiple Methods)
+### Date: September 15, 2026
+
+### New Files
+- `migrations/0006_payments_upgrade.sql` — DB migration adding `payment_reference`, `notes`, `recorded_by` columns; expanding `payment_method` and `payment_status` enums
+- `src/server/controllers/paymentController.js` — Payment CRUD API (get summary, add, update, void)
+- `src/server/routes/payments.js` — Payment API routes mounted at `/admin/payments`
+- `src/server/services/qrService.js` — QR code generation service (SVG + DataURL)
+
+### Dependencies Added
+- `qrcode` — Server-side QR code generation
+
+### Database Changes
+- `payments` table: Added `payment_reference VARCHAR(100)`, `notes TEXT`, `recorded_by INT`
+- `payment_method` enum expanded: `cash`, `bank_transfer`, `cheque`, `credit_card`, `debit_card`, `online`, `other`
+- `payment_status` enum: `paid`, `pending`, `partial`, `refunded`, `voided`
+
+### New Model Functions (`src/server/models/index.js`)
+- `getPaymentsByBooking(booking_type, booking_id)` — Fetch all payments for a booking
+- `getBookingTotalAmount(booking_type, booking_id)` — Get total amount from flight_bookings or tour_bookings
+- `getBookingPaymentSummary(booking_type, booking_id)` — Full summary: totalAmount, totalPaid, pendingAmount, balance, isFullyPaid, paymentCount, payments[]
+- `addPayment({...})` — Insert payment with auto-generated invoice_no, transaction_id, base_fare/tax_amount/agency_fee breakdown
+- `updatePayment(id, updates)` — Update payment fields
+- `deletePayment(id)` — Void/delete a payment
+
+### API Endpoints
+- `GET /admin/payments/:type/:id/summary` — Payment summary for a booking
+- `POST /admin/payments/:type/:id/record` — Record a new payment
+- `PUT /admin/payments/record/:paymentId` — Update a payment
+- `DELETE /admin/payments/record/:paymentId` — Void a payment
+
+### Payment Management UI
+- **Flight show page** (`admin/flights/show.ejs`): Full payment management section with summary cards (Total, Paid, Balance Due, Status), add payment form with method/reference/notes, payment history table with void buttons
+- **Flight booking form** (`admin/flights/new.ejs`): Optional initial payment with method selection, reference, and notes
+- **Tour booking form** (`admin/tours/show.ejs`): Same payment options during tour reservation
+
+### Route Architecture Fix
+- Original routes used `/:type/:id/payments` which conflicted with `/payments/:paymentId` DELETE route
+- Renamed to `/:type/:id/summary` (GET), `/:type/:id/record` (POST), `/record/:paymentId` (PUT/DELETE)
+- Frontend fetch URLs updated to match
+
+### Auto-Invoice Removal
+- Removed auto-invoice creation from both flight and tour booking controllers
+- Operators now choose to record payment during booking or skip (Record Later option)
+
+### Notifications Fix
+- `notificationController.js`: Added graceful error handling for email/WhatsApp failures (doesn't crash booking flow)
+- `emailService.js`: Fixed SMTP empty string check with `.trim()` to prevent `SMTP_SECURE` parse error
+
+---
+
+## QR Code Feature
+### Date: September 15, 2026
+
+### New Files
+- `src/server/services/qrService.js` — QR code generation using `qrcode` npm package
+
+### New API Endpoint
+- `GET /t/:token/qr` — Returns SVG QR code image for any portal link (cached 24h)
+
+### QR Code Display Locations
+- **Customer portal view** (`portal/view.ejs`): QR code shown below e-ticket barcode section and tour booking section with "Scan to Open Portal" label
+- **Admin flight show** (`admin/flights/show.ejs`): QR code appears when "Share Portal Link" is clicked, alongside the share URL
+
+### Implementation
+- Server generates SVG QR codes via `QRCode.toString(url, { type: 'svg' })`
+- Portal URL encoded: `https://ztts.apexsol.pk/t/{token}`
+- SVG served with `Content-Type: image/svg+xml` and 24h cache header
+- Styled with brand primary color (#0b192c) on white background
+- 120px display size on portal, 130px on admin share box
+
+---
+
+## Currency-Aware Forms
+### Date: September 15, 2026
+
+### Problem
+- All booking forms showed amounts in hardcoded USD ($ USD) regardless of the active currency selector at the top of the page
+- Payment forms and summary cards also displayed USD-only amounts
+
+### Solution
+- Added currency conversion to all booking and payment forms
+- Amounts entered in local currency (PKR, AED, etc.) are converted to USD before saving
+- All display amounts converted from USD to active currency for display
+
+### Modified Files
+- `src/server/controllers/flightController.js` — `getNewFlightForm` and `viewFlightDetail` now pass `activeCurrency` and `exchangeRates` to templates; `postCreateFlight` uses `total_amount_usd` and `pay_amount_usd` hidden fields
+- `src/server/controllers/tourController.js` — `viewTourDetail` passes currency data; `postBookTour` uses `pay_amount_usd`
+- `src/client/views/admin/flights/new.ejs` — Labels show active currency symbol, exchange rate displayed, JavaScript converts amounts on form submit
+- `src/client/views/admin/flights/show.ejs` — Payment form, summary cards, and payment history all display in active currency; `fmtLocal()` function for conversion
+- `src/client/views/admin/tours/show.ejs` — Package price and payment form show active currency; JavaScript converts payment amount on submit
+
+### Currency Conversion Flow
+1. User selects currency at top of page → stored in session
+2. Currency middleware sets `res.locals.activeCurrency` and `res.locals.exchangeRates`
+3. Forms show labels like "Total Ticket Amount (Rs PKR)" with exchange rate note
+4. Hidden fields (`total_amount_usd`, `pay_amount_usd`) populated via JavaScript on submit
+5. Server receives USD amounts and stores them in the database
+6. Display functions convert USD back to active currency using exchange rates
+
+---
+
+## Deployment — DirectAdmin Production Server
+### Date: September 15, 2026
+
+### Server Configuration
+- **Host:** DirectAdmin with NodeJS Selector (Node 22)
+- **URL:** https://ztts.apexsol.pk
+- **DB:** MySQL `apexsolp_ztts` / user `apexsolp_ztts` / host `localhost`
+- **Git:** https://github.com/apexsolutions78/ztts.git
+- **App root:** `/home/apexsolp/domains/ztts.apexsol.pk/public_html`
+
+### Critical Fixes During Deployment
+1. **MySQL activation**: `checkDatabase()` was never called at startup — app used in-memory fallback. Fixed by adding `checkDatabase()` call before `app.listen()`.
+2. **Trust proxy**: Added `app.set('trust proxy', 1)` for Passenger reverse proxy to fix session/cookie issues.
+3. **SMTP configuration**: `SMTP_SECURE=false` required for port 587 (was `true` causing connection failure).
+4. **Login session fix**: `req.session.user` not persisting — resolved by trust proxy setting.
+5. **EJS syntax fix**: Portal view had raw JS template literal (`${tourBooking.total_travelers}`) inside EJS template — fixed to use EJS tags.
+6. **Route conflicts**: Payment API routes renamed to avoid path parameter conflicts with DELETE routes.
+
+### Brand Assets
+- GIF/WebP logo files at project root served via `/brand` static route
+- Animated airplane logo used throughout
+- White background on hero section for logo compatibility
+
+---
+
+## Updated Statistics
+
+| # | Milestone | Status | Date |
+|---|-----------|--------|------|
+| M0 | Foundation | ✅ Complete | Pre-existing |
+| M1 | Core Domain | ✅ Complete | Pre-existing |
+| M2 | Enterprise Features | ✅ Complete | Pre-existing |
+| M3 | Auth & Security | ✅ Complete | Pre-existing |
+| M4 | Exchange Rates | ✅ Complete | Pre-existing |
+| M5 | Notifications | ✅ Complete | Sep 15, 2026 |
+| M6 | CRUD Completion | ✅ Complete | Sep 15, 2026 |
+| M7 | Dashboard Analytics | ✅ Complete | Sep 15, 2026 |
+| M8 | PDF, Upload, Homepage, Errors | ✅ Complete | Sep 15, 2026 |
+| M9 | AI Travel Assistant | ✅ Complete | Sep 15, 2026 |
+| M10 | Advanced Payment System | ✅ Complete | Sep 15, 2026 |
+
+### Cumulative Statistics
+- **Files Created:** 26+
+- **Files Modified:** 40+
+- **Dependencies Added:** 6 (nodemailer, pdfkit, multer, ollama, axios, qrcode)
+- **New Model Functions:** 18
+- **New Controller Functions:** 26
+- **New Routes:** 16
+- **New Views:** 11
+- **New Services:** 7 (emailService, whatsAppService, pdfService, aiRouter, qrService, upload middleware, currency middleware)
+- **CSS Responsive Breakpoints:** 3 (1100px, 860px, 480px)
+- **External JS Files:** 1 (chat.js)
+- **AI Providers:** 4 (Groq, Gemini, Ollama, HuggingFace)
+- **Payment Methods:** 7 (cash, bank_transfer, cheque, credit_card, debit_card, online, other)
+- **Currencies Supported:** 6 (USD, PKR, AED, EUR, GBP, SAR)
+
+---
+
+## Git Commits (This Session)
+1. `a8264f2` — fix: payment API routes, response data mapping, and invoice breakdown
+2. `de01282` — feat: QR code generation for customer portal links
+3. `29de26a` — feat: currency-aware forms for flight and tour booking creation
+
+---
+
+## Current Issues / Next Steps
+
+### Active
+- **503 on login after deploy** — App may have crashed after latest push. Need to check server logs.
+- **Payment API still loading** — Despite route fixes, the payment summary may still fail on production. Need to verify `getBookingPaymentSummary` works with MySQL data.
+- **Customer due tracking** — Need per-customer outstanding balance view across all bookings.
+- **Invoice breakdown** — PDF shows $0 for base fare/tax/fee when payments don't have those fields populated.
+
+### Potential Enhancements
+- Tour booking detail page (admin side) — Individual tour bookings don't have a show/edit page
+- Customer portal for tour bookings — Share QR code from admin tour booking list
+- Per-customer balance dashboard — Aggregate unpaid amounts across all bookings
+- Payment receipt PDF generation
+- Refund/partial payment workflows

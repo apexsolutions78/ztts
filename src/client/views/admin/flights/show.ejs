@@ -173,7 +173,7 @@
         <h4 style="margin-bottom: 1rem;">Record New Payment</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div>
-            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Amount (<%= exchangeRates[activeCurrency]?.symbol || '$' %> <%= activeCurrency %>)</label>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Amount (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
             <input type="number" id="payAmount" step="0.01" min="0.01" class="form-control" placeholder="0.00" style="width: 100%;">
             <input type="hidden" id="payAmountUSD">
           </div>
@@ -230,8 +230,8 @@
       const BOOKING_TYPE = 'flight';
       const BOOKING_ID = ${flight.id};
       const BOOKING_TOTAL = ${flight.total_amount};
-      const EXCHANGE_RATES = <%- JSON.stringify(exchangeRates) %>;
-      const ACTIVE_CURRENCY = '<%= activeCurrency %>';
+      const EXCHANGE_RATES = ${JSON.stringify(exchangeRates)};
+      const ACTIVE_CURRENCY = '${activeCurrency}';
       const CURRENCY_RATE = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
 
       function formatPrice(amount) {
