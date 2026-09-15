@@ -143,15 +143,15 @@ export function generateInvoicePDF(invoice, res) {
   doc.text('AMOUNT', 380, y + 8, { width: 160, align: 'right' });
   y += 30;
 
-  const baseFare = Number(invoice.base_fare || invoice.amount * 0.88);
-  const taxAmount = Number(invoice.tax_amount || invoice.amount * 0.08);
-  const agencyFee = Number(invoice.agency_fee || invoice.amount * 0.04);
+  const baseFare = invoice.base_fare != null ? Number(invoice.base_fare) : null;
+  const taxAmount = invoice.tax_amount != null ? Number(invoice.tax_amount) : null;
+  const agencyFee = invoice.agency_fee != null ? Number(invoice.agency_fee) : null;
 
-  const items = [
-    ['Base Fare', `$${baseFare.toFixed(2)}`],
-    ['Taxes & Fees', `$${taxAmount.toFixed(2)}`],
-    ['Agency Service Fee', `$${agencyFee.toFixed(2)}`]
-  ];
+  const items = [];
+  if (baseFare != null) items.push(['Base Fare', `$${baseFare.toFixed(2)}`]);
+  if (taxAmount != null) items.push(['Taxes & Fees', `$${taxAmount.toFixed(2)}`]);
+  if (agencyFee != null) items.push(['Agency Service Fee', `$${agencyFee.toFixed(2)}`]);
+  if (items.length === 0) items.push(['Total Amount', `$${Number(invoice.amount).toFixed(2)}`]);
   items.forEach(([desc, amt]) => {
     doc.fontSize(10).fill(BRAND.dark).text(desc, 60, y, { width: 300 });
     doc.text(amt, 380, y, { width: 160, align: 'right' });

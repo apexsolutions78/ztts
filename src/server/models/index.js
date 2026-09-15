@@ -692,19 +692,19 @@ export async function getCustomerLedger(customerId) {
   return null;
 }
 
-export async function addPayment({ booking_type, booking_id, amount, payment_method, payment_reference, notes, recorded_by }) {
+export async function addPayment({ booking_type, booking_id, amount, payment_method, payment_reference, notes, base_fare, tax_amount, agency_fee, recorded_by }) {
   const invoice_no = 'INV-2026-' + Math.floor(1000 + Math.random() * 9000);
   const transaction_id = 'TXN-' + Math.floor(1000000 + Math.random() * 9000000);
   const amt = Number(amount);
-  const base_fare = (amt * 0.88).toFixed(2);
-  const tax_amount = (amt * 0.08).toFixed(2);
-  const agency_fee = (amt * 0.04).toFixed(2);
+  const finalBaseFare = base_fare != null ? Number(base_fare) : null;
+  const finalTaxAmount = tax_amount != null ? Number(tax_amount) : null;
+  const finalAgencyFee = agency_fee != null ? Number(agency_fee) : null;
 
   if (isUsingMySQL()) {
     const [result] = await pool.query(
       `INSERT INTO payments (invoice_no, booking_type, booking_id, amount, base_fare, tax_amount, agency_fee, payment_method, payment_reference, notes, payment_status, transaction_id, recorded_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', ?, ?)`,
-      [invoice_no, booking_type, booking_id, amt, base_fare, tax_amount, agency_fee, payment_method || 'cash', payment_reference || null, notes || null, transaction_id, recorded_by || null]
+      [invoice_no, booking_type, booking_id, amt, finalBaseFare, finalTaxAmount, finalAgencyFee, payment_method || 'cash', payment_reference || null, notes || null, transaction_id, recorded_by || null]
     );
     return { id: result.insertId, invoice_no, transaction_id };
   }
@@ -714,6 +714,9 @@ export async function addPayment({ booking_type, booking_id, amount, payment_met
     booking_type,
     booking_id: Number(booking_id),
     amount: Number(amount),
+    base_fare: finalBaseFare,
+    tax_amount: finalTaxAmount,
+    agency_fee: finalAgencyFee,
     payment_method: payment_method || 'cash',
     payment_reference: payment_reference || null,
     notes: notes || null,

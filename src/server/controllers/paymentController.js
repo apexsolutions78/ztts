@@ -21,7 +21,7 @@ export async function getBookingPaymentsAPI(req, res, next) {
 export async function postAddPayment(req, res, next) {
   try {
     const { type, id } = req.params;
-    const { amount, payment_method, payment_reference, notes } = req.body;
+    const { amount, payment_method, payment_reference, notes, base_fare, tax_amount, agency_fee } = req.body;
 
     if (!amount || Number(amount) <= 0) {
       return res.status(400).json({ success: false, error: 'Invalid payment amount' });
@@ -40,6 +40,9 @@ export async function postAddPayment(req, res, next) {
       payment_method: payment_method || 'cash',
       payment_reference,
       notes,
+      base_fare: base_fare ? Number(base_fare) : null,
+      tax_amount: tax_amount ? Number(tax_amount) : null,
+      agency_fee: agency_fee ? Number(agency_fee) : null,
       recorded_by: req.session.user?.id
     });
 
