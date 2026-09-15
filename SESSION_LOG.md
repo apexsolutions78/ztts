@@ -259,3 +259,111 @@ All 9 tests passing consistently throughout the session:
 - **New Routes:** 10
 - **New Views:** 8
 - **CSS Responsive Breakpoints:** 3 (1100px, 860px, 480px)
+
+---
+
+## M8 — PDF Generation, File Upload, Public Homepage & Error Handling
+### Date: September 15, 2026
+
+### New Files
+- `src/server/services/pdfService.js` — PDFKit e-ticket + invoice generators
+- `src/server/middleware/upload.js` — Multer config for tour images (5MB, jpg/png/webp/gif)
+- `src/server/controllers/homeController.js` — Public homepage controller
+- `src/server/routes/home.js` — Public homepage route
+- `src/client/views/home/index.ejs` — Landing page template (hero, features, tour showcase, CTA)
+- `src/client/views/errors/500.ejs` — Server error page
+- `src/client/public/robots.txt`
+
+### Dependencies Added
+- `pdfkit` — PDF generation
+- `multer` — File upload handling
+
+### Features
+- **E-Ticket PDF**: `GET /admin/flights/:id/pdf` — branded A4 PDF with flight route, passenger details, barcode
+- **Invoice PDF**: `GET /admin/finance/:id/pdf` — tax invoice with line items, payment status
+- **Tour image upload**: `multer` middleware — file upload on create/edit forms
+- **Public landing page**: `GET /` — hero section, features grid, tour package showcase, CTA
+- **Error handler**: Detects AJAX vs page — JSON for API, rendered `500.ejs` for page requests
+- **Static assets**: Favicon in all templates, `robots.txt`, `uploads/` directory served
+
+### Bug Fix
+- Dashboard `dashboard.ejs` had `<%= %>` EJS tags inside template literal body of `<%- include() %>` — EJS parser confused inner `%>` as closing the outer `<%-`. Converted to `${...}` template literal syntax. Moved `flightPct`/`tourPct`/`maxRev` calculations to controller.
+
+---
+
+## M9 — AI Travel Assistant (Chatbot)
+### Date: September 15, 2026
+
+### New Files
+- `src/server/services/aiRouter.js` — Smart query routing to free AI models
+- `src/server/controllers/chatController.js` — Chat endpoint + database context builder
+- `src/server/routes/chat.js` — Chat routes
+- `src/client/views/admin/chat/index.ejs` — Chat UI view
+- `src/client/public/js/chat.js` — External chat JavaScript (avoids EJS template literal issues)
+
+### Dependencies Added
+- `ollama` — Local Ollama integration
+- `axios` — HTTP client for Groq/Gemini/HuggingFace APIs
+
+### Features
+- **Intent classification**: visa, travel planning, flight status, booking, weather, general
+- **Multi-provider AI routing**:
+  - **Groq** (primary): `qwen/qwen3.8-27b` (complex), `allam-2-7b` (fast)
+  - **Gemini** (fallback): `gemini-1.5-flash` via free API
+  - **Ollama** (local fallback): `mistral:7b`, `llama3.2:3b`
+  - **HuggingFace** (last resort): `Mistral-7B-Instruct-v0.3`
+- **Database context injection**: AI has access to real customer, flight, tour, and financial data
+- **Chat UI**: Typing indicator, spinner on Send button, quick action buttons, message history
+- **Audit logging**: Every AI interaction recorded in audit trail
+
+### Database Context Injection
+The chat controller builds live database context per query:
+- Customer questions → Name, passport, nationality, phone, email
+- Flight questions → PNR, airline, route, dates, price, ticket status
+- Tour questions → Package name, destination, duration, price
+- Finance questions → Revenue, invoices, payment methods
+- General questions → Dashboard stats overview
+
+### Environment Variables Added
+```
+GEMINI_API_KEY=
+GROQ_API_KEY=
+HF_API_KEY=
+```
+
+### Bug Fixes (M9)
+1. **ESM import hoisting**: API keys read at module load time (before dotenv.config()). Fixed by reading `process.env` lazily inside functions.
+2. **Ollama import crash**: `new Ollama()` at module top level crashed if Ollama not running. Fixed with dynamic `await import('ollama')` inside function.
+3. **EJS template literal broke inline JS**: `\*\*` became `*` (making regex into JS comment), `\n` became actual newline. Fixed by moving JS to external file `/static/js/chat.js`.
+4. **Browser cache**: Added `Cache-Control: no-store` header to prevent stale HTML being served.
+5. **Groq model names**: Initial models (`llama-3.1-8b-instant`) not available. Discovered working models via API: `qwen/qwen3.8-27b`, `allam-2-7b`, `groq/compound-mini`.
+6. **Groq context limit**: `groq/compound-mini` has tiny context window (413 error with full prompts). Switched to `qwen/qwen3.8-27b`.
+
+---
+
+## Updated Statistics
+
+| # | Milestone | Status | Date |
+|---|-----------|--------|------|
+| M0 | Foundation | ✅ Complete | Pre-existing |
+| M1 | Core Domain | ✅ Complete | Pre-existing |
+| M2 | Enterprise Features | ✅ Complete | Pre-existing |
+| M3 | Auth & Security | ✅ Complete | Pre-existing |
+| M4 | Exchange Rates | ✅ Complete | Pre-existing |
+| M5 | Notifications | ✅ Complete | Sep 15, 2026 |
+| M6 | CRUD Completion | ✅ Complete | Sep 15, 2026 |
+| M7 | Dashboard Analytics | ✅ Complete | Sep 15, 2026 |
+| M8 | PDF, Upload, Homepage, Errors | ✅ Complete | Sep 15, 2026 |
+| M9 | AI Travel Assistant | ✅ Complete | Sep 15, 2026 |
+
+### Cumulative Statistics
+- **Files Created:** 22+
+- **Files Modified:** 30+
+- **Dependencies Added:** 5 (nodemailer, pdfkit, multer, ollama, axios)
+- **New Model Functions:** 12
+- **New Controller Functions:** 22
+- **New Routes:** 13
+- **New Views:** 11
+- **CSS Responsive Breakpoints:** 3 (1100px, 860px, 480px)
+- **External JS Files:** 1 (chat.js)
+- **AI Providers:** 4 (Groq, Gemini, Ollama, HuggingFace)
