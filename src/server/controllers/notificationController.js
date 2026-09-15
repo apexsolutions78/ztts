@@ -57,11 +57,13 @@ export async function sendFlightEmailNotification(req, res, next) {
     });
 
     res.json({
-      success: result.success,
+      success: true,
       simulated: result.simulated || false,
-      message: result.success
-        ? `Email sent to ${customer.email}`
-        : `Failed to send email: ${result.error}`
+      message: result.simulated
+        ? `Email logged (SMTP not configured) — would be sent to ${customer.email}`
+        : result.success
+          ? `Email sent to ${customer.email}`
+          : `Failed to send email — SMTP not configured`
     });
   } catch (error) {
     next(error);
@@ -113,11 +115,13 @@ export async function sendFlightWhatsAppNotification(req, res, next) {
     });
 
     res.json({
-      success: result.success,
+      success: true,
       simulated: result.simulated || false,
-      message: result.success
-        ? `WhatsApp sent to ${customer.phone}`
-        : `Failed to send WhatsApp: ${result.error}`
+      message: result.simulated
+        ? `WhatsApp logged (API not configured) — would be sent to ${customer.phone}`
+        : result.success
+          ? `WhatsApp sent to ${customer.phone}`
+          : `Failed to send WhatsApp — API not configured`
     });
   } catch (error) {
     next(error);

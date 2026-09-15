@@ -6,7 +6,7 @@ let transporter = null;
 function getTransporter() {
   if (transporter) return transporter;
 
-  if (!env.email.host || !env.email.user) {
+  if (!env.email.host || !env.email.host.trim() || !env.email.user || !env.email.user.trim()) {
     console.warn('[Apex Solutions Email] SMTP not configured – emails will be logged only');
     return null;
   }
