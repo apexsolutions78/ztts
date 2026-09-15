@@ -97,7 +97,10 @@ app.use(errorHandler);
 const isTestMode = process.env.NODE_ENV === 'test' || env.nodeEnv === 'test' || process.execArgv.includes('--test');
 
 if (!isTestMode) {
-  app.listen(env.port, () => console.log(`Apex Solutions running on ${env.appUrl}`));
+  checkDatabase().then(ok => {
+    console.log(`[Apex Solutions DB] MySQL ${ok ? 'connected ✓' : 'unavailable — using in-memory store'}`);
+    app.listen(env.port, () => console.log(`Apex Solutions running on ${env.appUrl}`));
+  });
 }
 
 export default app;
