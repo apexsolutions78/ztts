@@ -1,7 +1,5 @@
-import { Ollama } from 'ollama';
 import axios from 'axios';
 
-const ollama = new Ollama({ host: 'http://localhost:11434' });
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -24,8 +22,8 @@ const SYSTEM_PROMPTS = {
 };
 
 const MODEL_STRATEGY = {
-  visa_research: 'gemini',
-  travel_planning: 'gemini',
+  visa_research: 'groq',
+  travel_planning: 'groq',
   flight_status: 'groq',
   booking_query: 'groq',
   weather: 'groq',
@@ -61,17 +59,11 @@ export async function routeQuery(query, context = {}) {
   } catch (err) {
     console.error('[AI Router] Primary error:', err.message);
     try {
-      // Fallback chain: try providers that weren't already attempted
-      if (provider !== 'Groq' && GROQ_API_KEY) {
-        const fbModel = intent === 'flight_status' || intent === 'booking_query' ? 'allam-2-7b' : 'qwen/qwen3.8-27b';
-        response = await queryGroq(`${SYSTEM_PROMPTS[intent]}\n\n${query}`, fbModel, GROQ_API_KEY);
-        provider = `Groq ${fbModel} (Fallback)`;
-      } else if (provider !== 'Gemini' && GEMINI_API_KEY) {
+      if (GEMINI_API_KEY) {
         response = await queryGemini(`${SYSTEM_PROMPTS[intent]}\n\n${query}`, GEMINI_API_KEY);
         provider = 'Gemini (Fallback)';
       } else {
-        response = await queryHuggingFace(`${SYSTEM_PROMPTS[intent]}\n\n${query}`);
-        provider = 'Mistral (Hugging Face Free)';
+        throw new Error('No fallback available');
       }
     } catch {
       response = 'I apologize, but I\'m having trouble processing your request. Please try again or contact support.';
@@ -115,6 +107,8 @@ async function queryGroq(prompt, model = 'allam-2-7b', apiKey) {
 }
 
 async function queryOllama(prompt, model = 'mistral:7b') {
+  const { Ollama } = await import('ollama');
+  const ollama = new Ollama({ host: 'http://localhost:11434' });
   const response = await ollama.chat({
     model,
     messages: [{ role: 'user', content: prompt }],
