@@ -56,6 +56,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.appUrl = env.appUrl;
   res.locals.currentPath = req.path;
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   next();
 });
 
