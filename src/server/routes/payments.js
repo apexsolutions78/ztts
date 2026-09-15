@@ -3,9 +3,9 @@ import { getBookingPaymentsAPI, postAddPayment, postUpdatePayment, postDeletePay
 
 const router = Router();
 
-router.get('/:type/:id/payments', getBookingPaymentsAPI);
-router.post('/:type/:id/payments', postAddPayment);
-router.put('/payments/:paymentId', postUpdatePayment);
-router.delete('/payments/:paymentId', postDeletePayment);
+router.get('/:type/:id/summary', getBookingPaymentsAPI);
+router.post('/:type/:id/record', postAddPayment);
+router.put('/record/:paymentId', postUpdatePayment);
+router.delete('/record/:paymentId', postDeletePayment);
 
 export default router;

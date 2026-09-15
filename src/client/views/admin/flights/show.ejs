@@ -297,10 +297,10 @@
 
       async function loadPayments() {
         try {
-          const res = await fetch('/admin/payments/' + BOOKING_TYPE + '/' + BOOKING_ID + '/payments');
+          const res = await fetch('/admin/payments/' + BOOKING_TYPE + '/' + BOOKING_ID + '/summary');
           const data = await res.json();
           if (!data.success) return;
-          const s = data.summary;
+          const s = data.data;
           document.getElementById('payTotalAmount').textContent = formatPrice(s.totalAmount);
           document.getElementById('payTotalPaid').textContent = formatPrice(s.totalPaid);
           document.getElementById('payBalance').textContent = formatPrice(s.balance);
@@ -340,8 +340,10 @@
         const isVisible = form.style.display !== 'none';
         form.style.display = isVisible ? 'none' : 'block';
         if (!isVisible) {
-          const balance = document.getElementById('payBalance').textContent;
-          document.getElementById('payAmount').placeholder = balance;
+          const balance = parseFloat(document.getElementById('payBalance').textContent.replace(/[^0-9.-]/g, '')) || 0;
+          const input = document.getElementById('payAmount');
+          input.placeholder = 'Amount (remaining: ' + formatPrice(balance) + ')';
+          input.value = balance > 0 ? balance.toFixed(2) : '';
         }
       }
 
@@ -354,7 +356,7 @@
         const btn = document.getElementById('submitPayBtn');
         btn.textContent = 'Saving...'; btn.disabled = true;
         try {
-          const res = await fetch('/admin/payments/' + BOOKING_TYPE + '/' + BOOKING_ID + '/payments', {
+          const res = await fetch('/admin/payments/' + BOOKING_TYPE + '/' + BOOKING_ID + '/record', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount, payment_method, payment_reference, notes })
@@ -380,7 +382,7 @@
       async function voidPayment(paymentId) {
         if (!confirm('Void this payment? This cannot be undone.')) return;
         try {
-          const res = await fetch('/admin/payments/payments/' + paymentId, { method: 'DELETE' });
+          const res = await fetch('/admin/payments/record/' + paymentId, { method: 'DELETE' });
           const data = await res.json();
           if (data.success) { alert(data.message); loadPayments(); }
           else { alert('Error: ' + (data.error || 'Unknown error')); }
