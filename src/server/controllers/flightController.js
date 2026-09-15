@@ -189,12 +189,14 @@ export async function viewFlightDetail(req, res, next) {
     }
     const liveStatus = getFlightLiveStatus(flight);
     const { activeCurrency, exchangeRates } = res.locals;
+    const existingToken = await findPortalTokenByFlightBooking(flight.id);
     res.render('admin/flights/show', {
       title: `Flight PNR: ${flight.booking_ref}`,
       flight,
       liveStatus,
       activeCurrency,
-      exchangeRates
+      exchangeRates,
+      portalToken: existingToken?.token || null
     });
   } catch (error) {
     next(error);

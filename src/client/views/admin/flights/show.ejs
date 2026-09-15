@@ -235,6 +235,7 @@
       const EXCHANGE_RATES = ${JSON.stringify(exchangeRates)};
       const ACTIVE_CURRENCY = '${activeCurrency}';
       const CURRENCY_RATE = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
+      const PORTAL_TOKEN = ${portalToken ? "'" + portalToken + "'" : 'null'};
 
       function formatPrice(amount) {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
@@ -428,6 +429,16 @@
 
       loadPayments();
       loadNotifications(${flight.id});
+
+      if (PORTAL_TOKEN) {
+        const ticketQR = document.getElementById('ticketQR');
+        const ticketQRPlaceholder = document.getElementById('ticketQRPlaceholder');
+        if (ticketQR) {
+          ticketQR.src = '/t/' + PORTAL_TOKEN + '/qr';
+          ticketQR.style.display = 'block';
+          ticketQRPlaceholder.style.display = 'none';
+        }
+      }
     </script>
   ` }) %>
 </body>
