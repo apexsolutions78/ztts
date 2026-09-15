@@ -534,7 +534,39 @@ export async function getAuditLogs(limit = 50) {
 // --- FINANCIAL LEDGER & INVOICE MODEL ---
 export async function getFinancialLedger() {
   if (isUsingMySQL()) {
-    const [rows] = await pool.query('SELECT * FROM payments ORDER BY created_at DESC');
+    const [rows] = await pool.query(`
+      SELECT p.*,
+        c.full_name AS customer_name, c.email AS customer_email, c.phone AS customer_phone, c.passport_number,
+        CASE
+          WHEN p.booking_type = 'flight' THEN fb.airline
+          WHEN p.booking_type = 'tour' THEN tp.title
+        END AS booking_title,
+        CASE
+          WHEN p.booking_type = 'flight' THEN CONCAT(fb.origin, ' → ', fb.destination)
+          WHEN p.booking_type = 'tour' THEN tp.destination
+        END AS booking_route,
+        CASE
+          WHEN p.booking_type = 'flight' THEN fb.total_amount
+          WHEN p.booking_type = 'tour' THEN tb.total_amount
+        END AS booking_total,
+        CASE
+          WHEN p.booking_type = 'flight' THEN fb.booking_ref
+          ELSE NULL
+        END AS booking_ref,
+        CASE
+          WHEN p.booking_type = 'flight' THEN fb.departure_date
+          WHEN p.booking_type = 'tour' THEN tb.travel_date
+        END AS travel_date
+      FROM payments p
+      LEFT JOIN customers c ON (
+        (p.booking_type = 'flight' AND p.booking_id IN (SELECT id FROM flight_bookings WHERE customer_id = c.id))
+        OR (p.booking_type = 'tour' AND p.booking_id IN (SELECT id FROM tour_bookings WHERE customer_id = c.id))
+      )
+      LEFT JOIN flight_bookings fb ON p.booking_type = 'flight' AND p.booking_id = fb.id
+      LEFT JOIN tour_bookings tb ON p.booking_type = 'tour' AND p.booking_id = tb.id
+      LEFT JOIN tour_packages tp ON tb.tour_package_id = tp.id
+      ORDER BY p.created_at DESC
+    `);
     return rows;
   }
   return memoryStore.payments;
@@ -613,6 +645,51 @@ export async function getBookingPaymentSummary(booking_type, booking_id) {
     paymentCount: payments.length,
     payments
   };
+}
+
+export async function getCustomerLedger(customerId) {
+  if (isUsingMySQL()) {
+    const [customer] = await pool.query('SELECT * FROM customers WHERE id = ?', [customerId]);
+    if (!customer[0]) return null;
+    const cust = customer[0];
+
+    const [flights] = await pool.query(`
+      SELECT fb.*, 'flight' AS type, fb.total_amount AS booking_total,
+        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE booking_type = 'flight' AND booking_id = fb.id AND payment_status = 'paid') AS total_paid
+      FROM flight_bookings fb WHERE fb.customer_id = ?
+      ORDER BY fb.created_at DESC
+    `, [customerId]);
+
+    const [tours] = await pool.query(`
+      SELECT tb.*, 'tour' AS type, tp.title AS tour_title, tb.total_amount AS booking_total,
+        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE booking_type = 'tour' AND booking_id = tb.id AND payment_status = 'paid') AS total_paid
+      FROM tour_bookings tb
+      JOIN tour_packages tp ON tb.tour_package_id = tp.id
+      WHERE tb.customer_id = ?
+      ORDER BY tb.created_at DESC
+    `, [customerId]);
+
+    const [payments] = await pool.query(`
+      SELECT p.*, 
+        CASE WHEN p.booking_type = 'flight' THEN fb.booking_ref ELSE tp.title END AS ref_name
+      FROM payments p
+      LEFT JOIN flight_bookings fb ON p.booking_type = 'flight' AND p.booking_id = fb.id
+      LEFT JOIN tour_bookings tb ON p.booking_type = 'tour' AND p.booking_id = tb.id
+      LEFT JOIN tour_packages tp ON tb.tour_package_id = tp.id
+      WHERE (p.booking_type = 'flight' AND p.booking_id IN (SELECT id FROM flight_bookings WHERE customer_id = ?))
+         OR (p.booking_type = 'tour' AND p.booking_id IN (SELECT id FROM tour_bookings WHERE customer_id = ?))
+      ORDER BY p.created_at DESC
+    `, [customerId, customerId]);
+
+    const allBookings = [...flights.map(f => ({ ...f, type: 'flight', ref: f.booking_ref })), ...tours.map(t => ({ ...t, type: 'tour', ref: t.tour_title }))];
+    allBookings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const totalBookingValue = allBookings.reduce((s, b) => s + Number(b.booking_total || 0), 0);
+    const totalPaid = payments.filter(p => p.payment_status === 'paid').reduce((s, p) => s + Number(p.amount || 0), 0);
+
+    return { customer: cust, bookings: allBookings, payments, totalBookingValue, totalPaid, balance: totalBookingValue - totalPaid };
+  }
+  return null;
 }
 
 export async function addPayment({ booking_type, booking_id, amount, payment_method, payment_reference, notes, recorded_by }) {

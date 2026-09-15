@@ -99,23 +99,58 @@ export function generateInvoicePDF(invoice, res) {
   let y = 100;
   doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('INVOICE NO', 50, y);
   doc.fontSize(12).font('Helvetica-Bold').fill(BRAND.dark).text(invoice.invoice_no || `INV-${invoice.id}`, 50, y + 14);
-  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('DATE', 300, y);
-  doc.fontSize(10).fill(BRAND.dark).text(invoice.created_at || new Date().toLocaleDateString(), 300, y + 14);
-  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('PAYMENT METHOD', 420, y);
-  doc.fontSize(10).fill(BRAND.dark).text((invoice.payment_method || '').replace('_', ' ').toUpperCase(), 420, y + 14);
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('DATE', 250, y);
+  doc.fontSize(10).fill(BRAND.dark).text(invoice.created_at ? new Date(invoice.created_at).toLocaleDateString() : new Date().toLocaleDateString(), 250, y + 14);
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('PAYMENT METHOD', 400, y);
+  doc.fontSize(10).fill(BRAND.dark).text((invoice.payment_method || '').replace('_', ' ').toUpperCase(), 400, y + 14);
+
+  // Customer details
+  y = 145;
+  doc.rect(50, y, 495, 60).fill('#f0f4f8');
+  y += 10;
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('BILL TO', 60, y);
+  doc.fontSize(11).font('Helvetica-Bold').fill(BRAND.dark).text(invoice.customer_name || 'Customer', 60, y + 14);
+  const customerDetails = [];
+  if (invoice.passport_number) customerDetails.push(`Passport: ${invoice.passport_number}`);
+  if (invoice.customer_email) customerDetails.push(`Email: ${invoice.customer_email}`);
+  if (invoice.customer_phone) customerDetails.push(`Phone: ${invoice.customer_phone}`);
+  doc.fontSize(9).fill(BRAND.muted).text(customerDetails.join('  |  ') || 'No customer details', 60, y + 30, { width: 480 });
+
+  // Booking details
+  y = 220;
+  doc.fontSize(10).font('Helvetica-Bold').fill(BRAND.primary).text('BOOKING DETAILS', 50, y);
+  y += 18;
+  doc.moveTo(50, y).lineTo(545, y).stroke(BRAND.gold);
+  y += 10;
+
+  const bookingItems = [];
+  bookingItems.push(['Service', invoice.booking_type === 'flight' ? 'Air Ticket' : 'Tour Package']);
+  if (invoice.booking_ref) bookingItems.push(['Booking Ref / PNR', invoice.booking_ref]);
+  if (invoice.booking_title) bookingItems.push([invoice.booking_type === 'flight' ? 'Airline' : 'Tour Package', invoice.booking_title]);
+  if (invoice.booking_route) bookingItems.push(['Route / Destination', invoice.booking_route]);
+  if (invoice.travel_date) bookingItems.push([invoice.booking_type === 'flight' ? 'Departure Date' : 'Travel Date', new Date(invoice.travel_date).toLocaleDateString()]);
+
+  bookingItems.forEach(([label, value]) => {
+    doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text(label.toUpperCase(), 60, y, { width: 150 });
+    doc.fontSize(10).font('Helvetica').fill(BRAND.dark).text(value, 220, y, { width: 320 });
+    y += 16;
+  });
 
   // Line items
-  y = 160;
+  y += 10;
   doc.rect(50, y, 495, 25).fill(BRAND.light);
   doc.fontSize(8).font('Helvetica-Bold').fill(BRAND.muted).text('DESCRIPTION', 60, y + 8);
   doc.text('AMOUNT', 380, y + 8, { width: 160, align: 'right' });
   y += 30;
 
+  const baseFare = Number(invoice.base_fare || invoice.amount * 0.88);
+  const taxAmount = Number(invoice.tax_amount || invoice.amount * 0.08);
+  const agencyFee = Number(invoice.agency_fee || invoice.amount * 0.04);
+
   const items = [
-    ['Booking Type', invoice.booking_type === 'flight' ? 'Air Ticket' : 'Tour Package'],
-    ['Base Fare', `$${Number(invoice.base_fare || invoice.amount * 0.88).toFixed(2)}`],
-    ['Taxes & Fees', `$${Number(invoice.tax_amount || invoice.amount * 0.08).toFixed(2)}`],
-    ['Agency Service Fee', `$${Number(invoice.agency_fee || invoice.amount * 0.04).toFixed(2)}`]
+    ['Base Fare', `$${baseFare.toFixed(2)}`],
+    ['Taxes & Fees', `$${taxAmount.toFixed(2)}`],
+    ['Agency Service Fee', `$${agencyFee.toFixed(2)}`]
   ];
   items.forEach(([desc, amt]) => {
     doc.fontSize(10).fill(BRAND.dark).text(desc, 60, y, { width: 300 });
@@ -132,8 +167,13 @@ export function generateInvoicePDF(invoice, res) {
 
   // Payment status
   y += 30;
-  doc.roundedRect(50, y, 100, 25, 5).fill(invoice.payment_status === 'paid' ? '#38a169' : '#e53e3e');
+  doc.roundedRect(50, y, 100, 25, 5).fill(invoice.payment_status === 'paid' ? '#38a169' : invoice.payment_status === 'partial' ? '#d69e2e' : '#e53e3e');
   doc.fontSize(10).font('Helvetica-Bold').fill('#ffffff').text((invoice.payment_status || 'PAID').toUpperCase(), 55, y + 7, { width: 90, align: 'center' });
+
+  // Transaction ID
+  if (invoice.transaction_id) {
+    doc.fontSize(8).fill(BRAND.muted).text(`Transaction: ${invoice.transaction_id}`, 170, y + 8);
+  }
 
   // Footer
   doc.fontSize(8).fill(BRAND.muted).text('Thank you for your business! | support@zahabiatravel.com | Powered by Apex Solutions', 50, 760, { width: 495, align: 'center' });

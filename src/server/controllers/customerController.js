@@ -1,4 +1,4 @@
-import { getAllCustomers, findCustomerById, createCustomer, updateCustomer, deleteCustomer, getAllFlightBookings, getTourBookingsByCustomerId, logAuditAction } from '../models/index.js';
+import { getAllCustomers, findCustomerById, createCustomer, updateCustomer, deleteCustomer, getAllFlightBookings, getTourBookingsByCustomerId, logAuditAction, getCustomerLedger } from '../models/index.js';
 
 export async function listCustomers(req, res, next) {
   try {
@@ -135,6 +135,22 @@ export async function postDeleteCustomer(req, res, next) {
     });
 
     res.redirect('/admin/customers?deleted=true');
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function viewCustomerLedger(req, res, next) {
+  try {
+    const ledger = await getCustomerLedger(req.params.id);
+    if (!ledger) return res.status(404).render('errors/404', { title: 'Customer Not Found' });
+    const { activeCurrency, exchangeRates } = res.locals;
+    res.render('admin/customers/ledger', {
+      title: `Customer Ledger: ${ledger.customer.full_name}`,
+      ledger,
+      activeCurrency,
+      exchangeRates
+    });
   } catch (error) {
     next(error);
   }

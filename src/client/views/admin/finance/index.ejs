@@ -82,14 +82,13 @@
           <thead>
             <tr>
               <th>Invoice No</th>
+              <th>Customer</th>
               <th>Type</th>
-              <th>Base Fare</th>
-              <th>Taxes</th>
-              <th>Agency Fee</th>
+              <th>Service</th>
               <th>Total Amount</th>
               <th>Payment Method</th>
               <th>Status</th>
-              <th>Date & Time</th>
+              <th>Date</th>
               <th>Invoice</th>
             </tr>
           </thead>
@@ -97,15 +96,14 @@
             ${ledger.map(p => `
               <tr>
                 <td><strong style="color: var(--primary);">${p.invoice_no || ('INV-' + p.id)}</strong></td>
+                <td>${p.customer_name || '<span class="muted">—</span>'}</td>
                 <td><span style="text-transform: uppercase; font-size: 0.8rem; font-weight: 700;">${p.booking_type}</span></td>
-                <td>${formatPrice(p.base_fare || (p.amount * 0.88))}</td>
-                <td>${formatPrice(p.tax_amount || (p.amount * 0.08))}</td>
-                <td>${formatPrice(p.agency_fee || (p.amount * 0.04))}</td>
+                <td>${p.booking_title || p.booking_route || p.booking_id}${p.booking_ref ? ' (' + p.booking_ref + ')' : ''}</td>
                 <td><strong style="font-size: 1.05rem;">${formatPrice(p.amount)}</strong></td>
-                <td><code>${p.payment_method}</code></td>
+                <td><code>${(p.payment_method || '').replace('_', ' ')}</code></td>
                 <td><span class="badge badge-${p.payment_status}">${p.payment_status}</span></td>
-                <td><span class="muted">${p.created_at}</span></td>
-                <td><a href="/admin/finance/${p.id}/pdf" target="_blank" class="btn btn-sm btn-accent" style="padding: 0.35rem 0.7rem; font-size: 0.78rem;">📄 PDF</a></td>
+                <td><span class="muted">${new Date(p.created_at).toLocaleDateString()}</span></td>
+                <td><a href="/admin/finance/${p.id}/pdf" target="_blank" class="btn btn-sm btn-accent" style="padding: 0.35rem 0.7rem; font-size: 0.78rem;">PDF</a></td>
               </tr>
             `).join('')}
           </tbody>

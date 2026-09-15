@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 2rem;">
+      <a href="/admin/customers/${ledger.customer.id}" class="btn btn-secondary btn-sm">← Back to Customer</a>
+      <h1 style="margin-top: 0.5rem;">Customer Ledger</h1>
+      <p class="muted">Complete financial overview for ${ledger.customer.full_name}</p>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="margin-bottom: 0.5rem;">${ledger.customer.full_name}</h2>
+          <p class="muted" style="margin: 0;">${ledger.customer.email || ''} ${ledger.customer.phone ? '• ' + ledger.customer.phone : ''} ${ledger.customer.passport_number ? '• Passport: ' + ledger.customer.passport_number : ''}</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Customer Since</div>
+          <div style="font-weight: 700;">${new Date(ledger.customer.created_at).toLocaleDateString()}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="background: #edf4f2; padding: 1.25rem; border-radius: var(--radius-sm); text-align: center;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Bookings</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: var(--primary);">${ledger.bookings.length}</div>
+      </div>
+      <div style="background: #edf7ed; padding: 1.25rem; border-radius: var(--radius-sm); text-align: center;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Booking Value</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: var(--primary);">$${Number(ledger.totalBookingValue).toFixed(2)}</div>
+      </div>
+      <div style="background: #edf7ed; padding: 1.25rem; border-radius: var(--radius-sm); text-align: center;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Paid</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: #38a169;">$${Number(ledger.totalPaid).toFixed(2)}</div>
+      </div>
+      <div style="background: ${ledger.balance > 0 ? '#fef3cd' : '#edf7ed'}; padding: 1.25rem; border-radius: var(--radius-sm); text-align: center;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Outstanding Balance</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: ${ledger.balance > 0 ? '#d69e2e' : '#38a169'};">$${Number(ledger.balance).toFixed(2)}</div>
+      </div>
+    </div>
+
+    <!-- Bookings -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h3 style="margin-bottom: 1rem;">Bookings</h3>
+      ${ledger.bookings.length === 0 ? '<p class="muted">No bookings found.</p>' : ''}
+      ${ledger.bookings.length > 0 ? '<div class="table-responsive"><table class="data-table"><thead><tr><th>Type</th><th>Reference</th><th>Details</th><th>Date</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>' +
+        ledger.bookings.map(b => {
+          const bal = Number(b.booking_total || 0) - Number(b.total_paid || 0);
+          const status = bal <= 0 ? 'Paid' : Number(b.total_paid || 0) > 0 ? 'Partial' : 'Unpaid';
+          const statusClass = status === 'Paid' ? 'paid' : status === 'Partial' ? 'partial' : 'unpaid';
+          return '<tr>' +
+            '<td><span class="badge badge-' + (b.type === 'flight' ? 'active' : 'confirmed') + '">' + (b.type === 'flight' ? 'Flight' : 'Tour') + '</span></td>' +
+            '<td><strong>' + (b.booking_ref || b.tour_title || '-') + '</strong></td>' +
+            '<td>' + (b.type === 'flight' ? (b.origin || '') + ' → ' + (b.destination || '') + ' (' + (b.airline || '') + ')' : (b.tour_title || '') + ' • ' + (b.total_travelers || 1) + ' pax') + '</td>' +
+            '<td>' + new Date(b.created_at).toLocaleDateString() + '</td>' +
+            '<td>$' + Number(b.booking_total || 0).toFixed(2) + '</td>' +
+            '<td style="color: #38a169; font-weight: 700;">$' + Number(b.total_paid || 0).toFixed(2) + '</td>' +
+            '<td style="color: ' + (bal > 0 ? '#d69e2e' : '#38a169') + '; font-weight: 700;">$' + bal.toFixed(2) + '</td>' +
+            '<td><span class="badge badge-' + statusClass + '">' + status.toUpperCase() + '</span></td>' +
+          '</tr>';
+        }).join('') +
+      '</tbody></table></div>' : ''}
+    </div>
+
+    <!-- Payment History -->
+    <div class="card">
+      <h3 style="margin-bottom: 1rem;">Payment History</h3>
+      ${ledger.payments.length === 0 ? '<p class="muted">No payments recorded yet.</p>' : ''}
+      ${ledger.payments.length > 0 ? '<div class="table-responsive"><table class="data-table"><thead><tr><th>Date</th><th>Invoice</th><th>Service</th><th>Reference</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead><tbody>' +
+        ledger.payments.map(p => {
+          const methodLabels = { cash: 'Cash', bank_transfer: 'Bank Transfer', cheque: 'Cheque', credit_card: 'Credit Card', debit_card: 'Debit Card', online: 'Online', other: 'Other' };
+          return '<tr>' +
+            '<td>' + new Date(p.created_at).toLocaleDateString() + '</td>' +
+            '<td><strong>' + (p.invoice_no || '-') + '</strong></td>' +
+            '<td>' + (p.booking_type === 'flight' ? 'Flight' : 'Tour') + ' — ' + (p.ref_name || p.booking_id) + '</td>' +
+            '<td>' + (p.payment_reference || '-') + '</td>' +
+            '<td>' + (methodLabels[p.payment_method] || p.payment_method) + '</td>' +
+            '<td style="color: var(--primary); font-weight: 700;">$' + Number(p.amount).toFixed(2) + '</td>' +
+            '<td><span class="badge badge-' + p.payment_status + '">' + (p.payment_status || 'PAID').toUpperCase() + '</span></td>' +
+          '</tr>';
+        }).join('') +
+      '</tbody></table></div>' : ''}
+    </div>
+  ` }) %>
+</body>
+</html>
