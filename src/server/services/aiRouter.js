@@ -4,6 +4,8 @@ import axios from 'axios';
 const ollama = new Ollama({ host: 'http://localhost:11434' });
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const INTENT_PATTERNS = {
   visa_research: ['visa', 'visa requirements', 'do i need visa', 'documents for visa', 'visa process', 'visa fee', 'embassy'],
@@ -26,10 +28,10 @@ const SYSTEM_PROMPTS = {
 const MODEL_STRATEGY = {
   visa_research: 'gemini',
   travel_planning: 'gemini',
-  flight_status: 'local',
-  booking_query: 'local',
-  weather: 'local',
-  general: 'local'
+  flight_status: 'groq',
+  booking_query: 'groq',
+  weather: 'groq',
+  general: 'groq'
 };
 
 export async function routeQuery(query, context = {}) {
@@ -46,6 +48,10 @@ export async function routeQuery(query, context = {}) {
     if (strategy === 'gemini' && GEMINI_API_KEY) {
       response = await queryGemini(fullPrompt);
       provider = 'Gemini (Free)';
+    } else if (strategy === 'groq' && GROQ_API_KEY) {
+      const model = intent === 'flight_status' || intent === 'booking_query' ? 'llama-3.2-3b-preview' : 'llama-3.1-8b-instant';
+      response = await queryGroq(fullPrompt, model);
+      provider = `Groq ${model}`;
     } else {
       const model = intent === 'flight_status' || intent === 'booking_query' ? 'llama3.2:3b' : 'mistral:7b';
       response = await queryOllama(fullPrompt, model);
@@ -54,8 +60,18 @@ export async function routeQuery(query, context = {}) {
   } catch (err) {
     console.error('[AI Router] Primary error:', err.message);
     try {
-      response = await queryHuggingFace(`${SYSTEM_PROMPTS[intent]}\n\n${query}`);
-      provider = 'Mistral (Hugging Face Free)';
+      // Fallback chain: try providers that weren't already attempted
+      if (provider !== 'Groq' && GROQ_API_KEY) {
+        const fbModel = intent === 'flight_status' || intent === 'booking_query' ? 'llama-3.2-3b-preview' : 'llama-3.1-8b-instant';
+        response = await queryGroq(`${SYSTEM_PROMPTS[intent]}\n\n${query}`, fbModel);
+        provider = `Groq ${fbModel} (Fallback)`;
+      } else if (provider !== 'Gemini' && GEMINI_API_KEY) {
+        response = await queryGemini(`${SYSTEM_PROMPTS[intent]}\n\n${query}`);
+        provider = 'Gemini (Fallback)';
+      } else {
+        response = await queryHuggingFace(`${SYSTEM_PROMPTS[intent]}\n\n${query}`);
+        provider = 'Mistral (Hugging Face Free)';
+      }
     } catch {
       response = 'I apologize, but I\'m having trouble processing your request. Please try again or contact support.';
       provider = 'Fallback';
@@ -79,6 +95,22 @@ async function queryGemini(prompt) {
     generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
   }, { headers: { 'Content-Type': 'application/json' }, timeout: 10000 });
   return response.data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+}
+
+async function queryGroq(prompt, model = 'llama-3.1-8b-instant') {
+  const response = await axios.post(GROQ_URL, {
+    model,
+    messages: [
+      { role: 'system', content: 'You are a helpful travel assistant for Zahabia Travel & Tourism.' },
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.7,
+    max_tokens: 1024
+  }, {
+    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+    timeout: 8000
+  });
+  return response.data.choices?.[0]?.message?.content || 'No response';
 }
 
 async function queryOllama(prompt, model = 'mistral:7b') {
