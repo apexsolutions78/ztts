@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start;">
+      <div>
+        <a href="/admin/tours" class="btn btn-secondary btn-sm">← Back to Tours</a>
+        <h1 style="margin-top: 0.5rem;">${package.title}</h1>
+        <p class="muted">📍 ${package.destination} • ${package.duration_days} Days</p>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="/admin/tours/${package.id}/edit" class="btn btn-primary btn-sm">✏ Edit Package</a>
+        <form method="post" action="/admin/tours/${package.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this tour package?')">
+          <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">🗑 Delete</button>
+        </form>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem;">
+      <!-- Package Details -->
+      <div class="card">
+        <h2>Package Overview</h2>
+        <p style="font-size: 1.1rem; margin: 1rem 0; color: var(--text-muted);">${package.description}</p>
+
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #f7faf9; border-radius: var(--radius-md);">
+          <h3>Package Inclusions</h3>
+          <ul style="margin-left: 1.2rem; margin-top: 0.5rem; color: var(--text-muted);">
+            <li>5-Star Hotel Accommodations with Breakfast</li>
+            <li>Airport Pick-up & VIP Luxury Transport</li>
+            <li>English / Arabic Speaking Guided Tours</li>
+            <li>Visa Processing Assistance</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Book Customer Form -->
+      <div class="card">
+        <h2>Book Package for Customer</h2>
+        <form method="post" action="/admin/tours/book">
+          <input type="hidden" name="tour_package_id" value="${package.id}">
+
+          <div class="form-group">
+            <label for="customer_id">Select Customer</label>
+            <select id="customer_id" name="customer_id" required>
+              <option value="">-- Choose Customer --</option>
+              ${customers.map(c => `<option value="${c.id}">${c.full_name} (${c.email || c.phone})</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="travel_date">Travel Date</label>
+            <input type="date" id="travel_date" name="travel_date" required class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="total_travelers">Number of Travelers</label>
+            <input type="number" id="total_travelers" name="total_travelers" value="1" min="1" required class="form-control">
+          </div>
+
+          <div style="margin: 1.5rem 0; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-sm);">
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted);">Package Price Per Person</div>
+            <div style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; color: var(--primary);">${formatPrice(package.price)}</div>
+          </div>
+
+
+          <button type="submit" class="btn btn-accent" style="width: 100%;">Confirm Tour Reservation</button>
+        </form>
+      </div>
+    </div>
+  ` }) %>
+</body>
+</html>

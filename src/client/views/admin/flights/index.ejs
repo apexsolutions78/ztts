@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <p class="eyebrow">Ticketing Operations</p>
+        <h1>Flight Bookings & E-Tickets</h1>
+        <p class="muted">Manage flight reservations, issue tickets, and generate customer share links.</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="/admin/flights/export/csv" class="btn btn-secondary">📥 Export CSV</a>
+        <a href="/admin/flights/new" class="btn btn-primary">+ Create Flight Booking</a>
+      </div>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+      <form method="get" action="/admin/flights" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 200px;">
+          <label for="query" style="font-size: 0.8rem; margin-bottom: 0.2rem;">Search PNR / Customer / Airport</label>
+          <input type="text" id="query" name="query" value="${filters?.query || ''}" placeholder="e.g. ZHB-8921, Hamdan, DXB..." class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+          <label for="status" style="font-size: 0.8rem; margin-bottom: 0.2rem;">Ticket Status</label>
+          <select id="status" name="status" style="padding: 0.55rem 0.8rem;">
+            <option value="">All Statuses</option>
+            <option value="ticketed" ${filters?.status === 'ticketed' ? 'selected' : ''}>Ticketed</option>
+            <option value="confirmed" ${filters?.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+            <option value="cancelled" ${filters?.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.65rem 1.2rem;">Filter Results</button>
+        <a href="/admin/flights" class="btn btn-secondary btn-sm" style="padding: 0.65rem 1.2rem;">Reset</a>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>PNR / Booking Ref</th>
+              <th>Passenger Name</th>
+              <th>Airline & Flight</th>
+              <th>Route</th>
+              <th>Class</th>
+              <th>Departure Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${flights.length > 0 ? flights.map(f => `
+              <tr>
+                <td><strong style="font-family: var(--font-heading); color: var(--primary);">${f.booking_ref}</strong></td>
+                <td>${f.customer_name}</td>
+                <td><strong>${f.airline}</strong><br><span class="muted">${f.flight_number}</span></td>
+                <td><strong>${f.origin}</strong> → <strong>${f.destination}</strong></td>
+                <td>${f.cabin_class}</td>
+                <td>${new Date(f.departure_date).toLocaleString()}</td>
+                <td><strong>${formatPrice(f.total_amount)}</strong></td>
+                <td><span class="badge badge-${f.ticket_status}">${f.ticket_status}</span></td>
+
+                <td>
+                  <a href="/admin/flights/${f.id}" class="btn btn-secondary btn-sm">Manage</a>
+                  <a href="/admin/flights/${f.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="9" class="muted" style="text-align: center;">No matching flight bookings found.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` }) %>
+</body>
+</html>

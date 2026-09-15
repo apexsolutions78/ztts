@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <a href="/admin/flights" class="btn btn-secondary btn-sm">← Back to Flights</a>
+        <h1 style="margin-top: 0.5rem;">Flight Reservation: ${flight.booking_ref}</h1>
+        <p class="muted">Passenger PNR & E-Ticket Management</p>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+        ${flight.ticket_status !== 'ticketed' ? `
+          <form method="post" action="/admin/flights/${flight.id}/issue" style="margin: 0;">
+            <button type="submit" class="btn btn-primary">✔ Issue E-Ticket</button>
+          </form>
+        ` : `<span class="badge badge-ticketed" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">✔ E-TICKET ISSUED</span>`}
+        
+        <button id="shareBtn" onclick="generateShareLink(${flight.id})" class="btn btn-accent">🔗 Share Portal Link</button>
+        <button onclick="sendNotification(${flight.id}, 'email')" id="sendEmailBtn" class="btn btn-primary" style="background: #2563eb;">✉ Send Email</button>
+        <button onclick="sendNotification(${flight.id}, 'whatsapp')" id="sendWhatsAppBtn" class="btn btn-primary" style="background: #25d366;">💬 Send WhatsApp</button>
+        <a href="/admin/flights/${flight.id}/pdf" target="_blank" class="btn btn-primary" style="background: #805ad5;">📄 Download PDF</a>
+        <a href="/admin/flights/${flight.id}/edit" class="btn btn-secondary">✏ Edit</a>
+        <form method="post" action="/admin/flights/${flight.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this flight booking?')">
+          <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">🗑 Delete</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Share Link Toast / Alert -->
+    <div id="shareBox" style="display: none;" class="alert alert-success">
+      <strong>Customer Portal Access Link Generated:</strong>
+      <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+        <input type="text" id="shareUrlInput" readonly class="form-control" style="background: #fff;">
+        <button onclick="copyShareUrl()" class="btn btn-secondary btn-sm">Copy Link</button>
+        <a id="openPortalLink" href="#" target="_blank" class="btn btn-primary btn-sm">Open Portal →</a>
+      </div>
+    </div>
+
+    <div class="ticket-wrapper">
+      <div class="ticket-header">
+        <div class="ticket-airline-brand">
+          <img src="/brand/LOGO123.png" alt="Zahabia Logo" style="height: 50px;" onerror="this.src='/brand/Golden_airplane_circling_globe_20260914222838.gif';">
+          <div>
+            <h2>ZAHABIA AIR TICKETING</h2>
+            <span style="font-size: 0.8rem; color: var(--accent-gold); text-transform: uppercase;">Official E-Ticket Receipt</span>
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          <span style="font-size: 0.8rem; text-transform: uppercase; color: #a0aec0;">PNR Reference</span>
+          <div style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--accent-gold);">${flight.booking_ref}</div>
+        </div>
+      </div>
+
+      <div class="ticket-body">
+        <!-- Live Status Bar -->
+        <div style="background: #edf4f2; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">LIVE FLIGHT TRACKER ENGINE</span>
+            <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">STATUS: <span class="badge badge-${liveStatus.statusClass}">${liveStatus.status}</span></div>
+          </div>
+          <div style="display: flex; gap: 1.5rem; font-size: 0.88rem;">
+            <div><strong>Terminal:</strong> ${liveStatus.terminal}</div>
+            <div><strong>Gate:</strong> ${liveStatus.gate}</div>
+            <div><strong>Baggage Claim:</strong> ${liveStatus.baggage || 'TBA'}</div>
+          </div>
+        </div>
+
+        <div class="flight-route">
+          <div>
+            <div class="airport-code">${flight.origin}</div>
+            <div class="airport-name">Origin Departure</div>
+          </div>
+          <div class="route-divider">
+            <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary);">${flight.airline} (${flight.flight_number})</div>
+            <div class="route-line"></div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">${flight.cabin_class} Class</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="airport-code">${flight.destination}</div>
+            <div class="airport-name">Destination Arrival</div>
+          </div>
+        </div>
+
+        <div class="ticket-grid">
+          <div class="ticket-field">
+            <label>Passenger Name</label>
+            <val>${flight.customer_name}</val>
+          </div>
+          <div class="ticket-field">
+            <label>Passport Number</label>
+            <val>${flight.passport_number || 'N/A'}</val>
+          </div>
+          <div class="ticket-field">
+            <label>Departure Time</label>
+            <val>${new Date(flight.departure_date).toLocaleString()}</val>
+          </div>
+          <div class="ticket-field">
+            <label>Arrival Time</label>
+            <val>${new Date(flight.arrival_date).toLocaleString()}</val>
+          </div>
+          <div class="ticket-field">
+            <label>Total Fare</label>
+            <val>${formatPrice(flight.total_amount)}</val>
+          </div>
+
+          <div class="ticket-field">
+            <label>Ticket Status</label>
+            <val><span class="badge badge-${flight.ticket_status}">${flight.ticket_status}</span></val>
+          </div>
+        </div>
+
+        <div class="barcode-sim">
+          <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">ELECTRONIC BOARDING PASS PASSCODE</div>
+            <div style="font-family: monospace; font-size: 1rem; font-weight: 700;">ZHB-ETKT-${flight.id}-2026-X99</div>
+          </div>
+          <div class="barcode-lines"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification History -->
+    <div class="card" style="margin-top: 2rem;">
+      <h3 style="margin-bottom: 1rem;">Notification History</h3>
+      <div id="notificationList" style="color: var(--text-muted); font-size: 0.9rem;">Loading...</div>
+    </div>
+
+    <script>
+      async function generateShareLink(id) {
+        try {
+          const res = await fetch('/admin/flights/' + id + '/share', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            document.getElementById('shareBox').style.display = 'block';
+            document.getElementById('shareUrlInput').value = data.shareUrl;
+            document.getElementById('openPortalLink').href = data.shareUrl;
+          }
+        } catch (err) {
+          alert('Failed to generate portal link');
+        }
+      }
+
+      function copyShareUrl() {
+        const input = document.getElementById('shareUrlInput');
+        input.select();
+        document.execCommand('copy');
+        alert('Copied link to clipboard!');
+      }
+
+      async function sendNotification(flightId, channel) {
+        const btn = channel === 'email' ? document.getElementById('sendEmailBtn') : document.getElementById('sendWhatsAppBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'Sending...';
+        btn.disabled = true;
+
+        try {
+          const res = await fetch('/admin/flights/' + flightId + '/notify/' + channel, { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            alert(data.message + (data.simulated ? ' (Simulated – SMTP/WhatsApp API not configured)' : ''));
+            loadNotifications(flightId);
+          } else {
+            alert('Failed: ' + (data.message || data.error || 'Unknown error'));
+          }
+        } catch (err) {
+          alert('Failed to send notification');
+        } finally {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }
+      }
+
+      async function loadNotifications(flightId) {
+        try {
+          const res = await fetch('/admin/flights/' + flightId + '/notifications');
+          const data = await res.json();
+          const container = document.getElementById('notificationList');
+          if (!data.success || !data.data.length) {
+            container.innerHTML = '<p>No notifications sent yet for this booking.</p>';
+            return;
+          }
+          container.innerHTML = data.data.map(n => {
+            const icon = n.channel === 'email' ? '✉' : '💬';
+            const channelLabel = n.channel === 'email' ? 'Email' : 'WhatsApp';
+            const statusColor = n.status === 'delivered' ? '#38a169' : '#e53e3e';
+            return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #e2e8f0;">' +
+              '<div>' + icon + ' <strong>' + channelLabel + '</strong> → ' + n.recipient + '</div>' +
+              '<div style="display: flex; gap: 1rem; align-items: center;">' +
+                '<span style="font-size: 0.8rem; color: #718096;">' + new Date(n.created_at).toLocaleString() + '</span>' +
+                '<span style="font-size: 0.75rem; font-weight: 700; color: ' + statusColor + '; text-transform: uppercase;">' + n.status + '</span>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+        } catch (err) {
+          document.getElementById('notificationList').innerHTML = '<p>Failed to load notifications.</p>';
+        }
+      }
+
+      loadNotifications(${flight.id});
+    </script>
+  ` }) %>
+</body>
+</html>

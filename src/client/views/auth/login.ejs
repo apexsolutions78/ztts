@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body style="background: linear-gradient(135deg, #0b192c 0%, #05443b 100%); justify-content: center; align-items: center;">
+  <main class="app-container narrow-container" style="margin: 0 auto;">
+    <div class="card" style="border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;">
+      <div style="margin-bottom: 1.5rem;">
+        <img src="/brand/Golden_airplane_circling_globe_20260914222838.gif" alt="Zahabia Airplane" style="height: 100px; width: auto; border-radius: 12px;" onerror="this.src='/brand/LOGO123.png';">
+        <h1 style="font-size: 1.8rem; margin-top: 0.5rem; color: var(--primary-dark);">ZAHABIA TRAVEL & TOURISM</h1>
+        <p class="eyebrow" style="color: var(--accent-gold);">Operations Workspace</p>
+      </div>
+
+      <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <form method="post" action="/auth/login" style="text-align: left;">
+        <input type="hidden" name="next" value="<%= next %>">
+        
+        <div class="form-group">
+          <label for="email">Operator Email Address</label>
+          <input type="email" id="email" name="email" class="form-control" placeholder="admin@zahabiatravel.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem; padding: 0.85rem;">Sign In to Operations</button>
+      </form>
+
+      <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light); font-size: 0.82rem; color: var(--text-muted);">
+        <p><strong>Demo Login Credentials:</strong></p>
+        <p>Admin: <code>admin@zahabiatravel.com</code> / <code>admin123</code></p>
+        <p>Agent: <code>agent@zahabiatravel.com</code> / <code>agent123</code></p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

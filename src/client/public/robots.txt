@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /t/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+Sitemap: http://localhost:3000/robots.txt

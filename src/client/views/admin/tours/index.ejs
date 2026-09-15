@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <p class="eyebrow">Tourism & Packages</p>
+        <h1>Tour Packages & Reservations</h1>
+        <p class="muted">Featured vacation packages, Umrah trips, and customer tour bookings.</p>
+      </div>
+      <a href="/admin/tours/new" class="btn btn-accent">+ Create New Tour Package</a>
+    </div>
+
+    <!-- Active Tour Packages Grid -->
+    <h2 style="margin-bottom: 1rem;">Active Tour Packages</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+      ${packages.map(p => `
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-active" style="margin-bottom: 0.5rem;">${p.status}</span>
+            <h3>${p.title}</h3>
+            <p class="muted" style="margin: 0.5rem 0;">📍 <strong>${p.destination}</strong> • ${p.duration_days} Days / ${p.duration_days - 1} Nights</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0.8rem 0;">${p.description}</p>
+          </div>
+          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Price Per Person</span>
+              <div style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--primary);">${formatPrice(p.price)}</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <a href="/admin/tours/${p.id}" class="btn btn-primary btn-sm">Book →</a>
+              <a href="/admin/tours/${p.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
+              <form method="post" action="/admin/tours/${p.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this tour package?')">
+                <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Tour Reservations Table -->
+    <div class="card">
+      <h2>Recent Tour Reservations</h2>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Package Name</th>
+              <th>Customer</th>
+              <th>Travel Date</th>
+              <th>Travelers</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tourBookings.length > 0 ? tourBookings.map(tb => `
+              <tr>
+                <td><strong>${tb.tour_title}</strong></td>
+                <td>${tb.customer_name}</td>
+                <td>${tb.travel_date}</td>
+                <td>${tb.total_travelers} Persons</td>
+                <td><strong>${formatPrice(tb.total_amount)}</strong></td>
+                <td><span class="badge badge-${tb.status}">${tb.status}</span></td>
+                <td>
+                  ${tb.status !== 'cancelled' ? '<form method="post" action="/admin/tours/bookings/' + tb.id + '/cancel" style="margin: 0;" onsubmit="return confirm(\'Cancel this tour booking?\')"><button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Cancel</button></form>' : '<span class="muted">Cancelled</span>'}
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="7" class="muted">No tour reservations placed yet.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  ` }) %>
+</body>
+</html>

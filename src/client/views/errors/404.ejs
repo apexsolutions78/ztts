@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body style="justify-content: center; align-items: center;">
+  <main class="app-container narrow-container" style="text-align: center;">
+    <div class="card">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">✈️</div>
+      <h1>404 Page Not Found</h1>
+      <p class="muted" style="margin: 1rem 0;"><%= typeof message !== 'undefined' ? message : 'The requested page or itinerary link could not be found.' %></p>
+      <a href="/admin" class="btn btn-primary" style="margin-top: 1rem;">Return to Dashboard</a>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 2rem;">
+
+      <p class="eyebrow">Security & Operations Audit</p>
+      <h1>Audit Security Trail</h1>
+      <p class="muted">Real-time log of operator actions, ticket issuances, and profile modifications.</p>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+      <form method="get" action="/admin/audit-logs" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 180px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Search Actions / Details</label>
+          <input type="text" name="search" value="${filters?.search || ''}" placeholder="e.g. CREATE_BOOKING, ticket..." class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+        <div style="flex: 1; min-width: 150px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Action Type</label>
+          <select name="action" style="padding: 0.55rem 0.8rem;">
+            <option value="">All Actions</option>
+            ${uniqueActions.map(a => '<option value="' + a + '" ' + (filters?.action === a ? 'selected' : '') + '>' + a + '</option>').join('')}
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 150px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Operator</label>
+          <select name="user_name" style="padding: 0.55rem 0.8rem;">
+            <option value="">All Operators</option>
+            ${uniqueUsers.map(u => '<option value="' + u + '" ' + (filters?.user_name === u ? 'selected' : '') + '>' + u + '</option>').join('')}
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Date From</label>
+          <input type="date" name="date_from" value="${filters?.date_from || ''}" class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Date To</label>
+          <input type="date" name="date_to" value="${filters?.date_to || ''}" class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.65rem 1.2rem;">Filter</button>
+        <a href="/admin/audit-logs" class="btn btn-secondary btn-sm" style="padding: 0.65rem 1.2rem;">Reset</a>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Operator Name</th>
+              <th>Action Executed</th>
+              <th>Target Entity</th>
+              <th>Details & Notes</th>
+              <th>IP Address</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logs.map(l => `
+              <tr>
+                <td><span class="muted">${l.created_at}</span></td>
+                <td><strong>${l.user_name}</strong></td>
+                <td><span class="badge badge-active">${l.action}</span></td>
+                <td><span style="text-transform: uppercase; font-weight: 700; font-size: 0.8rem;">${l.entity_type} #${l.entity_id}</span></td>
+                <td>${l.details}</td>
+                <td><code>${l.ip_address}</code></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` }) %>
+</body>
+</html>

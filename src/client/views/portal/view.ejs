@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Customer Portal</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body style="background-color: var(--bg-main);">
+  <div style="background: var(--bg-dark); color: #fff; padding: 1rem 1.5rem;" class="btn-no-print">
+    <div style="max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <img src="/brand/Golden_airplane_circling_globe_20260914222838.gif" alt="Zahabia Airplane" style="height: 40px; border-radius: 8px;" onerror="this.src='/brand/LOGO123.png';">
+        <div>
+          <h2 style="color: var(--accent-gold); font-size: 1rem; margin: 0;">ZAHABIA TRAVEL & TOURISM</h2>
+          <span style="font-size: 0.65rem; color: #a0aec0; text-transform: uppercase;">Customer E-Ticket & Itinerary Portal</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <select onchange="location.href='?currency=' + this.value" style="padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; background: var(--bg-dark); color: #fff; border: 1px solid var(--accent-gold); cursor: pointer;">
+          <option value="PKR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'PKR') ? 'selected' : '' %>>PKR (Rs)</option>
+          <option value="USD" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'USD') ? 'selected' : '' %>>USD ($)</option>
+          <option value="AED" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'AED') ? 'selected' : '' %>>AED</option>
+          <option value="EUR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'EUR') ? 'selected' : '' %>>EUR</option>
+          <option value="GBP" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'GBP') ? 'selected' : '' %>>GBP</option>
+          <option value="SAR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'SAR') ? 'selected' : '' %>>SAR</option>
+        </select>
+        <button onclick="window.print()" class="btn btn-accent btn-sm">Print E-Ticket</button>
+        ${typeof flight !== 'undefined' && flight ? `<a href="/admin/flights/${flight.id}/pdf" target="_blank" class="btn btn-accent btn-sm" style="background: #805ad5; color: #fff;">Download PDF</a>` : ''}
+      </div>
+    </div>
+  </div>
+
+
+  <main class="app-container" style="max-width: 1000px; margin-top: 2rem;">
+    <!-- Welcome Header -->
+    <div class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, #ffffff 0%, #f4f8f7 100%);">
+      <p class="eyebrow">Verified Travel Itinerary</p>
+      <h1>Welcome, <%= customer ? customer.full_name : 'Valued Passenger' %></h1>
+      <p class="muted">Your electronic ticket receipt and tour details confirmed by Zahabia Travel & Tourism.</p>
+    </div>
+
+    <!-- Flight E-Ticket Pass -->
+    <% if (flight) { %>
+      <div class="ticket-wrapper">
+        <div class="ticket-header">
+          <div class="ticket-airline-brand">
+            <img src="/brand/LOGO123.png" alt="Airline Brand" style="height: 55px;" onerror="this.src='/brand/Golden_airplane_circling_globe_20260914222838.gif';">
+            <div>
+              <h2 style="color: var(--accent-gold);"><%= flight.airline %></h2>
+              <span style="font-size: 0.8rem; color: #e2ece9; text-transform: uppercase;">ELECTRONIC TICKET RECEIPT</span>
+            </div>
+          </div>
+
+          <div style="text-align: right;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: #a0aec0;">PNR / Booking Ref</span>
+            <div style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--accent-gold);"><%= flight.booking_ref %></div>
+          </div>
+        </div>
+
+        <div class="ticket-body">
+          <% if (typeof liveStatus !== 'undefined' && liveStatus) { %>
+            <div style="background: #edf4f2; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;" class="btn-no-print">
+              <div>
+                <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">LIVE FLIGHT TRACKER</span>
+                <div style="font-weight: 800; font-size: 1rem; color: var(--primary);">STATUS: <span class="badge badge-<%= liveStatus.statusClass %>"><%= liveStatus.status %></span></div>
+              </div>
+              <div style="display: flex; gap: 1.25rem; font-size: 0.85rem;">
+                <div><strong>Terminal:</strong> <%= liveStatus.terminal %></div>
+                <div><strong>Gate:</strong> <%= liveStatus.gate %></div>
+                <div><strong>Baggage:</strong> <%= liveStatus.baggage || 'TBA' %></div>
+              </div>
+            </div>
+          <% } %>
+
+          <div class="flight-route">
+
+            <div>
+              <div class="airport-code"><%= flight.origin %></div>
+              <div class="airport-name">Departure Airport</div>
+            </div>
+            <div class="route-divider">
+              <div style="font-weight: 700; font-size: 1rem; color: var(--primary);"><%= flight.flight_number %></div>
+              <div class="route-line"></div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;"><%= flight.cabin_class %> Class</div>
+            </div>
+            <div style="text-align: right;">
+              <div class="airport-code"><%= flight.destination %></div>
+              <div class="airport-name">Destination Airport</div>
+            </div>
+          </div>
+
+          <div class="ticket-grid">
+            <div class="ticket-field">
+              <label>Passenger Name</label>
+              <val><%= flight.customer_name %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Passport Number</label>
+              <val><%= flight.passport_number || 'N/A' %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Departure Date & Time</label>
+              <val><%= new Date(flight.departure_date).toLocaleString() %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Arrival Date & Time</label>
+              <val><%= new Date(flight.arrival_date).toLocaleString() %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Ticket Status</label>
+              <val><span class="badge badge-<%= flight.ticket_status %>"><%= flight.ticket_status %></span></val>
+            </div>
+            <div class="ticket-field">
+              <label>Total Fare Paid</label>
+              <val><%= formatPrice(flight.total_amount) %></val>
+            </div>
+
+          </div>
+
+          <div class="barcode-sim">
+            <div>
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">E-TICKET SECURITY VERIFICATION HASH</div>
+              <div style="font-family: monospace; font-size: 0.95rem; font-weight: 700; color: var(--primary);"><%= token %></div>
+            </div>
+            <div class="barcode-lines"></div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Tour Package Reservation Details -->
+    <% if (tourBooking && tourPackage) { %>
+      <div class="card" style="margin-top: 2rem;">
+        <span class="badge badge-active" style="margin-bottom: 0.5rem;">Tour Reservation Confirmed</span>
+        <h2><%= tourPackage.title %></h2>
+        <p class="muted" style="margin: 0.5rem 0 1rem;">📍 <strong><%= tourPackage.destination %></strong> • Travel Date: <strong><%= tourBooking.travel_date %></strong> (${tourBooking.total_travelers} Persons)</p>
+        <p><%= tourPackage.description %></p>
+      </div>
+    <% } %>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Zahabia Travel & Tourism. For customer support, contact support@zahabiatravel.com.</p>
+  </footer>
+</body>
+</html>

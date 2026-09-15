@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 2rem;">
+      <a href="/admin/customers/${customer.id}" class="btn btn-secondary btn-sm">← Back to Customer</a>
+      <h1 style="margin-top: 0.5rem;">Edit Customer: ${customer.full_name}</h1>
+      <p class="muted">Update customer passport & contact details</p>
+    </div>
+
+    <div class="card" style="max-width: 700px;">
+      ${typeof error !== 'undefined' && error ? '<div class="alert alert-danger">' + error + '</div>' : ''}
+
+      <form method="post" action="/admin/customers/${customer.id}/edit">
+        <div class="form-group">
+          <label for="full_name">Full Name (as in Passport)</label>
+          <input type="text" id="full_name" name="full_name" value="${customer.full_name}" required class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="passport_number">Passport Number</label>
+          <input type="text" id="passport_number" name="passport_number" value="${customer.passport_number || ''}" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="nationality">Nationality</label>
+          <input type="text" id="nationality" name="nationality" value="${customer.nationality || ''}" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" value="${customer.email || ''}" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number / WhatsApp</label>
+          <input type="text" id="phone" name="phone" value="${customer.phone || ''}" class="form-control">
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <a href="/admin/customers/${customer.id}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  ` }) %>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 2rem;">
+      <a href="/admin/flights" class="btn btn-secondary btn-sm">← Back to Flights</a>
+      <h1 style="margin-top: 0.5rem;">New Flight Booking</h1>
+      <p class="muted">Enter flight itinerary and passenger details to reserve PNR.</p>
+    </div>
+
+    <div class="card" style="max-width: 800px;">
+      ${typeof error !== 'undefined' && error ? `<div class="alert alert-danger">${error}</div>` : ''}
+
+      <form method="post" action="/admin/flights/new">
+        <div class="form-group">
+          <label for="customer_id">Select Passenger / Customer</label>
+          <select id="customer_id" name="customer_id" required>
+            <option value="">-- Choose Existing Customer --</option>
+            ${customers.map(c => `<option value="${c.id}">${c.full_name} (${c.passport_number || 'No Passport'}) - ${c.nationality || ''}</option>`).join('')}
+          </select>
+          <p class="muted" style="margin-top: 0.3rem; font-size: 0.8rem;">Don't see the customer? <a href="/admin/customers">Register customer in CRM first</a>.</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="airline">Airline Carrier</label>
+            <input type="text" id="airline" name="airline" placeholder="e.g. Emirates, Qatar Airways, Flydubai" required class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="flight_number">Flight Number</label>
+            <input type="text" id="flight_number" name="flight_number" placeholder="e.g. EK-201" required class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="origin">Origin Airport (3-Letter Code)</label>
+            <input type="text" id="origin" name="origin" placeholder="DXB" maxlength="3" required class="form-control" style="text-transform: uppercase;">
+          </div>
+          <div class="form-group">
+            <label for="destination">Destination Airport (3-Letter Code)</label>
+            <input type="text" id="destination" name="destination" placeholder="JFK" maxlength="3" required class="form-control" style="text-transform: uppercase;">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="departure_date">Departure Date & Time</label>
+            <input type="datetime-local" id="departure_date" name="departure_date" required class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="arrival_date">Arrival Date & Time</label>
+            <input type="datetime-local" id="arrival_date" name="arrival_date" required class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cabin_class">Cabin Class</label>
+            <select id="cabin_class" name="cabin_class">
+              <option value="Economy">Economy Class</option>
+              <option value="Premium Economy">Premium Economy</option>
+              <option value="Business">Business Class</option>
+              <option value="First">First Class</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="total_amount">Total Ticket Amount ($ USD)</label>
+            <input type="number" step="0.01" id="total_amount" name="total_amount" placeholder="650.00" required class="form-control">
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+          <button type="submit" class="btn btn-primary">Create Booking & Reserve PNR</button>
+          <a href="/admin/flights" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  ` }) %>
+</body>
+</html>

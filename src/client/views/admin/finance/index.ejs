@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+
+      <div>
+        <p class="eyebrow">Financial Accounting</p>
+        <h1>Agency Financial Ledger</h1>
+        <p class="muted">Transaction logs, invoice breakdowns, and tax reporting.</p>
+      </div>
+      <a href="/admin/finance/export/csv" class="btn btn-primary">📥 Download Financial CSV Report</a>
+    </div>
+
+    <!-- Financial Revenue Summary -->
+    <div class="metrics-grid">
+      <div class="metric-card gold">
+        <div class="metric-title">Total Gross Revenue</div>
+        <div class="metric-value">${formatPrice(stats.totalRevenue)}</div>
+        <div class="metric-sub">Displaying in ${activeCurrency}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Flight Sales</div>
+        <div class="metric-value">${formatPrice(stats.totalFlightRevenue)}</div>
+        <div class="metric-sub">Air Ticketing Revenue</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Tour Sales</div>
+        <div class="metric-value">${formatPrice(stats.totalTourRevenue)}</div>
+        <div class="metric-sub">Vacation & Umrah Packages</div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+      <form method="get" action="/admin/finance" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 180px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Search Invoice / Transaction</label>
+          <input type="text" name="search" value="${filters?.search || ''}" placeholder="INV-..., TXN-..." class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+        <div style="flex: 1; min-width: 130px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Booking Type</label>
+          <select name="type" style="padding: 0.55rem 0.8rem;">
+            <option value="">All Types</option>
+            <option value="flight" ${filters?.type === 'flight' ? 'selected' : ''}>Flight</option>
+            <option value="tour" ${filters?.type === 'tour' ? 'selected' : ''}>Tour</option>
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 150px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Date From</label>
+          <input type="date" name="date_from" value="${filters?.date_from || ''}" class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+        <div style="flex: 1; min-width: 150px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Date To</label>
+          <input type="date" name="date_to" value="${filters?.date_to || ''}" class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.65rem 1.2rem;">Filter</button>
+        <a href="/admin/finance" class="btn btn-secondary btn-sm" style="padding: 0.65rem 1.2rem;">Reset</a>
+      </form>
+    </div>
+
+    ${filters?.search || filters?.type || filters?.date_from || filters?.date_to ? `
+    <div style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: #e6f4f1; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.88rem; font-weight: 600;">Filtered: ${filteredStats.count} transactions — Total: ${formatPrice(filteredStats.total)} (Flight: ${formatPrice(filteredStats.flight)} | Tour: ${formatPrice(filteredStats.tour)})</span>
+    </div>
+    ` : ''}
+
+    <!-- Transactions Table -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Recorded Transactions & Tax Invoices</h2>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Invoice No</th>
+              <th>Type</th>
+              <th>Base Fare</th>
+              <th>Taxes</th>
+              <th>Agency Fee</th>
+              <th>Total Amount</th>
+              <th>Payment Method</th>
+              <th>Status</th>
+              <th>Date & Time</th>
+              <th>Invoice</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ledger.map(p => `
+              <tr>
+                <td><strong style="color: var(--primary);">${p.invoice_no || ('INV-' + p.id)}</strong></td>
+                <td><span style="text-transform: uppercase; font-size: 0.8rem; font-weight: 700;">${p.booking_type}</span></td>
+                <td>${formatPrice(p.base_fare || (p.amount * 0.88))}</td>
+                <td>${formatPrice(p.tax_amount || (p.amount * 0.08))}</td>
+                <td>${formatPrice(p.agency_fee || (p.amount * 0.04))}</td>
+                <td><strong style="font-size: 1.05rem;">${formatPrice(p.amount)}</strong></td>
+                <td><code>${p.payment_method}</code></td>
+                <td><span class="badge badge-${p.payment_status}">${p.payment_status}</span></td>
+                <td><span class="muted">${p.created_at}</span></td>
+                <td><a href="/admin/finance/${p.id}/pdf" target="_blank" class="btn btn-sm btn-accent" style="padding: 0.35rem 0.7rem; font-size: 0.78rem;">📄 PDF</a></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  ` }) %>
+</body>
+</html>

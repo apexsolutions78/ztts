@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 2rem;">
+      <p class="eyebrow">Agency Configuration</p>
+      <h1>Admin Exchange Rate Settings</h1>
+      <p class="muted">Set dynamic currency exchange rates relative to base currency 1 USD ($).</p>
+    </div>
+
+    ${typeof success !== 'undefined' && success ? `<div class="alert alert-success">${success}</div>` : ''}
+    ${typeof error !== 'undefined' && error ? `<div class="alert alert-danger">${error}</div>` : ''}
+
+    <div class="card" style="max-width: 800px;">
+      <h2>Current Exchange Rates (Base: 1.00 USD)</h2>
+      <p class="muted" style="margin-bottom: 1.5rem; font-size: 0.9rem;">Prices across the platform will automatically recalculate when users switch currency.</p>
+
+      <form method="post" action="/admin/settings/rates">
+        <div class="table-responsive" style="margin-bottom: 1.5rem;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Currency Code</th>
+                <th>Currency Name</th>
+                <th>Symbol</th>
+                <th>Exchange Rate per 1 USD</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>USD</strong></td>
+                <td>US Dollar (Base Currency)</td>
+                <td><code>$</code></td>
+                <td><input type="text" value="1.000000" disabled class="form-control" style="background: #edf4f2; width: 140px;"></td>
+              </tr>
+              ${Object.entries(rates).filter(([code]) => code !== 'USD').map(([code, data]) => `
+                <tr>
+                  <td><strong>${code}</strong></td>
+                  <td>${data.name}</td>
+                  <td><code>${data.symbol}</code></td>
+                  <td>
+                    <input type="number" step="0.000001" name="rates[${code}]" value="${data.rate}" required class="form-control" style="width: 160px;">
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <button type="submit" class="btn btn-accent" style="padding: 0.85rem 1.8rem;">Save & Apply Exchange Rates</button>
+      </form>
+    </div>
+  ` }) %>
+</body>
+</html>

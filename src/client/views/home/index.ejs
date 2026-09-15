@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zahabia Travel & Tourism | Premium Air Ticketing & Tour Packages</title>
+  <meta name="description" content="Zahabia Travel & Tourism — Premium air ticketing, luxury tour packages, Umrah trips, and vacation experiences. Book with Apex Solutions.">
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .hero {
+      background: linear-gradient(135deg, #0b192c 0%, #05443b 60%, #086b5e 100%);
+      color: #fff;
+      padding: 4rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -25%;
+      width: 150%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(212,175,55,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero h1 { font-size: 3rem; color: #fff; margin-bottom: 0.5rem; }
+    .hero .gold { color: var(--accent-gold); }
+    .hero p { font-size: 1.15rem; color: #a0aec0; max-width: 600px; margin: 0.5rem auto 2rem; }
+    .hero-img { height: 100px; border-radius: 16px; margin-bottom: 1.5rem; }
+    .section { max-width: 1100px; margin: 3rem auto; padding: 0 1.5rem; }
+    .section-title { text-align: center; margin-bottom: 2rem; }
+    .tour-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+    .tour-card { display: flex; flex-direction: column; }
+    .tour-card .tour-img {
+      height: 200px;
+      background: linear-gradient(135deg, #e2ece9 0%, #c5d8d2 100%);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      overflow: hidden;
+    }
+    .tour-card .tour-img img { width: 100%; height: 100%; object-fit: cover; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .feature-card { text-align: center; padding: 2rem 1.5rem; }
+    .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .cta-section {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-dark) 100%);
+      color: #fff;
+      padding: 3rem 2rem;
+      text-align: center;
+      border-radius: var(--radius-lg);
+      margin: 3rem auto;
+      max-width: 800px;
+    }
+    .cta-section h2 { color: #fff; margin-bottom: 0.5rem; }
+    .cta-section p { color: #a0aec0; margin-bottom: 1.5rem; }
+    .footer-public {
+      background: var(--bg-dark);
+      color: #a0aec0;
+      padding: 2rem;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    .footer-public a { color: var(--accent-gold); text-decoration: none; }
+    @media (max-width: 860px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero Section -->
+  <div class="hero">
+    <img src="/brand/Golden_airplane_circling_globe_20260914222838.gif" alt="Zahabia Travel" class="hero-img" onerror="this.src='/brand/LOGO123.png';">
+    <h1><span class="gold">ZAHABIA</span> TRAVEL & TOURISM</h1>
+    <p>Premium air ticketing, luxury tour packages, Umrah pilgrimages, and unforgettable vacation experiences — powered by Apex Solutions.</p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <a href="/auth/login" class="btn btn-accent" style="padding: 0.85rem 2rem; font-size: 1rem;">Operator Login →</a>
+      <a href="#packages" class="btn btn-secondary" style="padding: 0.85rem 2rem; font-size: 1rem; background: rgba(255,255,255,0.1); color: #fff;">View Packages ↓</a>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="section">
+    <div class="section-title">
+      <p class="eyebrow">Why Choose Zahabia</p>
+      <h2>World-Class Travel Services</h2>
+    </div>
+    <div class="features">
+      <div class="card feature-card">
+        <div class="feature-icon">✈</div>
+        <h3>Air Ticketing</h3>
+        <p class="muted">Economy, Business, and First Class tickets with Emirates, Qatar Airways, Flydubai, and more. Instant e-ticket issuance.</p>
+      </div>
+      <div class="card feature-card">
+        <div class="feature-icon">🌴</div>
+        <h3>Luxury Tour Packages</h3>
+        <p class="muted">Desert safaris, Maldives overwater villas, European adventures — curated experiences with 5-star accommodations.</p>
+      </div>
+      <div class="card feature-card">
+        <div class="feature-icon">🕌</div>
+        <h3>Umrah & Hajj</h3>
+        <p class="muted">Premium Umrah packages with 5-star clock tower hotels in Makkah and front-row Madinah accommodations.</p>
+      </div>
+      <div class="card feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Digital E-Tickets</h3>
+        <p class="muted">Receive your e-ticket via email and WhatsApp. View, print, or share your itinerary with a secure portal link.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tour Packages Section -->
+  <div class="section" id="packages">
+    <div class="section-title">
+      <p class="eyebrow">Featured Packages</p>
+      <h2>Explore Our Tour Collection</h2>
+    </div>
+    <div class="tour-grid">
+      <% if (typeof packages !== 'undefined' && packages.length > 0) { %>
+        <% packages.forEach(p => { %>
+          <div class="card tour-card">
+            <div class="tour-img">
+              <% if (p.image_url && p.image_url !== '/static/img/default_tour.jpg') { %>
+                <img src="<%= p.image_url %>" alt="<%= p.title %>">
+              <% } else { %>
+                🌴
+              <% } %>
+            </div>
+            <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+              <span class="badge badge-active" style="align-self: flex-start; margin-bottom: 0.5rem;"><%= p.status %></span>
+              <h3><%= p.title %></h3>
+              <p class="muted" style="margin: 0.5rem 0;">📍 <%= p.destination %> • <%= p.duration_days %> Days</p>
+              <p style="font-size: 0.9rem; color: var(--text-muted); flex: 1;"><%= p.description ? p.description.substring(0, 120) + '...' : '' %></p>
+              <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">From</span>
+                  <div style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800; color: var(--primary);"><%= formatPrice(p.price) %></div>
+                </div>
+                <span class="muted" style="font-size: 0.8rem;">per person</span>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+          <h3> Tours Coming Soon</h3>
+          <p class="muted">We're curating amazing travel experiences. Check back soon!</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- CTA Section -->
+  <div class="section">
+    <div class="cta-section">
+      <h2>Ready to Book Your Journey?</h2>
+      <p>Contact our team or log in to the operator portal to manage your bookings.</p>
+      <a href="mailto:support@zahabiatravel.com" class="btn btn-accent">Contact Support</a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-public">
+    <p>&copy; 2026 Zahabia Travel & Tourism. All rights reserved. Powered by <a href="#">Apex Solutions</a>.</p>
+    <p style="margin-top: 0.5rem;">📧 support@zahabiatravel.com | ✈ Premium Air Ticketing & Tour Management</p>
+  </div>
+</body>
+</html>

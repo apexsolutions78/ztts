@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <p class="eyebrow">CRM Directory</p>
+        <h1>Customer Profiles & Passports</h1>
+        <p class="muted">Manage VIP customer contact details, passport records, and booking histories.</p>
+      </div>
+    </div>
+
+    <!-- Search Card -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+      <form method="get" action="/admin/customers" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 3; min-width: 200px;">
+          <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; display: block;">Search by Name, Passport, Nationality, Email, or Phone</label>
+          <input type="text" name="search" value="${filters?.search || ''}" placeholder="e.g. Hamdan, A9823411, UAE..." class="form-control" style="padding: 0.55rem 0.8rem;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.65rem 1.2rem;">Search</button>
+        <a href="/admin/customers" class="btn btn-secondary btn-sm" style="padding: 0.65rem 1.2rem;">Reset</a>
+      </form>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+      <!-- Customer List Table -->
+      <div class="card">
+        <h2>Customer Directory</h2>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Passport No</th>
+                <th>Nationality</th>
+                <th>Contact Info</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${customers.map(c => `
+                <tr>
+                  <td><strong>${c.full_name}</strong></td>
+                  <td><code>${c.passport_number || 'N/A'}</code></td>
+                  <td>${c.nationality || 'N/A'}</td>
+                  <td>
+                    ${c.email ? `<div>📧 ${c.email}</div>` : ''}
+                    ${c.phone ? `<div>📞 ${c.phone}</div>` : ''}
+                  </td>
+                  <td><a href="/admin/customers/${c.id}" class="btn btn-secondary btn-sm">View Profile</a> <a href="/admin/customers/${c.id}/edit" class="btn btn-secondary btn-sm">Edit</a></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add New Customer Form -->
+      <div class="card">
+        <h2>Register New Customer</h2>
+        ${typeof error !== 'undefined' && error ? `<div class="alert alert-danger">${error}</div>` : ''}
+
+        <form method="post" action="/admin/customers/new">
+          <div class="form-group">
+            <label for="full_name">Full Name (as in Passport)</label>
+            <input type="text" id="full_name" name="full_name" required placeholder="e.g. Sheikh Hamdan Al-Maktoum" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="passport_number">Passport Number</label>
+            <input type="text" id="passport_number" name="passport_number" placeholder="A9823411" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="nationality">Nationality</label>
+            <input type="text" id="nationality" name="nationality" placeholder="United Arab Emirates" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="customer@example.com" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number / WhatsApp</label>
+            <input type="text" id="phone" name="phone" placeholder="+971 50 123 4567" class="form-control">
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Create Customer Profile</button>
+        </form>
+      </div>
+    </div>
+  ` }) %>
+</body>
+</html>

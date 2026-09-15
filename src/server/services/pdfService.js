@@ -1,0 +1,125 @@
+import PDFDocument from 'pdfkit';
+
+const BRAND = {
+  primary: '#05443b',
+  gold: '#d4af37',
+  dark: '#0b192c',
+  muted: '#5c7370',
+  light: '#f4f7f6'
+};
+
+export function generateETicketPDF(flight, customer, res) {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=E-Ticket_${flight.booking_ref}.pdf`);
+  doc.pipe(res);
+
+  // Header bar
+  doc.rect(0, 0, 595.28, 90).fill(BRAND.dark);
+  doc.fontSize(22).fill('#ffffff').font('Helvetica-Bold').text('ZAHABIA TRAVEL & TOURISM', 50, 25);
+  doc.fontSize(10).fill(BRAND.gold).text('ELECTRONIC TICKET RECEIPT', 50, 55);
+
+  // PNR box
+  doc.roundedRect(420, 20, 130, 50, 5).fill(BRAND.gold);
+  doc.fontSize(9).fill(BRAND.dark).text('PNR / BOOKING REF', 430, 28, { width: 110, align: 'center' });
+  doc.fontSize(18).font('Helvetica-Bold').text(flight.booking_ref, 430, 45, { width: 110, align: 'center' });
+
+  // Flight route
+  let y = 110;
+  doc.fill(BRAND.light).rect(50, y, 495, 80).fill();
+  doc.fontSize(28).font('Helvetica-Bold').fill(BRAND.primary).text(flight.origin, 70, y + 15);
+  doc.fontSize(12).fill(BRAND.muted).text('Departure Airport', 70, y + 50);
+  doc.fontSize(14).font('Helvetica-Bold').fill(BRAND.primary).text(`${flight.airline} | ${flight.flight_number}`, 220, y + 10);
+  doc.moveTo(200, y + 35).lineTo(390, y + 35).stroke(BRAND.gold);
+  doc.fontSize(10).fill(BRAND.muted).text(`${flight.cabin_class} Class`, 240, y + 42);
+  doc.fontSize(28).font('Helvetica-Bold').fill(BRAND.primary).text(flight.destination, 400, y + 15);
+  doc.fontSize(10).fill(BRAND.muted).text('Destination', 400, y + 50);
+
+  // Passenger details
+  y = 210;
+  doc.fontSize(14).font('Helvetica-Bold').fill(BRAND.primary).text('PASSENGER DETAILS', 50, y);
+  y += 25;
+  const details = [
+    ['Passenger Name', customer?.full_name || 'N/A'],
+    ['Passport Number', customer?.passport_number || 'N/A'],
+    ['Nationality', customer?.nationality || 'N/A'],
+    ['Departure', new Date(flight.departure_date).toLocaleString()],
+    ['Arrival', new Date(flight.arrival_date).toLocaleString()],
+    ['Total Fare', `$${Number(flight.total_amount).toFixed(2)}`],
+    ['Ticket Status', flight.ticket_status.toUpperCase()]
+  ];
+  details.forEach(([label, value]) => {
+    doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text(label.toUpperCase(), 50, y, { width: 150 });
+    doc.fontSize(10).font('Helvetica').fill(BRAND.dark).text(value, 210, y, { width: 300 });
+    y += 18;
+  });
+
+  // Barcode simulation
+  y += 20;
+  doc.moveTo(50, y).lineTo(545, y).dash(3, { space: 3 }).stroke(BRAND.muted);
+  y += 15;
+  doc.fontSize(8).fill(BRAND.muted).text('E-TICKET SECURITY VERIFICATION', 50, y);
+  doc.fontSize(10).font('Helvetica-Bold').fill(BRAND.primary).text(`ZHB-ETKT-${flight.id}-2026-X99`, 50, y + 14);
+
+  // Footer
+  doc.fontSize(8).fill(BRAND.muted).text('For customer support, contact support@zahabiatravel.com | Powered by Apex Solutions', 50, 760, { width: 495, align: 'center' });
+
+  doc.end();
+}
+
+export function generateInvoicePDF(invoice, res) {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=Invoice_${invoice.invoice_no || invoice.id}.pdf`);
+  doc.pipe(res);
+
+  // Header
+  doc.rect(0, 0, 595.28, 80).fill(BRAND.dark);
+  doc.fontSize(20).fill('#ffffff').font('Helvetica-Bold').text('ZAHABIA TRAVEL & TOURISM', 50, 20);
+  doc.fontSize(10).fill(BRAND.gold).text('TAX INVOICE', 50, 48);
+
+  // Invoice info
+  let y = 100;
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('INVOICE NO', 50, y);
+  doc.fontSize(12).font('Helvetica-Bold').fill(BRAND.dark).text(invoice.invoice_no || `INV-${invoice.id}`, 50, y + 14);
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('DATE', 300, y);
+  doc.fontSize(10).fill(BRAND.dark).text(invoice.created_at || new Date().toLocaleDateString(), 300, y + 14);
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('PAYMENT METHOD', 420, y);
+  doc.fontSize(10).fill(BRAND.dark).text((invoice.payment_method || '').replace('_', ' ').toUpperCase(), 420, y + 14);
+
+  // Line items
+  y = 160;
+  doc.rect(50, y, 495, 25).fill(BRAND.light);
+  doc.fontSize(8).font('Helvetica-Bold').fill(BRAND.muted).text('DESCRIPTION', 60, y + 8);
+  doc.text('AMOUNT', 380, y + 8, { width: 160, align: 'right' });
+  y += 30;
+
+  const items = [
+    ['Booking Type', invoice.booking_type === 'flight' ? 'Air Ticket' : 'Tour Package'],
+    ['Base Fare', `$${Number(invoice.base_fare || invoice.amount * 0.88).toFixed(2)}`],
+    ['Taxes & Fees', `$${Number(invoice.tax_amount || invoice.amount * 0.08).toFixed(2)}`],
+    ['Agency Service Fee', `$${Number(invoice.agency_fee || invoice.amount * 0.04).toFixed(2)}`]
+  ];
+  items.forEach(([desc, amt]) => {
+    doc.fontSize(10).fill(BRAND.dark).text(desc, 60, y, { width: 300 });
+    doc.text(amt, 380, y, { width: 160, align: 'right' });
+    y += 20;
+  });
+
+  // Total
+  y += 5;
+  doc.moveTo(50, y).lineTo(545, y).stroke(BRAND.muted);
+  y += 10;
+  doc.fontSize(14).font('Helvetica-Bold').fill(BRAND.primary).text('TOTAL AMOUNT', 60, y);
+  doc.fontSize(14).font('Helvetica-Bold').fill(BRAND.gold).text(`$${Number(invoice.amount).toFixed(2)}`, 380, y, { width: 160, align: 'right' });
+
+  // Payment status
+  y += 30;
+  doc.roundedRect(50, y, 100, 25, 5).fill(invoice.payment_status === 'paid' ? '#38a169' : '#e53e3e');
+  doc.fontSize(10).font('Helvetica-Bold').fill('#ffffff').text((invoice.payment_status || 'PAID').toUpperCase(), 55, y + 7, { width: 90, align: 'center' });
+
+  // Footer
+  doc.fontSize(8).fill(BRAND.muted).text('Thank you for your business! | support@zahabiatravel.com | Powered by Apex Solutions', 50, 760, { width: 495, align: 'center' });
+
+  doc.end();
+}

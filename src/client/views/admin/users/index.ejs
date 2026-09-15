@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <p class="eyebrow">Administration</p>
+        <h1>User Management</h1>
+        <p class="muted">Manage admin and agent accounts for the platform.</p>
+      </div>
+      <a href="/admin/users/new" class="btn btn-primary">+ Create New User</a>
+    </div>
+
+    ${typeof created !== 'undefined' && created ? '<div class="alert alert-success">User created successfully.</div>' : ''}
+    ${typeof updated !== 'undefined' && updated ? '<div class="alert alert-success">User updated successfully.</div>' : ''}
+    ${typeof deleted !== 'undefined' && deleted ? '<div class="alert alert-success">User deleted successfully.</div>' : ''}
+    ${typeof error !== 'undefined' && error === 'self-delete' ? '<div class="alert alert-danger">You cannot delete your own account.</div>' : ''}
+
+    <div class="card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(u => `
+              <tr>
+                <td><strong>${u.name}</strong></td>
+                <td>${u.email}</td>
+                <td><span class="badge badge-${u.role === 'admin' ? 'active' : 'confirmed'}">${u.role}</span></td>
+                <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
+                <td style="display: flex; gap: 0.5rem;">
+                  <a href="/admin/users/${u.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
+                  ${u.id !== 1 ? '<form method="post" action="/admin/users/' + u.id + '/delete" style="margin: 0;" onsubmit="return confirm(\'Delete this user?\')"><button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Delete</button></form>' : ''}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` }) %>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "apex-solutions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Apex Solutions – air ticketing and tour management platform for Zahabia Travel & Tourism",
+  "scripts": {
+    "start": "node src/server/app.js",
+    "dev": "node --watch src/server/app.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "morgan": "^1.10.0",
+    "multer": "^2.4.0",
+    "mysql2": "^3.11.3",
+    "nodemailer": "^10.0.10",
+    "pdfkit": "^0.20.2"
+  }
+}
