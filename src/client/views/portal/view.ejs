@@ -27,7 +27,9 @@
           <option value="SAR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'SAR') ? 'selected' : '' %>>SAR</option>
         </select>
         <button onclick="window.print()" class="btn btn-accent btn-sm">Print E-Ticket</button>
-        ${typeof flight !== 'undefined' && flight ? `<a href="/admin/flights/${flight.id}/pdf" target="_blank" class="btn btn-accent btn-sm" style="background: #805ad5; color: #fff;">Download PDF</a>` : ''}
+        <% if (typeof flight !== 'undefined' && flight) { %>
+          <a href="/admin/flights/<%= flight.id %>/pdf" target="_blank" class="btn btn-accent btn-sm" style="background: #805ad5; color: #fff;">Download PDF</a>
+        <% } %>
       </div>
     </div>
   </div>
