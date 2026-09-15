@@ -76,12 +76,54 @@
           </div>
         </div>
 
+        <div style="background: #f8fafb; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-light); margin-top: 1rem;">
+          <h4 style="margin-bottom: 0.75rem; font-size: 0.95rem;">Initial Payment (Optional)</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pay_now">Record Payment Now?</label>
+              <select id="pay_now" name="pay_now" onchange="togglePayFields()">
+                <option value="no">No — Record Later</option>
+                <option value="cash">Yes — Cash</option>
+                <option value="bank_transfer">Yes — Bank Deposit / Transfer</option>
+                <option value="cheque">Yes — Cheque</option>
+                <option value="credit_card">Yes — Credit Card</option>
+                <option value="debit_card">Yes — Debit Card</option>
+                <option value="online">Yes — Online Payment</option>
+                <option value="other">Yes — Other</option>
+              </select>
+            </div>
+            <div class="form-group" id="payAmountGroup" style="display: none;">
+              <label for="pay_amount">Amount Paid ($ USD)</label>
+              <input type="number" step="0.01" id="pay_amount" name="pay_amount" placeholder="0.00" class="form-control">
+            </div>
+          </div>
+          <div class="form-row" id="payRefRow" style="display: none;">
+            <div class="form-group">
+              <label for="pay_reference">Reference / Cheque No.</label>
+              <input type="text" id="pay_reference" name="pay_reference" placeholder="e.g. Cheque #12345, Transfer Ref" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="pay_notes">Payment Notes</label>
+              <input type="text" id="pay_notes" name="pay_notes" placeholder="Optional" class="form-control">
+            </div>
+          </div>
+        </div>
+
         <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
           <button type="submit" class="btn btn-primary">Create Booking & Reserve PNR</button>
           <a href="/admin/flights" class="btn btn-secondary">Cancel</a>
         </div>
       </form>
     </div>
+
+    <script>
+      function togglePayFields() {
+        const method = document.getElementById('pay_now').value;
+        const show = method !== 'no';
+        document.getElementById('payAmountGroup').style.display = show ? 'block' : 'none';
+        document.getElementById('payRefRow').style.display = show ? 'flex' : 'none';
+      }
+    </script>
   ` }) %>
 </body>
 </html>

@@ -11,7 +11,7 @@ import {
   findTourBookingById,
   getAllTourBookings,
   createPortalToken,
-  createInvoiceForBooking,
+  addPayment,
   logAuditAction,
   logNotificationRecord
 } from '../models/index.js';
@@ -97,7 +97,7 @@ export async function viewTourDetail(req, res, next) {
 
 export async function postBookTour(req, res, next) {
   try {
-    const { tour_package_id, customer_id, travel_date, total_travelers } = req.body;
+    const { tour_package_id, customer_id, travel_date, total_travelers, pay_now, pay_amount, pay_reference } = req.body;
     const pkg = await findTourPackageById(tour_package_id);
     if (!pkg) return res.status(404).json({ error: 'Package not found' });
 
@@ -110,12 +110,17 @@ export async function postBookTour(req, res, next) {
       total_amount: totalAmount
     });
 
-    // Auto-generate invoice for tour booking
-    await createInvoiceForBooking({
-      booking_type: 'tour',
-      booking_id: booking.id,
-      amount: totalAmount
-    });
+    // Record initial payment if provided
+    if (pay_now && pay_now !== 'no' && pay_amount && Number(pay_amount) > 0) {
+      await addPayment({
+        booking_type: 'tour',
+        booking_id: booking.id,
+        amount: Number(pay_amount),
+        payment_method: pay_now,
+        payment_reference: pay_reference,
+        recorded_by: req.session.user.id
+      });
+    }
 
     // Log audit
     await logAuditAction({

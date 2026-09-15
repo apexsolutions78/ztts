@@ -13,7 +13,7 @@ import {
   getFlightLiveStatus,
   searchFlights,
   generateCSV,
-  createInvoiceForBooking
+  addPayment
 } from '../models/index.js';
 import { sendEmail, buildETicketEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildETicketWhatsAppMessage } from '../services/whatsAppService.js';
@@ -73,7 +73,7 @@ export async function getNewFlightForm(req, res, next) {
 
 export async function postCreateFlight(req, res, next) {
   try {
-    const { customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount } = req.body;
+    const { customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount, pay_now, pay_amount, pay_reference, pay_notes } = req.body;
     if (!customer_id || !airline || !flight_number || !origin || !destination) {
       const customers = await getAllCustomers();
       return res.status(400).render('admin/flights/new', {
@@ -96,12 +96,18 @@ export async function postCreateFlight(req, res, next) {
       created_by: req.session.user.id
     });
 
-    // Create Invoice Ledger Entry
-    await createInvoiceForBooking({
-      booking_type: 'flight',
-      booking_id: booking.id,
-      amount: total_amount
-    });
+    // Record initial payment if provided
+    if (pay_now && pay_now !== 'no' && pay_amount && Number(pay_amount) > 0) {
+      await addPayment({
+        booking_type: 'flight',
+        booking_id: booking.id,
+        amount: Number(pay_amount),
+        payment_method: pay_now,
+        payment_reference: pay_reference,
+        notes: pay_notes,
+        recorded_by: req.session.user.id
+      });
+    }
 
     // Log Audit Action
     await logAuditAction({
@@ -112,6 +118,52 @@ export async function postCreateFlight(req, res, next) {
       entity_id: booking.id,
       details: `Created flight PNR ${booking.booking_ref} (${airline} ${flight_number} ${origin}-${destination})`
     });
+
+    // Auto-create portal token and send notifications to customer
+    const customer = await findCustomerById(customer_id);
+    if (customer) {
+      const portalToken = await createPortalToken({
+        customer_id: customer.id,
+        flight_booking_id: booking.id
+      });
+      const portalUrl = `${req.protocol}://${req.get('host')}/t/${portalToken}`;
+
+      // Email notification
+      if (customer.email) {
+        const emailContent = buildETicketEmail({
+          customerName: customer.full_name,
+          bookingRef: booking.booking_ref,
+          airline,
+          flightNumber: flight_number,
+          origin: origin.toUpperCase(),
+          destination: destination.toUpperCase(),
+          departureDate: departure_date,
+          arrivalDate: arrival_date,
+          cabinClass: cabin_class,
+          totalAmount: total_amount,
+          portalUrl
+        });
+        const emailResult = await sendEmail({ to: customer.email, subject: emailContent.subject, html: emailContent.html, text: emailContent.text });
+        await logNotificationRecord({ customer_id: customer.id, flight_booking_id: booking.id, channel: 'email', recipient: customer.email, subject: emailContent.subject, content: emailContent.text, status: emailResult.success ? 'delivered' : 'failed' });
+      }
+
+      // WhatsApp notification
+      if (customer.phone) {
+        const waMessage = buildETicketWhatsAppMessage({
+          customerName: customer.full_name,
+          bookingRef: booking.booking_ref,
+          airline,
+          flightNumber: flight_number,
+          origin: origin.toUpperCase(),
+          destination: destination.toUpperCase(),
+          departureDate: departure_date,
+          cabinClass: cabin_class,
+          portalUrl
+        });
+        const waResult = await sendWhatsApp({ to: customer.phone, message: waMessage });
+        await logNotificationRecord({ customer_id: customer.id, flight_booking_id: booking.id, channel: 'whatsapp', recipient: customer.phone, subject: `WhatsApp E-Ticket: ${booking.booking_ref}`, content: waMessage, status: waResult.success ? 'delivered' : 'failed' });
+      }
+    }
 
     res.redirect(`/admin/flights/${booking.id}`);
   } catch (error) {
