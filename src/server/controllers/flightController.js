@@ -13,7 +13,8 @@ import {
   getFlightLiveStatus,
   searchFlights,
   generateCSV,
-  addPayment
+  addPayment,
+  findPortalTokenByFlightBooking
 } from '../models/index.js';
 import { sendEmail, buildETicketEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildETicketWhatsAppMessage } from '../services/whatsAppService.js';
@@ -390,7 +391,8 @@ export async function downloadETicketPDF(req, res, next) {
     const flight = await findFlightBookingById(req.params.id);
     if (!flight) return res.status(404).render('errors/404', { title: 'Flight Not Found' });
     const customer = await findCustomerById(flight.customer_id);
-    generateETicketPDF(flight, customer, res);
+    const portalToken = await findPortalTokenByFlightBooking(flight.id);
+    generateETicketPDF(flight, customer, res, portalToken?.token);
   } catch (error) {
     next(error);
   }

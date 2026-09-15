@@ -121,20 +121,13 @@
 
           </div>
 
-          <div class="barcode-sim">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm); border: 1px dashed #cbd5e0;" class="btn-no-print">
             <div>
-              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">E-TICKET SECURITY VERIFICATION HASH</div>
-              <div style="font-family: monospace; font-size: 0.95rem; font-weight: 700; color: var(--primary);"><%= token %></div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">E-Ticket Verification</div>
+              <div style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary);"><%= token %></div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Scan to reopen this portal</div>
             </div>
-            <div class="barcode-lines"></div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f8fafb; border-radius: var(--radius-sm); border: 1px dashed var(--border-light);" class="btn-no-print">
-            <div>
-              <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Scan to Open Portal</div>
-              <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">Show this QR code to access your e-ticket anytime</div>
-            </div>
-            <img src="/t/<%= token %>/qr" alt="Portal QR Code" style="width: 120px; height: 120px; border: 2px solid var(--primary); border-radius: 8px; padding: 4px; background: #fff;">
+            <img src="/t/<%= token %>/qr" alt="Portal QR Code" style="width: 110px; height: 110px; border: 2px solid var(--primary); border-radius: 8px; padding: 4px; background: #fff;">
           </div>
         </div>
       </div>

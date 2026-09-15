@@ -125,12 +125,14 @@
           </div>
         </div>
 
-        <div class="barcode-sim">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm); border: 1px dashed #cbd5e0;">
           <div>
-            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">ELECTRONIC BOARDING PASS PASSCODE</div>
-            <div style="font-family: monospace; font-size: 1rem; font-weight: 700;">ZHB-ETKT-${flight.id}-2026-X99</div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Customer Portal QR Code</div>
+            <div style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary);">ZHB-ETKT-${flight.id}-2026-X99</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Scan to open e-ticket portal</div>
           </div>
-          <div class="barcode-lines"></div>
+          <img id="ticketQR" src="" alt="Portal QR Code" style="width: 110px; height: 110px; border: 2px solid var(--primary); border-radius: 8px; padding: 4px; background: #fff; display: none;">
+          <div id="ticketQRPlaceholder" style="width: 110px; height: 110px; border: 2px dashed #cbd5e0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #a0aec0; text-align: center; padding: 0.5rem;">Click "Share Portal Link" to generate</div>
         </div>
       </div>
     </div>
@@ -259,6 +261,13 @@
             const qrImg = document.getElementById('shareQR');
             qrImg.src = '/t/' + data.token + '/qr';
             qrImg.style.display = 'block';
+            const ticketQR = document.getElementById('ticketQR');
+            const ticketQRPlaceholder = document.getElementById('ticketQRPlaceholder');
+            if (ticketQR) {
+              ticketQR.src = '/t/' + data.token + '/qr';
+              ticketQR.style.display = 'block';
+              ticketQRPlaceholder.style.display = 'none';
+            }
           }
         } catch (err) {
           alert('Failed to generate portal link');

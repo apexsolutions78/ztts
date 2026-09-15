@@ -466,6 +466,14 @@ export async function findPortalToken(token) {
   return memoryStore.portal_tokens.find(t => t.token === token) || null;
 }
 
+export async function findPortalTokenByFlightBooking(flightBookingId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM portal_tokens WHERE flight_booking_id = ? ORDER BY id DESC LIMIT 1', [flightBookingId]);
+    return rows[0] || null;
+  }
+  return memoryStore.portal_tokens.find(t => t.flight_booking_id === Number(flightBookingId)) || null;
+}
+
 // --- DASHBOARD METRICS MODEL ---
 export async function getDashboardStats() {
   const flights = await getAllFlightBookings();

@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 
 const BRAND = {
   primary: '#05443b',
@@ -8,11 +9,21 @@ const BRAND = {
   light: '#f4f7f6'
 };
 
-export function generateETicketPDF(flight, customer, res) {
+export async function generateETicketPDF(flight, customer, res, portalToken) {
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=E-Ticket_${flight.booking_ref}.pdf`);
   doc.pipe(res);
+
+  // Generate QR code buffer if token available
+  let qrDataUrl = null;
+  if (portalToken) {
+    try {
+      const host = res.req?.get('host') || 'ztts.apexsol.pk';
+      const protocol = res.req?.protocol || 'https';
+      qrDataUrl = await QRCode.toDataURL(`${protocol}://${host}/t/${portalToken}`, { width: 200, margin: 1 });
+    } catch (e) { /* skip QR on error */ }
+  }
 
   // Header bar
   doc.rect(0, 0, 595.28, 90).fill(BRAND.dark);
@@ -54,12 +65,18 @@ export function generateETicketPDF(flight, customer, res) {
     y += 18;
   });
 
-  // Barcode simulation
+  // QR Code or verification
   y += 20;
   doc.moveTo(50, y).lineTo(545, y).dash(3, { space: 3 }).stroke(BRAND.muted);
   y += 15;
-  doc.fontSize(8).fill(BRAND.muted).text('E-TICKET SECURITY VERIFICATION', 50, y);
+  doc.fontSize(8).fill(BRAND.muted).text('E-TICKET VERIFICATION', 50, y);
   doc.fontSize(10).font('Helvetica-Bold').fill(BRAND.primary).text(`ZHB-ETKT-${flight.id}-2026-X99`, 50, y + 14);
+  if (qrDataUrl) {
+    try {
+      doc.image(qrDataUrl, 420, y - 10, { width: 100, height: 100 });
+      doc.fontSize(7).fill(BRAND.muted).text('Scan to open portal', 420, y + 95, { width: 100, align: 'center' });
+    } catch (e) { /* skip */ }
+  }
 
   // Footer
   doc.fontSize(8).fill(BRAND.muted).text('For customer support, contact support@zahabiatravel.com | Powered by Apex Solutions', 50, 760, { width: 495, align: 'center' });
