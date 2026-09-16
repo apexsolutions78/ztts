@@ -37,102 +37,204 @@
       display: flex;
       flex-direction: column;
       border-radius: var(--radius-lg);
-      overflow: hidden;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       border: 1px solid var(--border-light);
       background: #fff;
+      position: relative;
+      padding: 0 !important;
     }
     .tour-card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
     }
     .tour-card .tour-img {
-      height: 260px;
+      width: 100%;
       background: linear-gradient(135deg, #e2ece9 0%, #c5d8d2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 4rem;
-      overflow: hidden;
       position: relative;
     }
-    .tour-card .tour-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
-    .tour-card:hover .tour-img img { transform: scale(1.05); }
+    .tour-card .tour-img img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+    .tour-card:hover .tour-img img { transform: scale(1.02); }
     .tour-card .tour-img .duration-badge {
       position: absolute;
       top: 1rem;
       right: 1rem;
-      background: rgba(16,42,39,0.85);
+      background: rgba(16,42,39,0.88);
       color: #fff;
-      padding: 0.4rem 0.8rem;
+      padding: 0.4rem 0.9rem;
       border-radius: 20px;
       font-size: 0.75rem;
       font-weight: 700;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
     }
-    .tour-card .tour-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
+    .tour-card .tour-img .img-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(16,42,39,0.7) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .tour-card .tour-body {
+      padding: 1.4rem 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .tour-card .tour-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.4rem;
+    }
     .tour-card .tour-dest {
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--accent-gold);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 0.5rem;
     }
     .tour-card .tour-body h3 {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       margin: 0 0 0.5rem;
       line-height: 1.3;
       color: var(--primary-dark);
     }
     .tour-card .tour-desc {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       color: var(--text-muted);
-      line-height: 1.6;
-      flex: 1;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.55;
+      margin-bottom: 0.8rem;
+    }
+    .tour-card .tour-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
       margin-bottom: 1rem;
     }
+    .tour-card .tour-highlight-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.6rem;
+      background: #f0f7f5;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      color: var(--primary-dark);
+      font-weight: 500;
+    }
+    .tour-card .tour-details-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+    .tour-card.tour-expanded .tour-details-panel {
+      max-height: 500px;
+      opacity: 1;
+    }
+    .tour-card .tour-details-inner {
+      padding: 0.8rem 0;
+      border-top: 1px dashed var(--border-light);
+    }
+    .tour-card .tour-details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+    .tour-card .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .tour-card .detail-item span:first-child {
+      font-size: 0.9rem;
+    }
+    .tour-card .tour-full-desc {
+      margin-top: 0.6rem;
+      font-size: 0.82rem;
+      color: #5c7370;
+      line-height: 1.6;
+    }
     .tour-card .tour-footer {
-      padding-top: 1rem;
+      padding-top: 0.9rem;
       border-top: 1px solid var(--border-light);
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      margin-top: auto;
     }
     .tour-card .tour-price-label {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .tour-card .tour-price {
       font-family: var(--font-heading);
-      font-size: 1.5rem;
+      font-size: 1.45rem;
       font-weight: 800;
       color: var(--primary);
       line-height: 1.2;
     }
     .tour-card .tour-per {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
+    }
+    .tour-card .tour-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .tour-card .tour-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.5rem 0.9rem;
+      background: transparent;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tour-card .tour-toggle-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .tour-card .tour-toggle-btn .arrow {
+      transition: transform 0.3s;
+      display: inline-block;
+    }
+    .tour-card.tour-expanded .tour-toggle-btn .arrow {
+      transform: rotate(180deg);
     }
     .tour-card .tour-book-btn {
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
-      padding: 0.6rem 1.2rem;
+      padding: 0.5rem 1rem;
       background: var(--primary);
       color: #fff;
       border: none;
       border-radius: var(--radius-sm);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
@@ -218,26 +320,59 @@
     <div class="tour-grid">
       <% if (typeof packages !== 'undefined' && packages.length > 0) { %>
         <% packages.forEach(p => { %>
-          <div class="card tour-card">
+          <div class="card tour-card" data-tour-id="<%= p.id %>">
             <div class="tour-img">
               <% if (p.image_url && p.image_url !== '/static/img/default_tour.jpg') { %>
                 <img src="<%= p.image_url %>" alt="<%= p.title %>">
               <% } else { %>
                 🌴
               <% } %>
-              <span class="duration-badge"><%= p.duration_days %> Days</span>
+              <div class="img-overlay"></div>
+              <span class="duration-badge"><%= p.duration_days %> Days<% if (p.duration_nights) { %> / <%= p.duration_nights %> Nights<% } %></span>
             </div>
             <div class="tour-body">
-              <span class="tour-dest">📍 <%= p.destination %></span>
+              <div class="tour-top-row">
+                <span class="tour-dest">📍 <%= p.destination %></span>
+              </div>
               <h3><%= p.title %></h3>
-              <p class="tour-desc"><%= p.description || 'An amazing travel experience curated by Zahabia Travel & Tourism.' %></p>
+              <p class="tour-desc"><%= p.description ? p.description.substring(0, 120) + (p.description.length > 120 ? '...' : '') : 'An amazing travel experience curated by Zahabia Travel & Tourism.' %></p>
+              <% if (p.highlights) { %>
+                <div class="tour-highlights">
+                  <% var tags = p.highlights.split(',').slice(0, 3); %>
+                  <% tags.forEach(function(tag) { %>
+                    <span class="tour-highlight-tag">✨ <%= tag.trim() %></span>
+                  <% }); %>
+                </div>
+              <% } %>
+              <div class="tour-details-panel" id="details-<%= p.id %>">
+                <div class="tour-details-inner">
+                  <div class="tour-details-grid">
+                    <div class="detail-item"><span>📍</span> <%= p.destination %></div>
+                    <div class="detail-item"><span>🕐</span> <%= p.duration_days %> Days / <%= p.duration_nights || p.duration_days %> Nights</div>
+                    <% if (p.inclusions) { %>
+                      <div class="detail-item" style="grid-column: 1 / -1;"><span>✅</span> <%= p.inclusions %></div>
+                    <% } %>
+                    <% if (p.accommodation) { %>
+                      <div class="detail-item" style="grid-column: 1 / -1;"><span>🏨</span> <%= p.accommodation %></div>
+                    <% } %>
+                  </div>
+                  <% if (p.description && p.description.length > 120) { %>
+                    <p class="tour-full-desc"><%= p.description %></p>
+                  <% } %>
+                </div>
+              </div>
               <div class="tour-footer">
                 <div>
                   <div class="tour-price-label">Starting from</div>
                   <div class="tour-price"><%= formatPrice(p.price) %></div>
                   <div class="tour-per">per person</div>
                 </div>
-                <a href="#packages" class="tour-book-btn">View Details →</a>
+                <div class="tour-actions">
+                  <button class="tour-toggle-btn">
+                    <span class="toggle-label">More Info</span> <span class="arrow">▼</span>
+                  </button>
+                  <a href="/tours/<%= p.slug || p.id %>" class="tour-book-btn">Book Now →</a>
+                </div>
               </div>
             </div>
           </div>
@@ -265,5 +400,23 @@
     <p>&copy; 2026 Zahabia Travel & Tourism. All rights reserved. Powered by <a href="#">Apex Solutions</a>.</p>
     <p style="margin-top: 0.5rem;">📧 support@zahabiatravel.com | ✈ Premium Air Ticketing & Tour Management</p>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.tour-toggle-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var card = this.closest('.tour-card');
+          if (card) {
+            card.classList.toggle('tour-expanded');
+            var label = this.querySelector('.toggle-label');
+            if (label) {
+              label.textContent = card.classList.contains('tour-expanded') ? 'Less Info' : 'More Info';
+            }
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>
