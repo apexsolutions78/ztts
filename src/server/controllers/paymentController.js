@@ -145,3 +145,60 @@ export async function downloadPaymentReceipt(req, res, next) {
     next(error);
   }
 }
+
+export async function postRecordBatchPayments(req, res, next) {
+  try {
+    const { type, id } = req.params;
+    const { payments } = req.body;
+
+    if (!payments || !Array.isArray(payments) || payments.length === 0) {
+      return res.status(400).json({ success: false, error: 'No payments provided' });
+    }
+
+    const summary = await getBookingPaymentSummary(type, id);
+    if (summary.isFullyPaid) {
+      return res.status(400).json({ success: false, error: 'This booking is already fully paid' });
+    }
+
+    let remainingBalance = summary.balance;
+    const recordedPayments = [];
+
+    for (const p of payments) {
+      if (!p.amount || Number(p.amount) <= 0 || remainingBalance <= 0) continue;
+      const paymentAmount = Math.min(Number(p.amount), remainingBalance);
+      const payment = await addPayment({
+        booking_type: type,
+        booking_id: id,
+        amount: paymentAmount,
+        payment_method: p.payment_method || 'cash',
+        payment_reference: p.payment_reference,
+        notes: p.notes,
+        base_fare: p.base_fare ? Number(p.base_fare) : null,
+        tax_amount: p.tax_amount ? Number(p.tax_amount) : null,
+        agency_fee: p.agency_fee ? Number(p.agency_fee) : null,
+        recorded_by: req.session.user?.id
+      });
+      recordedPayments.push(payment);
+      remainingBalance -= paymentAmount;
+    }
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'ADD_BATCH_PAYMENT',
+      entity_type: 'payment',
+      entity_id: id,
+      details: `Recorded ${recordedPayments.length} payment(s) for ${type} booking #${id}`
+    });
+
+    const updatedSummary = await getBookingPaymentSummary(type, id);
+    res.json({
+      success: true,
+      payments: recordedPayments,
+      summary: updatedSummary,
+      message: `${recordedPayments.length} payment(s) recorded successfully`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
