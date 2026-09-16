@@ -78,6 +78,14 @@ export async function createUser({ name, email, password, role = 'agent' }) {
 }
 
 // --- CUSTOMER MODEL ---
+export async function findCustomerByEmail(email) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM customers WHERE email = ?', [email]);
+    return rows[0] || null;
+  }
+  return memoryStore.customers.find(c => c.email && c.email.toLowerCase() === email.toLowerCase()) || null;
+}
+
 export async function getAllCustomers() {
   if (isUsingMySQL()) {
     const [rows] = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
@@ -94,11 +102,12 @@ export async function findCustomerById(id) {
   return memoryStore.customers.find(c => c.id === Number(id)) || null;
 }
 
-export async function createCustomer({ full_name, passport_number, nationality, email, phone }) {
+export async function createCustomer({ full_name, passport_number, nationality, email, phone, password }) {
+  const password_hash = password ? hashPassword(password) : null;
   if (isUsingMySQL()) {
     const [result] = await pool.query(
-      'INSERT INTO customers (full_name, passport_number, nationality, email, phone) VALUES (?, ?, ?, ?, ?)',
-      [full_name, passport_number, nationality, email, phone]
+      'INSERT INTO customers (full_name, passport_number, nationality, email, phone, password_hash) VALUES (?, ?, ?, ?, ?, ?)',
+      [full_name, passport_number, nationality, email, phone, password_hash]
     );
     return { id: result.insertId, full_name, passport_number, nationality, email, phone };
   }
@@ -109,6 +118,7 @@ export async function createCustomer({ full_name, passport_number, nationality, 
     nationality,
     email,
     phone,
+    password_hash,
     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
   };
   memoryStore.customers.push(newCustomer);

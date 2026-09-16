@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .account-nav {
+      background: var(--bg-dark);
+      color: #fff;
+      padding: 0.7rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .account-nav .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #fff; }
+    .account-nav .brand img { height: 36px; border-radius: 8px; }
+    .account-nav .brand span { font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem; }
+    .account-nav .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .account-nav .nav-links a {
+      color: #a0aec0;
+      text-decoration: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .account-nav .nav-links a:hover, .account-nav .nav-links a.active {
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+    }
+    .account-nav .user-info { display: flex; align-items: center; gap: 0.6rem; }
+    .account-nav .user-info span { font-size: 0.85rem; color: #a0aec0; }
+    .account-nav .signout {
+      background: rgba(255,255,255,0.1);
+      color: #a0aec0;
+      border: none;
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .account-nav .signout:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .account-container { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; }
+    .account-grid { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; }
+    .sidebar-card { border-radius: var(--radius-md); background: #fff; border: 1px solid var(--border-light); padding: 1.5rem; text-align: center; }
+    .sidebar-card .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 auto 1rem;
+    }
+    .sidebar-card h3 { font-size: 1.1rem; margin: 0 0 0.2rem; }
+    .sidebar-card .email { font-size: 0.82rem; color: var(--text-muted); }
+    .sidebar-card .member-since { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border-light); }
+    .sidebar-links { margin-top: 1rem; text-align: left; }
+    .sidebar-links a {
+      display: block;
+      padding: 0.6rem 0.8rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .sidebar-links a:hover, .sidebar-links a.active { background: #f0f7f5; color: var(--primary); }
+    .main-content .card { margin-bottom: 1.5rem; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border-light); }
+    .section-header h2 { font-size: 1.2rem; margin: 0; }
+    .booking-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .booking-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f8fcfa;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+    }
+    .booking-item .booking-info h4 { font-size: 0.95rem; margin: 0 0 0.2rem; }
+    .booking-item .booking-info p { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+    .booking-item .booking-meta { text-align: right; }
+    .booking-item .booking-meta .price { font-size: 1rem; font-weight: 700; color: var(--primary); }
+    .booking-item .booking-meta .status { font-size: 0.75rem; margin-top: 0.2rem; }
+    .profile-form .form-group { margin-bottom: 1rem; }
+    .profile-form label { display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .profile-form .form-control {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    .profile-form .form-control:focus { outline: none; border-color: var(--primary); }
+    .profile-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); }
+    .empty-state p { font-size: 0.9rem; }
+    .empty-state a { color: var(--primary); font-weight: 600; text-decoration: none; }
+    @media (max-width: 768px) {
+      .account-grid { grid-template-columns: 1fr; }
+      .account-nav .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="account-nav">
+    <a href="/" class="brand">
+      <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
+      <span>ZAHABIA</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/account" class="active">Dashboard</a></li>
+      <li><a href="/account/tours">Browse Tours</a></li>
+    </ul>
+    <div class="user-info">
+      <span><%= customer.full_name %></span>
+      <form method="POST" action="/account/logout" style="margin:0">
+        <button type="submit" class="signout">Sign Out</button>
+      </form>
+    </div>
+  </nav>
+
+  <div class="account-container">
+    <div class="account-grid">
+      <div>
+        <div class="sidebar-card">
+          <div class="avatar"><%= customer.full_name.charAt(0).toUpperCase() %></div>
+          <h3><%= customer.full_name %></h3>
+          <p class="email"><%= customer.email %></p>
+          <p class="member-since">Member since <%= new Date(customer.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) %></p>
+        </div>
+        <div class="sidebar-links">
+          <a href="/account" class="active">My Dashboard</a>
+          <a href="/account/tours">Browse Tours</a>
+          <a href="#profile-section" onclick="document.getElementById('profile-section').scrollIntoView({behavior:'smooth'})">Edit Profile</a>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="card">
+          <div class="section-header">
+            <h2>My Bookings</h2>
+            <a href="/account/tours" class="btn btn-primary btn-sm">Book a Tour</a>
+          </div>
+          <% if (bookings && bookings.length > 0) { %>
+            <div class="booking-list">
+              <% bookings.forEach(b => { %>
+                <div class="booking-item">
+                  <div class="booking-info">
+                    <h4><%= b.tour_title %></h4>
+                    <p>Travel Date: <%= new Date(b.travel_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %> &middot; <%= b.total_travelers %> traveler<%= b.total_travelers > 1 ? 's' : '' %></p>
+                  </div>
+                  <div class="booking-meta">
+                    <div class="price"><%= formatPrice(b.total_amount) %></div>
+                    <div class="status">
+                      <span class="badge badge-<%= b.status === 'confirmed' ? 'confirmed' : b.status === 'cancelled' ? 'cancelled' : 'pending' %>">
+                        <%= b.status %>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="empty-state">
+              <p>No bookings yet.</p>
+              <p><a href="/account/tours">Browse our tour packages</a> to get started.</p>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="card" id="profile-section">
+          <div class="section-header">
+            <h2>Edit Profile</h2>
+          </div>
+          <form method="POST" action="/account/profile" class="profile-form">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" name="full_name" class="form-control" value="<%= customer.full_name %>" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" name="phone" class="form-control" value="<%= customer.phone || '' %>">
+              </div>
+              <div class="form-group">
+                <label>Nationality</label>
+                <input type="text" name="nationality" class="form-control" value="<%= customer.nationality || '' %>">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Passport Number</label>
+              <input type="text" name="passport_number" class="form-control" value="<%= customer.passport_number || '' %>">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -19,6 +19,7 @@ import apiRoutes from './routes/api.js';
 import notificationRoutes from './routes/notifications.js';
 import userRoutes from './routes/users.js';
 import homeRoutes from './routes/home.js';
+import customerAuthRoutes from './routes/customerAuth.js';
 import chatRoutes from './routes/chat.js';
 import paymentRoutes from './routes/payments.js';
 import { requireAuth, requireAdmin } from './middleware/auth.js';
@@ -56,6 +57,7 @@ app.use(currencyMiddleware);
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
+  res.locals.customer = req.session.customer || null;
   res.locals.appUrl = env.appUrl;
   res.locals.currentPath = req.path;
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
@@ -76,6 +78,7 @@ app.get('/health', async (_req, res, next) => {
 });
 
 app.use('/auth', authRoutes);
+app.use('/account', customerAuthRoutes);
 app.use('/admin', requireAuth, adminRoutes);
 app.use('/admin/flights', requireAuth, flightRoutes);
 app.use('/admin/tours', requireAuth, tourRoutes);

@@ -38,6 +38,7 @@ export const memoryStore = {
       nationality: 'UAE',
       email: 'hamdan@example.com',
       phone: '+971 50 123 4567',
+      password_hash: hashPassword('customer123'),
       created_at: '2026-08-10 10:00:00'
     },
     {
@@ -47,6 +48,7 @@ export const memoryStore = {
       nationality: 'United Kingdom',
       email: 'elena.r@example.co.uk',
       phone: '+44 7700 900077',
+      password_hash: hashPassword('customer123'),
       created_at: '2026-08-15 14:30:00'
     },
     {
@@ -56,6 +58,7 @@ export const memoryStore = {
       nationality: 'Pakistan',
       email: 'tariq.m@example.com',
       phone: '+92 300 8877665',
+      password_hash: hashPassword('customer123'),
       created_at: '2026-09-01 09:15:00'
     }
   ],

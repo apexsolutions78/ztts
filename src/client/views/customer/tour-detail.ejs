@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .account-nav {
+      background: var(--bg-dark);
+      color: #fff;
+      padding: 0.7rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .account-nav .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #fff; }
+    .account-nav .brand img { height: 36px; border-radius: 8px; }
+    .account-nav .brand span { font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem; }
+    .account-nav .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .account-nav .nav-links a {
+      color: #a0aec0;
+      text-decoration: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .account-nav .nav-links a:hover, .account-nav .nav-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .account-nav .user-info { display: flex; align-items: center; gap: 0.6rem; }
+    .account-nav .user-info span { font-size: 0.85rem; color: #a0aec0; }
+    .account-nav .signout {
+      background: rgba(255,255,255,0.1);
+      color: #a0aec0;
+      border: none;
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .account-nav .signout:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .detail-container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+    .back-link { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--primary); font-size: 0.85rem; font-weight: 600; text-decoration: none; margin-bottom: 1.5rem; }
+    .back-link:hover { text-decoration: underline; }
+    .detail-card { border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-light); background: #fff; }
+    .detail-img { width: 100%; display: flex; align-items: center; justify-content: center; font-size: 4rem; background: linear-gradient(135deg, #e2ece9, #c5d8d2); }
+    .detail-img img { width: 100%; height: auto; display: block; }
+    .detail-body { padding: 2rem; }
+    .detail-dest { font-size: 0.8rem; color: var(--accent-gold); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
+    .detail-body h1 { font-size: 1.6rem; margin: 0 0 0.8rem; }
+    .detail-meta { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .detail-meta .meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-muted); }
+    .detail-meta .meta-item span:first-child { font-size: 1.1rem; }
+    .detail-desc { font-size: 0.92rem; color: #5c7370; line-height: 1.7; margin-bottom: 1.5rem; white-space: pre-line; }
+    .detail-price-box {
+      background: #f8fcfa;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .detail-price-box .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .detail-price-box .price { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+    .detail-price-box .per { font-size: 0.8rem; color: var(--text-muted); }
+    .detail-price-box .book-btn {
+      padding: 0.8rem 2rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .detail-price-box .book-btn:hover { background: var(--primary-dark); }
+    @media (max-width: 640px) {
+      .detail-price-box { flex-direction: column; gap: 1rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="account-nav">
+    <a href="/" class="brand">
+      <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
+      <span>ZAHABIA</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/account">Dashboard</a></li>
+      <li><a href="/account/tours" class="active">Browse Tours</a></li>
+    </ul>
+    <div class="user-info">
+      <span><%= customer.name %></span>
+      <form method="POST" action="/account/logout" style="margin:0">
+        <button type="submit" class="signout">Sign Out</button>
+      </form>
+    </div>
+  </nav>
+
+  <div class="detail-container">
+    <a href="/account/tours" class="back-link">← Back to Tours</a>
+    <div class="detail-card">
+      <div class="detail-img">
+        <% if (tour.image_url && tour.image_url !== '/static/img/default_tour.jpg') { %>
+          <img src="<%= tour.image_url %>" alt="<%= tour.title %>">
+        <% } else { %>
+          🌴
+        <% } %>
+      </div>
+      <div class="detail-body">
+        <div class="detail-dest">📍 <%= tour.destination %></div>
+        <h1><%= tour.title %></h1>
+        <div class="detail-meta">
+          <div class="meta-item"><span>🕐</span> <%= tour.duration_days %> Days</div>
+          <div class="meta-item"><span>📍</span> <%= tour.destination %></div>
+        </div>
+        <div class="detail-desc"><%= tour.description || 'An amazing travel experience curated by Zahabia Travel & Tourism.' %></div>
+        <div class="detail-price-box">
+          <div>
+            <div class="label">Starting from</div>
+            <div class="price"><%= formatPrice(tour.price) %></div>
+            <div class="per">per person</div>
+          </div>
+          <a href="/account" class="book-btn">Contact to Book →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
