@@ -135,18 +135,68 @@
 
     <!-- Tour Package Reservation Details -->
     <% if (tourBooking && tourPackage) { %>
-      <div class="card" style="margin-top: 2rem;">
-        <span class="badge badge-active" style="margin-bottom: 0.5rem;">Tour Reservation Confirmed</span>
-        <h2><%= tourPackage.title %></h2>
-        <p class="muted" style="margin: 0.5rem 0 1rem;">📍 <strong><%= tourPackage.destination %></strong> • Travel Date: <strong><%= tourBooking.travel_date %></strong> (${tourBooking.total_travelers} Persons)</p>
-        <p><%= tourPackage.description %></p>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f8fafb; border-radius: var(--radius-sm); border: 1px dashed var(--border-light);" class="btn-no-print">
-          <div>
-            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Scan to Open Booking Portal</div>
-            <div style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">Show this QR code to access your booking details</div>
+      <div class="ticket-wrapper" style="margin-top: 2rem;">
+        <div class="ticket-header">
+          <div class="ticket-airline-brand">
+            <img src="/brand/LOGO123.png" alt="Zahabia Logo" style="height: 55px;" onerror="this.src='/brand/Golden_airplane_circling_globe_20260914222838.gif';">
+            <div>
+              <h2 style="color: var(--accent-gold);"><%= tourPackage.title %></h2>
+              <span style="font-size: 0.8rem; color: #e2ece9; text-transform: uppercase;">TOUR RESERVATION CONFIRMED</span>
+            </div>
           </div>
-          <img src="/t/<%= token %>/qr" alt="Booking QR Code" style="width: 120px; height: 120px; border: 2px solid var(--primary); border-radius: 8px; padding: 4px; background: #fff;">
+          <div style="text-align: right;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: #a0aec0;">Booking Reference</span>
+            <div style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--accent-gold);">TOUR-<%= tourBooking.id %></div>
+          </div>
+        </div>
+
+        <div class="ticket-body">
+          <div style="background: #edf4f2; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">BOOKING STATUS</span>
+              <div style="font-weight: 800; font-size: 1rem; color: var(--primary);">STATUS: <span class="badge badge-<%= tourBooking.status %>"><%= tourBooking.status.toUpperCase() %></span></div>
+            </div>
+            <div style="display: flex; gap: 1.5rem; font-size: 0.85rem;">
+              <div><strong>Destination:</strong> <%= tourPackage.destination %></div>
+              <div><strong>Duration:</strong> <%= tourPackage.duration_days %> Days</div>
+            </div>
+          </div>
+
+          <div class="ticket-grid">
+            <div class="ticket-field">
+              <label>Passenger Name</label>
+              <val><%= customer ? customer.full_name : tourBooking.customer_name %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Destination</label>
+              <val><%= tourPackage.destination %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Travel Date</label>
+              <val><%= new Date(tourBooking.travel_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Number of Travelers</label>
+              <val><%= tourBooking.total_travelers %> Person<%= tourBooking.total_travelers > 1 ? 's' : '' %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Total Tour Cost</label>
+              <val style="font-size: 1.3rem; color: var(--primary); font-weight: 800;"><%= formatPrice(tourBooking.total_amount) %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Package Inclusions</label>
+              <val>Hotel, Transport, Guided Tours, Visa Assistance</val>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm); border: 1px dashed #cbd5e0;" class="btn-no-print">
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Tour Booking QR Code</div>
+              <div style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary);"><%= token %></div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Scan to reopen this portal</div>
+            </div>
+            <img src="/t/<%= token %>/qr" alt="Portal QR Code" style="width: 110px; height: 110px; border: 2px solid var(--primary); border-radius: 8px; padding: 4px; background: #fff;">
+          </div>
         </div>
       </div>
     <% } %>

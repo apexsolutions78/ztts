@@ -1,4 +1,4 @@
-import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, getAllTourBookings, getFlightLiveStatus } from '../models/index.js';
+import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, findTourBookingById, getFlightLiveStatus } from '../models/index.js';
 
 export async function viewCustomerPortal(req, res, next) {
   try {
@@ -32,8 +32,7 @@ export async function viewCustomerPortal(req, res, next) {
     }
 
     if (tokenData.tour_booking_id) {
-      const allTourBookings = await getAllTourBookings();
-      tourBooking = allTourBookings.find(tb => tb.id === tokenData.tour_booking_id);
+      tourBooking = await findTourBookingById(tokenData.tour_booking_id);
       if (tourBooking) {
         tourPackage = await findTourPackageById(tourBooking.tour_package_id);
       }
