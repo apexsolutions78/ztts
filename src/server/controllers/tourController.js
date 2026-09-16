@@ -23,10 +23,13 @@ export async function listTours(req, res, next) {
   try {
     const packages = await getAllTourPackages();
     const tourBookings = await getAllTourBookings();
+    const { activeCurrency, exchangeRates } = res.locals;
     res.render('admin/tours/index', {
       title: 'Tour Packages & Reservations',
       packages,
-      tourBookings
+      tourBookings,
+      activeCurrency,
+      exchangeRates
     });
   } catch (error) {
     next(error);
