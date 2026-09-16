@@ -142,33 +142,60 @@
       opacity: 0;
     }
     .tour-card.tour-expanded .tour-details-panel {
-      max-height: 500px;
+      max-height: 800px;
       opacity: 1;
     }
     .tour-card .tour-details-inner {
-      padding: 0.8rem 0;
+      padding: 1rem 0;
       border-top: 1px dashed var(--border-light);
     }
     .tour-card .tour-details-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.6rem;
+      gap: 0.7rem 1rem;
+      margin-bottom: 0.8rem;
     }
     .tour-card .detail-item {
       display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.78rem;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
+      line-height: 1.4;
     }
-    .tour-card .detail-item span:first-child {
-      font-size: 0.9rem;
+    .tour-card .detail-item .detail-icon {
+      flex-shrink: 0;
+      width: 20px;
+      text-align: center;
+      font-size: 0.85rem;
+      margin-top: 1px;
+    }
+    .tour-card .detail-item .detail-label {
+      font-weight: 600;
+      color: var(--text-main);
     }
     .tour-card .tour-full-desc {
-      margin-top: 0.6rem;
+      margin-top: 0.5rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid var(--border-light);
+    }
+    .tour-card .tour-full-desc .desc-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+    }
+    .tour-card .tour-full-desc .desc-body {
       font-size: 0.82rem;
       color: #5c7370;
-      line-height: 1.6;
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+    .tour-card .tour-full-desc .desc-body strong {
+      color: var(--primary-dark);
+      font-weight: 600;
     }
     .tour-card .tour-footer {
       padding-top: 0.9rem;
@@ -347,17 +374,32 @@
               <div class="tour-details-panel" id="details-<%= p.id %>">
                 <div class="tour-details-inner">
                   <div class="tour-details-grid">
-                    <div class="detail-item"><span>📍</span> <%= p.destination %></div>
-                    <div class="detail-item"><span>🕐</span> <%= p.duration_days %> Days / <%= p.duration_nights || p.duration_days %> Nights</div>
+                    <div class="detail-item">
+                      <span class="detail-icon">📍</span>
+                      <span><span class="detail-label">Destination:</span> <%= p.destination %></span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-icon">🕐</span>
+                      <span><span class="detail-label">Duration:</span> <%= p.duration_days %> Days / <%= p.duration_nights || p.duration_days %> Nights</span>
+                    </div>
                     <% if (p.inclusions) { %>
-                      <div class="detail-item" style="grid-column: 1 / -1;"><span>✅</span> <%= p.inclusions %></div>
+                      <div class="detail-item" style="grid-column: 1 / -1;">
+                        <span class="detail-icon">✅</span>
+                        <span><span class="detail-label">Includes:</span> <%= p.inclusions %></span>
+                      </div>
                     <% } %>
                     <% if (p.accommodation) { %>
-                      <div class="detail-item" style="grid-column: 1 / -1;"><span>🏨</span> <%= p.accommodation %></div>
+                      <div class="detail-item" style="grid-column: 1 / -1;">
+                        <span class="detail-icon">🏨</span>
+                        <span><span class="detail-label">Accommodation:</span> <%= p.accommodation %></span>
+                      </div>
                     <% } %>
                   </div>
                   <% if (p.description && p.description.length > 120) { %>
-                    <p class="tour-full-desc"><%= p.description %></p>
+                    <div class="tour-full-desc">
+                      <div class="desc-heading">Full Itinerary & Details</div>
+                      <div class="desc-body"><%= p.description %></div>
+                    </div>
                   <% } %>
                 </div>
               </div>
@@ -371,7 +413,7 @@
                   <button class="tour-toggle-btn">
                     <span class="toggle-label">More Info</span> <span class="arrow">▼</span>
                   </button>
-                  <a href="/tours/<%= p.slug || p.id %>" class="tour-book-btn">Book Now →</a>
+                  <a href="/auth/login" class="tour-book-btn">Book Now →</a>
                 </div>
               </div>
             </div>
