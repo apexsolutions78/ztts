@@ -301,7 +301,11 @@
             '<td>' + (p.payment_reference || '-') + '</td>' +
             '<td><strong style="color: var(--primary);">' + fmtLocal(p.amount) + '</strong></td>' +
             '<td><span class="badge badge-' + p.payment_status + '">' + p.payment_status.toUpperCase() + '</span></td>' +
-            '<td><div style="display: flex; gap: 0.3rem;"><a href="/admin/payments/record/' + p.id + '/receipt" target="_blank" class="btn btn-sm btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Receipt</a><button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Void</button></div></td>' +
+            '<td><div style="display: flex; gap: 0.3rem;">' +
+              (p.payment_status !== 'refunded' ? '<button onclick="refundPayment(' + p.id + ')" class="btn btn-sm btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Refund</button>' : '') +
+              '<a href="/admin/payments/record/' + p.id + '/receipt" target="_blank" class="btn btn-sm btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Receipt</a>' +
+              (p.payment_status !== 'refunded' ? '<button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Delete</button>' : '') +
+            '</div></td>' +
             '</tr>').join('');
         } catch (err) {
           console.error('Failed to load payments:', err);
@@ -396,13 +400,28 @@
       }
 
       async function voidPayment(paymentId) {
-        if (!confirm('Void this payment? This cannot be undone.')) return;
+        if (!confirm('Permanently DELETE this payment? This cannot be undone.')) return;
         try {
           const res = await fetch('/admin/payments/record/' + paymentId, { method: 'DELETE' });
           const data = await res.json();
           if (data.success) { alert(data.message); loadPayments(); }
           else { alert('Error: ' + (data.error || 'Unknown error')); }
-        } catch (err) { alert('Failed to void payment'); }
+        } catch (err) { alert('Failed to delete payment'); }
+      }
+
+      async function refundPayment(paymentId) {
+        const reason = prompt('Reason for refund (optional):');
+        if (reason === null) return;
+        try {
+          const res = await fetch('/admin/payments/record/' + paymentId + '/refund', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: reason || null })
+          });
+          const data = await res.json();
+          if (data.success) { alert(data.message); loadPayments(); }
+          else { alert('Error: ' + (data.error || 'Unknown error')); }
+        } catch (err) { alert('Failed to process refund'); }
       }
 
       loadPayments();

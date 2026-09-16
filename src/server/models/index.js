@@ -774,6 +774,21 @@ export async function deletePayment(id) {
   return removed;
 }
 
+export async function refundPayment(id, refundAmount) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [id]);
+    if (!rows[0]) return null;
+    const payment = rows[0];
+    const newStatus = refundAmount && refundAmount < payment.amount ? 'partial' : 'refunded';
+    await pool.query('UPDATE payments SET payment_status = ? WHERE id = ?', [newStatus, id]);
+    return { ...payment, payment_status: newStatus };
+  }
+  const payment = memoryStore.payments.find(p => p.id === Number(id));
+  if (!payment) return null;
+  payment.payment_status = refundAmount && refundAmount < payment.amount ? 'partial' : 'refunded';
+  return { ...payment };
+}
+
 // --- LIVE FLIGHT STATUS ENGINE ---
 export function getFlightLiveStatus(flight) {
   if (!flight) return { status: 'UNKNOWN', statusClass: 'muted', gate: 'TBA', terminal: '1' };

@@ -3,6 +3,7 @@ import {
   addPayment,
   updatePayment,
   deletePayment,
+  refundPayment,
   findFlightBookingById,
   findTourBookingById,
   getFinancialLedger,
@@ -124,11 +125,38 @@ export async function postDeletePayment(req, res, next) {
       action: 'DELETE_PAYMENT',
       entity_type: 'payment',
       entity_id: paymentId,
-      details: `Voided payment #${removed.invoice_no} (${removed.amount})`
+      details: `Deleted payment #${removed.invoice_no} (${removed.amount})`
     });
 
     const summary = await getBookingPaymentSummary(removed.booking_type, removed.booking_id);
-    res.json({ success: true, summary, message: 'Payment voided successfully' });
+    res.json({ success: true, summary, message: 'Payment deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postRefundPayment(req, res, next) {
+  try {
+    const { paymentId } = req.params;
+    const { refund_amount, reason } = req.body;
+
+    const refunded = await refundPayment(paymentId, refund_amount ? Number(refund_amount) : null);
+
+    if (!refunded) {
+      return res.status(404).json({ success: false, error: 'Payment not found' });
+    }
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'REFUND_PAYMENT',
+      entity_type: 'payment',
+      entity_id: paymentId,
+      details: `Refunded payment #${refunded.invoice_no} (${refunded.amount})${reason ? ' — Reason: ' + reason : ''}`
+    });
+
+    const summary = await getBookingPaymentSummary(refunded.booking_type, refunded.booking_id);
+    res.json({ success: true, payment: refunded, summary, message: 'Payment refunded successfully' });
   } catch (error) {
     next(error);
   }

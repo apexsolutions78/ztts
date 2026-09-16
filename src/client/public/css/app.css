@@ -413,6 +413,16 @@ h3 { font-size: 1.2rem; font-weight: 600; }
   color: #b47818;
 }
 
+.badge-refunded {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.badge-cancelled {
+  background: #fed7d7;
+  color: #c53030;
+}
+
 .badge-cancelled {
   background: #fde8e8;
   color: #c53030;
