@@ -36,15 +36,15 @@
       </div>
       <div style="background: #edf7ed; padding: 1.25rem; border-radius: var(--radius-sm); text-align: center;">
         <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Booking Value</div>
-        <div style="font-size: 1.6rem; font-weight: 800; color: var(--primary);">$${Number(ledger.totalBookingValue).toFixed(2)}</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: var(--primary);" id="totalBookingValue">${Number(ledger.totalBookingValue).toFixed(2)}</div>
       </div>
       <div style="background: #edf7ed; padding: 1.25rem; border-radius: var(--radius-sm); text-align: center;">
         <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Paid</div>
-        <div style="font-size: 1.6rem; font-weight: 800; color: #38a169;">$${Number(ledger.totalPaid).toFixed(2)}</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: #38a169;" id="totalPaid">${Number(ledger.totalPaid).toFixed(2)}</div>
       </div>
       <div style="background: ${ledger.balance > 0 ? '#fef3cd' : '#edf7ed'}; padding: 1.25rem; border-radius: var(--radius-sm); text-align: center;">
         <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Outstanding Balance</div>
-        <div style="font-size: 1.6rem; font-weight: 800; color: ${ledger.balance > 0 ? '#d69e2e' : '#38a169'};">$${Number(ledger.balance).toFixed(2)}</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: ${ledger.balance > 0 ? '#d69e2e' : '#38a169'};" id="balance">${Number(ledger.balance).toFixed(2)}</div>
       </div>
     </div>
 
@@ -62,9 +62,9 @@
             '<td><strong>' + (b.booking_ref || b.tour_title || '-') + '</strong></td>' +
             '<td>' + (b.type === 'flight' ? (b.origin || '') + ' → ' + (b.destination || '') + ' (' + (b.airline || '') + ')' : (b.tour_title || '') + ' • ' + (b.total_travelers || 1) + ' pax') + '</td>' +
             '<td>' + new Date(b.created_at).toLocaleDateString() + '</td>' +
-            '<td>$' + Number(b.booking_total || 0).toFixed(2) + '</td>' +
-            '<td style="color: #38a169; font-weight: 700;">$' + Number(b.total_paid || 0).toFixed(2) + '</td>' +
-            '<td style="color: ' + (bal > 0 ? '#d69e2e' : '#38a169') + '; font-weight: 700;">$' + bal.toFixed(2) + '</td>' +
+            '<td data-usd="' + Number(b.booking_total || 0) + '">' + Number(b.booking_total || 0).toFixed(2) + '</td>' +
+            '<td style="color: #38a169; font-weight: 700;" data-usd="' + Number(b.total_paid || 0) + '">' + Number(b.total_paid || 0).toFixed(2) + '</td>' +
+            '<td style="color: ' + (bal > 0 ? '#d69e2e' : '#38a169') + '; font-weight: 700;" data-usd="' + bal + '">' + bal.toFixed(2) + '</td>' +
             '<td><span class="badge badge-' + statusClass + '">' + status.toUpperCase() + '</span></td>' +
           '</tr>';
         }).join('') +
@@ -84,12 +84,37 @@
             '<td>' + (p.booking_type === 'flight' ? 'Flight' : 'Tour') + ' — ' + (p.ref_name || p.booking_id) + '</td>' +
             '<td>' + (p.payment_reference || '-') + '</td>' +
             '<td>' + (methodLabels[p.payment_method] || p.payment_method) + '</td>' +
-            '<td style="color: var(--primary); font-weight: 700;">$' + Number(p.amount).toFixed(2) + '</td>' +
+            '<td style="color: var(--primary); font-weight: 700;" data-usd="' + Number(p.amount) + '">' + Number(p.amount).toFixed(2) + '</td>' +
             '<td><span class="badge badge-' + p.payment_status + '">' + (p.payment_status || 'PAID').toUpperCase() + '</span></td>' +
           '</tr>';
         }).join('') +
       '</tbody></table></div>' : ''}
     </div>
+
+    <script>
+      const EXCHANGE_RATES = ${JSON.stringify(exchangeRates)};
+      const ACTIVE_CURRENCY = '${activeCurrency}';
+      const rate = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
+      const symbol = EXCHANGE_RATES[ACTIVE_CURRENCY]?.symbol || '$';
+
+      function fmtLocal(usdAmount) {
+        const converted = Number(usdAmount || 0) * rate;
+        const decimals = (ACTIVE_CURRENCY === 'PKR') ? 0 : 2;
+        return symbol + converted.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+      }
+
+      function applyCurrency() {
+        document.getElementById('totalBookingValue').textContent = fmtLocal(${Number(ledger.totalBookingValue).toFixed(2)});
+        document.getElementById('totalPaid').textContent = fmtLocal(${Number(ledger.totalPaid).toFixed(2)});
+        document.getElementById('balance').textContent = fmtLocal(${Number(ledger.balance).toFixed(2)});
+
+        document.querySelectorAll('[data-usd]').forEach(el => {
+          el.textContent = fmtLocal(el.getAttribute('data-usd'));
+        });
+      }
+
+      applyCurrency();
+    </script>
   ` }) %>
 </body>
 </html>
