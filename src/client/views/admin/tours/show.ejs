@@ -117,7 +117,7 @@
         document.getElementById('tourPayAmountGroup').style.display = show ? 'block' : 'none';
       }
 
-      document.querySelector('form').addEventListener('submit', function() {
+      document.querySelector('form[action="/admin/tours/book"]').addEventListener('submit', function() {
         const payAmt = document.getElementById('tour_pay_amount').value;
         if (payAmt) document.getElementById('tour_pay_amount_usd').value = toUSD(payAmt);
       });

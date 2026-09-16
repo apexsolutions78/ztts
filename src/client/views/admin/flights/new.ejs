@@ -135,7 +135,7 @@
         document.getElementById('payRefRow').style.display = show ? 'flex' : 'none';
       }
 
-      document.querySelector('form').addEventListener('submit', function() {
+      document.querySelector('form[action="/admin/flights/new"]').addEventListener('submit', function() {
         document.getElementById('total_amount_usd').value = toUSD(document.getElementById('total_amount').value);
         const payAmt = document.getElementById('pay_amount').value;
         if (payAmt) document.getElementById('pay_amount_usd').value = toUSD(payAmt);
