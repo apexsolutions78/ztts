@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .account-nav {
+      background: var(--bg-dark); color: #fff; padding: 0.7rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .account-nav .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #fff; }
+    .account-nav .brand img { height: 36px; border-radius: 8px; }
+    .account-nav .brand span { font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem; }
+    .account-nav .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .account-nav .nav-links a {
+      color: #a0aec0; text-decoration: none; padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+    }
+    .account-nav .nav-links a:hover, .account-nav .nav-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .account-nav .nav-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .account-nav .currency-switcher select {
+      padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700;
+      background: var(--bg-dark); color: #fff; border: 1px solid var(--accent-gold); cursor: pointer;
+    }
+    .account-nav .currency-switcher label {
+      font-size: 0.7rem; text-transform: uppercase; color: var(--accent-gold); font-weight: 700;
+    }
+    .account-nav .user-info { display: flex; align-items: center; gap: 0.6rem; }
+    .account-nav .user-info span { font-size: 0.85rem; color: #a0aec0; }
+    .account-nav .signout {
+      background: rgba(255,255,255,0.1); color: #a0aec0; border: none;
+      padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    }
+    .account-nav .signout:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .flight-container { max-width: 700px; margin: 2rem auto; padding: 0 1.5rem; }
+    .flight-header { text-align: center; margin-bottom: 2rem; }
+    .flight-header h1 { font-size: 1.6rem; margin: 0 0 0.3rem; }
+    .flight-header p { color: var(--text-muted); font-size: 0.92rem; }
+    .flight-card {
+      background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-lg);
+      overflow: hidden; box-shadow: var(--shadow-sm);
+    }
+    .flight-card-header {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: #fff; padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1rem;
+    }
+    .flight-card-header .icon { font-size: 2rem; }
+    .flight-card-header h2 { font-size: 1.2rem; margin: 0; }
+    .flight-card-header p { font-size: 0.82rem; color: #a0d4c8; margin: 0.2rem 0 0; }
+    .flight-card-body { padding: 2rem; }
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem; }
+    .form-control {
+      width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit;
+      transition: border-color 0.2s; background: #fafcfb;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5,68,59,0.08); }
+    select.form-control { cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
+    .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .auth-error {
+      background: #fde8e8; color: #9b2c2c; padding: 0.7rem 1rem; border-radius: var(--radius-sm);
+      font-size: 0.85rem; margin-bottom: 1.2rem; border-left: 4px solid #e53e3e;
+    }
+    .btn-submit {
+      width: 100%; padding: 0.85rem; background: var(--primary); color: #fff;
+      border: none; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s; margin-top: 0.5rem;
+    }
+    .btn-submit:hover { background: var(--primary-dark); }
+    .info-box {
+      background: #f0f7f5; border: 1px solid #c5d8d2; border-radius: var(--radius-sm);
+      padding: 1rem; margin-top: 1.5rem; font-size: 0.82rem; color: #3d6b63; line-height: 1.5;
+    }
+    .info-box strong { color: var(--primary-dark); }
+    @media (max-width: 640px) {
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="account-nav">
+    <a href="/" class="brand">
+      <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
+      <span>ZAHABIA</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/account">Dashboard</a></li>
+      <li><a href="/account/tours">Tours</a></li>
+      <li><a href="/account/flights/request" class="active">Flights</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="currency-switcher">
+        <label>Currency:</label>
+        <select onchange="location.href='?currency=' + this.value">
+          <option value="PKR" <%= activeCurrency === 'PKR' ? 'selected' : '' %>>PKR (Rs)</option>
+          <option value="USD" <%= activeCurrency === 'USD' ? 'selected' : '' %>>USD ($)</option>
+          <option value="AED" <%= activeCurrency === 'AED' ? 'selected' : '' %>>AED</option>
+          <option value="EUR" <%= activeCurrency === 'EUR' ? 'selected' : '' %>>EUR</option>
+          <option value="GBP" <%= activeCurrency === 'GBP' ? 'selected' : '' %>>GBP</option>
+          <option value="SAR" <%= activeCurrency === 'SAR' ? 'selected' : '' %>>SAR</option>
+        </select>
+      </div>
+      <div class="user-info">
+        <span><%= customer.name %></span>
+        <form method="POST" action="/account/logout" style="margin:0">
+          <button type="submit" class="signout">Sign Out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flight-container">
+    <div class="flight-header">
+      <h1>Request a Flight Booking</h1>
+      <p>Tell us your travel plans and we'll find the best options for you</p>
+    </div>
+
+    <div class="flight-card">
+      <div class="flight-card-header">
+        <div class="icon">✈</div>
+        <div>
+          <h2>Flight Details</h2>
+          <p>Fill in your travel requirements below</p>
+        </div>
+      </div>
+      <div class="flight-card-body">
+        <% if (error) { %>
+          <div class="auth-error"><%= error %></div>
+        <% } %>
+        <form method="POST" action="/account/flights/request">
+          <div class="form-row">
+            <div class="form-group">
+              <label>From (Origin) *</label>
+              <input type="text" name="origin" class="form-control" placeholder="e.g. KHI, DXB, LHR" value="<%= form.origin || '' %>" required>
+              <div class="form-hint">Airport code (3 letters)</div>
+            </div>
+            <div class="form-group">
+              <label>To (Destination) *</label>
+              <input type="text" name="destination" class="form-control" placeholder="e.g. JFK, LHR, DXB" value="<%= form.destination || '' %>" required>
+              <div class="form-hint">Airport code (3 letters)</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Departure Date *</label>
+              <input type="date" name="departure_date" class="form-control" value="<%= form.departure_date || '' %>" required>
+            </div>
+            <div class="form-group">
+              <label>Return Date</label>
+              <input type="date" name="return_date" class="form-control" value="<%= form.return_date || '' %>">
+              <div class="form-hint">Leave blank for one-way</div>
+            </div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label>Cabin Class</label>
+              <select name="cabin_class" class="form-control">
+                <option value="Economy" <%= (form.cabin_class === 'Economy' || !form.cabin_class) ? 'selected' : '' %>>Economy</option>
+                <option value="Business" <%= form.cabin_class === 'Business' ? 'selected' : '' %>>Business</option>
+                <option value="First" <%= form.cabin_class === 'First' ? 'selected' : '' %>>First Class</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Passengers</label>
+              <select name="passengers" class="form-control">
+                <option value="1">1 Passenger</option>
+                <option value="2">2 Passengers</option>
+                <option value="3">3 Passengers</option>
+                <option value="4">4 Passengers</option>
+                <option value="5">5+ Passengers</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Preferred Airline</label>
+              <input type="text" name="notes" class="form-control" placeholder="e.g. Emirates" value="<%= form.notes || '' %>">
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">Submit Flight Request →</button>
+        </form>
+        <div class="info-box">
+          <strong>How it works:</strong> Submit your flight request and our team will review available options. You'll receive a confirmation with pricing via email and WhatsApp. Payment is processed after you approve the itinerary.
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

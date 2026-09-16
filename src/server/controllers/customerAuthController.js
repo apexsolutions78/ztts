@@ -1,4 +1,4 @@
-import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, formatPrice, getExchangeRates } from '../models/index.js';
+import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, getAllCustomers } from '../models/index.js';
 import { hashPassword } from '../config/db.js';
 
 export async function getRegister(req, res) {
@@ -111,16 +111,17 @@ export async function getDashboard(req, res, next) {
     const customer = await findCustomerById(req.session.customer.id);
     if (!customer) return res.redirect('/account/logout');
 
-    const bookings = await getTourBookingsByCustomerId(customer.id);
-    const rates = await getExchangeRates();
-    const activeCurrency = req.session?.currency || 'USD';
+    const tourBookings = await getTourBookingsByCustomerId(customer.id);
+    const allFlights = await getAllFlightBookings();
+    const flightBookings = allFlights.filter(f => f.customer_id === customer.id);
 
     res.render('customer/dashboard', {
       title: 'My Account',
       customer,
-      bookings,
-      activeCurrency,
-      formatPrice: (amount) => formatPrice(amount, activeCurrency, rates)
+      tourBookings,
+      flightBookings,
+      formatPrice: res.locals.formatPrice,
+      activeCurrency: res.locals.activeCurrency
     });
   } catch (err) {
     next(err);
@@ -152,14 +153,12 @@ export async function getBrowseTours(req, res, next) {
   try {
     const packages = await getAllTourPackages();
     const activePackages = packages.filter(p => p.status === 'active');
-    const rates = await getExchangeRates();
-    const activeCurrency = req.session?.currency || 'USD';
 
     res.render('customer/tours', {
       title: 'Tour Packages',
       packages: activePackages,
-      activeCurrency,
-      formatPrice: (amount) => formatPrice(amount, activeCurrency, rates)
+      formatPrice: res.locals.formatPrice,
+      activeCurrency: res.locals.activeCurrency
     });
   } catch (err) {
     next(err);
@@ -168,20 +167,64 @@ export async function getBrowseTours(req, res, next) {
 
 export async function getTourDetail(req, res, next) {
   try {
-    const { getAllTourPackages } = await import('../models/index.js');
     const packages = await getAllTourPackages();
     const tour = packages.find(p => p.id === Number(req.params.id));
     if (!tour) return res.status(404).render('errors/404', { title: 'Tour Not Found' });
 
-    const rates = await getExchangeRates();
-    const activeCurrency = req.session?.currency || 'USD';
-
     res.render('customer/tour-detail', {
       title: tour.title,
       tour,
-      activeCurrency,
-      formatPrice: (amount) => formatPrice(amount, activeCurrency, rates)
+      formatPrice: res.locals.formatPrice,
+      activeCurrency: res.locals.activeCurrency
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getFlightRequest(req, res, next) {
+  try {
+    res.render('customer/flight-request', {
+      title: 'Request Flight Booking',
+      error: null,
+      form: {},
+      formatPrice: res.locals.formatPrice,
+      activeCurrency: res.locals.activeCurrency
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postFlightRequest(req, res, next) {
+  try {
+    const { origin, destination, departure_date, return_date, cabin_class, passengers, notes } = req.body;
+
+    if (!origin || !destination || !departure_date) {
+      return res.status(400).render('customer/flight-request', {
+        title: 'Request Flight Booking',
+        error: 'Origin, destination, and departure date are required.',
+        form: req.body,
+        formatPrice: res.locals.formatPrice,
+        activeCurrency: res.locals.activeCurrency
+      });
+    }
+
+    const customer = await findCustomerById(req.session.customer.id);
+    const booking = await createFlightBooking({
+      customer_id: customer.id,
+      airline: 'Pending Assignment',
+      flight_number: 'PENDING',
+      origin: origin.toUpperCase(),
+      destination: destination.toUpperCase(),
+      departure_date,
+      arrival_date: return_date || null,
+      cabin_class: cabin_class || 'Economy',
+      total_amount: 0,
+      created_by: customer.id
+    });
+
+    res.redirect('/account');
   } catch (err) {
     next(err);
   }

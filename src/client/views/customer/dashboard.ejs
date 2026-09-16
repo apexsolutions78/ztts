@@ -17,6 +17,8 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
     .account-nav .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #fff; }
     .account-nav .brand img { height: 36px; border-radius: 8px; }
@@ -31,9 +33,23 @@
       font-weight: 600;
       transition: all 0.2s;
     }
-    .account-nav .nav-links a:hover, .account-nav .nav-links a.active {
+    .account-nav .nav-links a:hover, .account-nav .nav-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .account-nav .nav-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .account-nav .currency-switcher select {
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: var(--bg-dark);
       color: #fff;
-      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--accent-gold);
+      cursor: pointer;
+    }
+    .account-nav .currency-switcher label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--accent-gold);
+      font-weight: 700;
     }
     .account-nav .user-info { display: flex; align-items: center; gap: 0.6rem; }
     .account-nav .user-info span { font-size: 0.85rem; color: #a0aec0; }
@@ -46,76 +62,74 @@
       font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
     }
     .account-nav .signout:hover { background: rgba(255,255,255,0.15); color: #fff; }
     .account-container { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; }
-    .account-grid { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; }
+    .account-grid { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; }
     .sidebar-card { border-radius: var(--radius-md); background: #fff; border: 1px solid var(--border-light); padding: 1.5rem; text-align: center; }
     .sidebar-card .avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
+      width: 72px; height: 72px; border-radius: 50%;
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      font-weight: 700;
-      margin: 0 auto 1rem;
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; font-weight: 700; margin: 0 auto 0.8rem;
     }
-    .sidebar-card h3 { font-size: 1.1rem; margin: 0 0 0.2rem; }
-    .sidebar-card .email { font-size: 0.82rem; color: var(--text-muted); }
-    .sidebar-card .member-since { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border-light); }
-    .sidebar-links { margin-top: 1rem; text-align: left; }
+    .sidebar-card h3 { font-size: 1rem; margin: 0 0 0.2rem; }
+    .sidebar-card .email { font-size: 0.8rem; color: var(--text-muted); }
+    .sidebar-card .member-since { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--border-light); }
+    .sidebar-links { margin-top: 0.8rem; text-align: left; }
     .sidebar-links a {
-      display: block;
-      padding: 0.6rem 0.8rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: all 0.2s;
+      display: block; padding: 0.55rem 0.8rem; color: var(--text-muted); text-decoration: none;
+      border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
     }
     .sidebar-links a:hover, .sidebar-links a.active { background: #f0f7f5; color: var(--primary); }
     .main-content .card { margin-bottom: 1.5rem; }
     .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border-light); }
-    .section-header h2 { font-size: 1.2rem; margin: 0; }
-    .booking-list { display: flex; flex-direction: column; gap: 0.8rem; }
-    .booking-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      background: #f8fcfa;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-light);
+    .section-header h2 { font-size: 1.15rem; margin: 0; }
+    .tabs { display: flex; gap: 0; margin-bottom: 1.2rem; border-bottom: 2px solid var(--border-light); }
+    .tabs button {
+      padding: 0.6rem 1.2rem; border: none; background: none; font-size: 0.85rem;
+      font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.2s;
     }
-    .booking-item .booking-info h4 { font-size: 0.95rem; margin: 0 0 0.2rem; }
-    .booking-item .booking-info p { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+    .tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tabs button:hover { color: var(--primary); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .booking-list { display: flex; flex-direction: column; gap: 0.7rem; }
+    .booking-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.9rem 1rem; background: #f8fcfa; border-radius: var(--radius-sm); border: 1px solid var(--border-light);
+    }
+    .booking-item .booking-info h4 { font-size: 0.92rem; margin: 0 0 0.2rem; }
+    .booking-item .booking-info p { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
     .booking-item .booking-meta { text-align: right; }
-    .booking-item .booking-meta .price { font-size: 1rem; font-weight: 700; color: var(--primary); }
-    .booking-item .booking-meta .status { font-size: 0.75rem; margin-top: 0.2rem; }
+    .booking-item .booking-meta .price { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+    .booking-item .booking-meta .status { font-size: 0.72rem; margin-top: 0.2rem; }
     .profile-form .form-group { margin-bottom: 1rem; }
     .profile-form label { display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem; }
     .profile-form .form-control {
-      width: 100%;
-      padding: 0.65rem 0.85rem;
-      border: 1.5px solid var(--border-light);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      font-family: inherit;
+      width: 100%; padding: 0.6rem 0.8rem; border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-sm); font-size: 0.88rem; font-family: inherit;
     }
     .profile-form .form-control:focus { outline: none; border-color: var(--primary); }
     .profile-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-    .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); }
-    .empty-state p { font-size: 0.9rem; }
+    .empty-state { text-align: center; padding: 1.5rem; color: var(--text-muted); }
+    .empty-state p { font-size: 0.88rem; }
     .empty-state a { color: var(--primary); font-weight: 600; text-decoration: none; }
+    .action-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .action-card {
+      display: flex; align-items: center; gap: 0.8rem; padding: 1rem;
+      background: linear-gradient(135deg, #f0f7f5, #e8f0ed); border-radius: var(--radius-md);
+      text-decoration: none; color: var(--text-main); border: 1px solid var(--border-light); transition: all 0.2s;
+    }
+    .action-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .action-card .icon { font-size: 1.8rem; }
+    .action-card .info h4 { font-size: 0.9rem; margin: 0 0 0.15rem; }
+    .action-card .info p { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
     @media (max-width: 768px) {
       .account-grid { grid-template-columns: 1fr; }
       .account-nav .nav-links { display: none; }
+      .action-cards { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -127,13 +141,27 @@
     </a>
     <ul class="nav-links">
       <li><a href="/account" class="active">Dashboard</a></li>
-      <li><a href="/account/tours">Browse Tours</a></li>
+      <li><a href="/account/tours">Tours</a></li>
+      <li><a href="/account/flights/request">Flights</a></li>
     </ul>
-    <div class="user-info">
-      <span><%= customer.full_name %></span>
-      <form method="POST" action="/account/logout" style="margin:0">
-        <button type="submit" class="signout">Sign Out</button>
-      </form>
+    <div class="nav-right">
+      <div class="currency-switcher">
+        <label>Currency:</label>
+        <select onchange="location.href='?currency=' + this.value">
+          <option value="PKR" <%= activeCurrency === 'PKR' ? 'selected' : '' %>>PKR (Rs)</option>
+          <option value="USD" <%= activeCurrency === 'USD' ? 'selected' : '' %>>USD ($)</option>
+          <option value="AED" <%= activeCurrency === 'AED' ? 'selected' : '' %>>AED</option>
+          <option value="EUR" <%= activeCurrency === 'EUR' ? 'selected' : '' %>>EUR</option>
+          <option value="GBP" <%= activeCurrency === 'GBP' ? 'selected' : '' %>>GBP</option>
+          <option value="SAR" <%= activeCurrency === 'SAR' ? 'selected' : '' %>>SAR</option>
+        </select>
+      </div>
+      <div class="user-info">
+        <span><%= customer.full_name %></span>
+        <form method="POST" action="/account/logout" style="margin:0">
+          <button type="submit" class="signout">Sign Out</button>
+        </form>
+      </div>
     </div>
   </nav>
 
@@ -149,41 +177,85 @@
         <div class="sidebar-links">
           <a href="/account" class="active">My Dashboard</a>
           <a href="/account/tours">Browse Tours</a>
+          <a href="/account/flights/request">Request Flight</a>
           <a href="#profile-section" onclick="document.getElementById('profile-section').scrollIntoView({behavior:'smooth'})">Edit Profile</a>
         </div>
       </div>
 
       <div class="main-content">
+        <div class="action-cards">
+          <a href="/account/tours" class="action-card">
+            <div class="icon">🌴</div>
+            <div class="info">
+              <h4>Browse Tours</h4>
+              <p>Explore curated travel packages</p>
+            </div>
+          </a>
+          <a href="/account/flights/request" class="action-card">
+            <div class="icon">✈</div>
+            <div class="info">
+              <h4>Request Flight</h4>
+              <p>Book flights worldwide</p>
+            </div>
+          </a>
+        </div>
+
         <div class="card">
           <div class="section-header">
             <h2>My Bookings</h2>
-            <a href="/account/tours" class="btn btn-primary btn-sm">Book a Tour</a>
           </div>
-          <% if (bookings && bookings.length > 0) { %>
-            <div class="booking-list">
-              <% bookings.forEach(b => { %>
-                <div class="booking-item">
-                  <div class="booking-info">
-                    <h4><%= b.tour_title %></h4>
-                    <p>Travel Date: <%= new Date(b.travel_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %> &middot; <%= b.total_travelers %> traveler<%= b.total_travelers > 1 ? 's' : '' %></p>
-                  </div>
-                  <div class="booking-meta">
-                    <div class="price"><%= formatPrice(b.total_amount) %></div>
-                    <div class="status">
-                      <span class="badge badge-<%= b.status === 'confirmed' ? 'confirmed' : b.status === 'cancelled' ? 'cancelled' : 'pending' %>">
-                        <%= b.status %>
-                      </span>
+          <div class="tabs">
+            <button class="active" onclick="switchTab('tours')">Tour Bookings</button>
+            <button onclick="switchTab('flights')">Flight Bookings</button>
+          </div>
+          <div class="tab-panel active" id="tab-tours">
+            <% if (tourBookings && tourBookings.length > 0) { %>
+              <div class="booking-list">
+                <% tourBookings.forEach(b => { %>
+                  <div class="booking-item">
+                    <div class="booking-info">
+                      <h4><%= b.tour_title %></h4>
+                      <p>Travel: <%= new Date(b.travel_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %> &middot; <%= b.total_travelers %> traveler<%= b.total_travelers > 1 ? 's' : '' %></p>
+                    </div>
+                    <div class="booking-meta">
+                      <div class="price"><%= formatPrice(b.total_amount) %></div>
+                      <div class="status">
+                        <span class="badge badge-<%= b.status === 'confirmed' ? 'confirmed' : b.status === 'cancelled' ? 'cancelled' : 'pending' %>"><%= b.status %></span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              <% }); %>
-            </div>
-          <% } else { %>
-            <div class="empty-state">
-              <p>No bookings yet.</p>
-              <p><a href="/account/tours">Browse our tour packages</a> to get started.</p>
-            </div>
-          <% } %>
+                <% }); %>
+              </div>
+            <% } else { %>
+              <div class="empty-state">
+                <p>No tour bookings yet. <a href="/account/tours">Browse tours</a> to get started.</p>
+              </div>
+            <% } %>
+          </div>
+          <div class="tab-panel" id="tab-flights">
+            <% if (flightBookings && flightBookings.length > 0) { %>
+              <div class="booking-list">
+                <% flightBookings.forEach(f => { %>
+                  <div class="booking-item">
+                    <div class="booking-info">
+                      <h4><%= f.origin %> → <%= f.destination %></h4>
+                      <p><%= f.airline %> &middot; <%= f.flight_number %> &middot; <%= f.cabin_class %> &middot; <%= new Date(f.departure_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+                    </div>
+                    <div class="booking-meta">
+                      <div class="price"><%= f.total_amount > 0 ? formatPrice(f.total_amount) : 'Pending' %></div>
+                      <div class="status">
+                        <span class="badge badge-<%= f.ticket_status === 'ticketed' ? 'ticketed' : f.ticket_status === 'confirmed' ? 'confirmed' : 'pending' %>"><%= f.ticket_status %></span>
+                      </div>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            <% } else { %>
+              <div class="empty-state">
+                <p>No flight bookings yet. <a href="/account/flights/request">Request a flight</a> to get started.</p>
+              </div>
+            <% } %>
+          </div>
         </div>
 
         <div class="card" id="profile-section">
@@ -215,5 +287,14 @@
       </div>
     </div>
   </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
 </body>
 </html>
