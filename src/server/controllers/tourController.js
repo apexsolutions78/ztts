@@ -166,7 +166,7 @@ export async function postBookTour(req, res, next) {
       action: 'CREATE_TOUR_BOOKING',
       entity_type: 'tour',
       entity_id: booking.id,
-      details: `Booked tour: ${pkg.title} for ${totalTravelers} traveler(s)`
+      details: `Booked tour: ${pkg.title} for ${total_travelers} traveler(s)`
     });
 
     // Auto-send notifications
