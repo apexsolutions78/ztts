@@ -36,7 +36,7 @@
 
         <div class="form-group">
           <label for="price_display">Price Per Person (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
-          <input type="number" step="0.01" id="price_display" name="price_display" placeholder="0.00" required class="form-control" oninput="convertPriceToUSD()">
+          <input type="number" step="0.000001" id="price_display" name="price_display" placeholder="0.00" required class="form-control" oninput="convertPriceToUSD()">
           <input type="hidden" id="price" name="price">
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">1 USD = ${exchangeRates[activeCurrency]?.rate || 1} ${activeCurrency}</div>
         </div>
@@ -71,7 +71,7 @@
 
       function convertPriceToUSD() {
         const localPrice = document.getElementById('price_display').value;
-        const usd = (Number(localPrice) / rate).toFixed(2);
+        const usd = (Number(localPrice) / rate).toFixed(6);
         document.getElementById('price').value = usd;
       }
     </script>

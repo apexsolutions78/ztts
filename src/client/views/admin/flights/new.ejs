@@ -125,7 +125,7 @@
       const rate = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
 
       function toUSD(localAmount) {
-        return (Number(localAmount) / rate).toFixed(2);
+        return (Number(localAmount) / rate).toFixed(6);
       }
 
       function togglePayFields() {
