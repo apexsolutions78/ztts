@@ -431,15 +431,21 @@ HF_API_KEY=
 - `GET /t/:token/qr` — Returns SVG QR code image for any portal link (cached 24h)
 
 ### QR Code Display Locations
-- **Customer portal view** (`portal/view.ejs`): QR code shown below e-ticket barcode section and tour booking section with "Scan to Open Portal" label
-- **Admin flight show** (`admin/flights/show.ejs`): QR code appears when "Share Portal Link" is clicked, alongside the share URL
+- **Customer portal view** (`portal/view.ejs`): Barcode replaced with QR + token verification section
+- **Admin flight show** (`admin/flights/show.ejs`): QR code auto-populates on page load if token exists; also appears in Share Portal Link box
+- **E-Ticket PDF** (`pdfService.js`): Barcode replaced with embedded QR code linking to portal
 
 ### Implementation
 - Server generates SVG QR codes via `QRCode.toString(url, { type: 'svg' })`
 - Portal URL encoded: `https://ztts.apexsol.pk/t/{token}`
 - SVG served with `Content-Type: image/svg+xml` and 24h cache header
-- Styled with brand primary color (#0b192c) on white background
-- 120px display size on portal, 130px on admin share box
+- PDF uses `QRCode.toDataURL()` for inline image embedding
+- `findPortalTokenByFlightBooking(id)` model function to look up existing tokens
+
+### Barcode Removal
+- Removed fake CSS barcode-lines from admin flight show page
+- Removed fake barcode from customer portal view
+- Replaced with QR codes in all three locations (admin, portal, PDF)
 
 ---
 
@@ -470,6 +476,59 @@ HF_API_KEY=
 5. Server receives USD amounts and stores them in the database
 6. Display functions convert USD back to active currency using exchange rates
 
+### EJS Template Literal Fix
+- **Problem**: Used `<%= %>` and `<%- %>` EJS tags inside template literal (`body: \`...\``) that was inside `<%- include() %>`. EJS parser got confused by nested tags.
+- **Fix**: Replaced all inner EJS tags with `${}` JavaScript template literal syntax in `flights/new.ejs`, `flights/show.ejs`, `tours/show.ejs`
+
+---
+
+## Enhanced Invoice PDF
+### Date: September 15, 2026
+
+### Problem
+- Invoice showed no customer details — just generic "Air Ticket" and fake tax breakdown (88%/8%/4% of total)
+- No booking reference, route, or dates on the invoice
+
+### Solution — Invoice PDF Now Includes
+- **Header**: Zahabia Travel & Tourism + TAX INVOICE
+- **Invoice info**: Invoice number, date, payment method
+- **Bill To section**: Customer name, passport, email, phone (in shaded box)
+- **Booking Details section**: Service type, PNR/reference, airline/tour name, route/destination, departure/travel date
+- **Line items**: Only shows base fare, taxes, agency fee if they were actually provided (not auto-calculated)
+- **Total amount** with payment status badge (paid/partial/unpaid)
+- **Transaction ID** reference
+
+### Invoice Breakdown Fix
+- **Before**: `addPayment` auto-calculated base_fare (88%), tax (8%), agency_fee (4%) — fake placeholder values
+- **Now**: Payment form has optional "Invoice Breakdown" section with Base Fare, Taxes, Agency Fee inputs
+- Operator enters actual values; if left blank, invoice shows just total amount
+- `addPayment` model stores provided values or NULL
+
+---
+
+## Customer Financial Ledger
+### Date: September 15, 2026
+
+### New Files
+- `src/client/views/admin/customers/ledger.ejs` — Customer ledger view
+
+### New Model Functions
+- `getCustomerLedger(customerId)` — Returns customer info, all bookings with paid/balance calc, all payments, totals
+- `findPortalTokenByFlightBooking(flightBookingId)` — Look up portal token by booking ID
+
+### New Route
+- `GET /admin/customers/:id/ledger` — Customer financial ledger page
+
+### Ledger Page Features
+- **Customer info card**: Name, email, phone, passport, customer since date
+- **Summary cards**: Total Bookings, Total Booking Value, Total Paid, Outstanding Balance
+- **Bookings table**: Type (Flight/Tour), reference, route/destination, date, total, paid, balance, status (Paid/Partial/Unpaid)
+- **Payment history table**: Date, invoice number, service, reference, method, amount, status
+- Accessible via "Financial Ledger" button on customer profile page
+
+### Finance Ledger Table Updated
+- Now shows **Customer Name** and **Service Details** (airline/route/tour name) instead of just tax breakdown columns
+
 ---
 
 ## Deployment — DirectAdmin Production Server
@@ -489,6 +548,8 @@ HF_API_KEY=
 4. **Login session fix**: `req.session.user` not persisting — resolved by trust proxy setting.
 5. **EJS syntax fix**: Portal view had raw JS template literal (`${tourBooking.total_travelers}`) inside EJS template — fixed to use EJS tags.
 6. **Route conflicts**: Payment API routes renamed to avoid path parameter conflicts with DELETE routes.
+7. **npm install required**: New `qrcode` package caused 503 on deploy until `npm install` was run on server.
+8. **EJS nested tags**: `<%= %>` inside template literal inside `<%- include() %>` broke parser. Fixed with `${}` syntax.
 
 ### Brand Assets
 - GIF/WebP logo files at project root served via `/brand` static route
@@ -514,13 +575,13 @@ HF_API_KEY=
 | M10 | Advanced Payment System | ✅ Complete | Sep 15, 2026 |
 
 ### Cumulative Statistics
-- **Files Created:** 26+
-- **Files Modified:** 40+
+- **Files Created:** 28+
+- **Files Modified:** 45+
 - **Dependencies Added:** 6 (nodemailer, pdfkit, multer, ollama, axios, qrcode)
-- **New Model Functions:** 18
-- **New Controller Functions:** 26
-- **New Routes:** 16
-- **New Views:** 11
+- **New Model Functions:** 20
+- **New Controller Functions:** 28
+- **New Routes:** 17
+- **New Views:** 12
 - **New Services:** 7 (emailService, whatsAppService, pdfService, aiRouter, qrService, upload middleware, currency middleware)
 - **CSS Responsive Breakpoints:** 3 (1100px, 860px, 480px)
 - **External JS Files:** 1 (chat.js)
@@ -534,20 +595,28 @@ HF_API_KEY=
 1. `a8264f2` — fix: payment API routes, response data mapping, and invoice breakdown
 2. `de01282` — feat: QR code generation for customer portal links
 3. `29de26a` — feat: currency-aware forms for flight and tour booking creation
+4. `7420ffa` — fix: EJS tags inside template literals causing 500 errors
+5. `fe6a9ae` — fix: auto-populate QR code on flight show page load if token exists
+6. `421fbc1` — feat: replace barcodes with QR codes across all views and PDF
+7. `0026b41` — feat: customer ledger + enhanced invoice PDF with full details
+8. `688b9c5` — fix: invoice breakdown uses actual values, not auto-calculated percentages
 
 ---
 
 ## Current Issues / Next Steps
 
-### Active
-- **503 on login after deploy** — App may have crashed after latest push. Need to check server logs.
-- **Payment API still loading** — Despite route fixes, the payment summary may still fail on production. Need to verify `getBookingPaymentSummary` works with MySQL data.
-- **Customer due tracking** — Need per-customer outstanding balance view across all bookings.
-- **Invoice breakdown** — PDF shows $0 for base fare/tax/fee when payments don't have those fields populated.
+### Resolved This Session
+- ✅ Payment API routes fixed (path conflicts)
+- ✅ QR codes replace barcodes everywhere
+- ✅ Currency-aware forms for booking and payment
+- ✅ Invoice PDF shows customer details, booking info, actual breakdown
+- ✅ Customer financial ledger page
+- ✅ EJS template literal parsing errors fixed
+- ✅ 503/500 errors from missing npm packages and nested EJS tags
 
 ### Potential Enhancements
 - Tour booking detail page (admin side) — Individual tour bookings don't have a show/edit page
 - Customer portal for tour bookings — Share QR code from admin tour booking list
-- Per-customer balance dashboard — Aggregate unpaid amounts across all bookings
-- Payment receipt PDF generation
+- Payment receipt PDF generation (separate from invoice)
 - Refund/partial payment workflows
+- Multi-payment split UI (pay half cash, half card on same booking)

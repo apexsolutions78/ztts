@@ -11,6 +11,7 @@ import {
   findTourBookingById,
   getAllTourBookings,
   createPortalToken,
+  findPortalTokenByTourBooking,
   addPayment,
   logAuditAction,
   logNotificationRecord
@@ -90,6 +91,28 @@ export async function viewTourDetail(req, res, next) {
       title: pkg.title,
       package: pkg,
       customers,
+      activeCurrency,
+      exchangeRates
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function viewTourBooking(req, res, next) {
+  try {
+    const booking = await findTourBookingById(req.params.id);
+    if (!booking) return res.status(404).render('errors/404', { title: 'Tour Booking Not Found' });
+
+    const pkg = await findTourPackageById(booking.tour_package_id);
+    const portalTokenRecord = await findPortalTokenByTourBooking(booking.id);
+    const { activeCurrency, exchangeRates } = res.locals;
+
+    res.render('admin/tours/booking', {
+      title: `Tour Booking: ${booking.tour_title}`,
+      booking,
+      package: pkg,
+      portalToken: portalTokenRecord ? portalTokenRecord.token : null,
       activeCurrency,
       exchangeRates
     });

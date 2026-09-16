@@ -71,7 +71,10 @@
                 <td><strong>${formatPrice(tb.total_amount)}</strong></td>
                 <td><span class="badge badge-${tb.status}">${tb.status}</span></td>
                 <td>
-                  ${tb.status !== 'cancelled' ? '<form method="post" action="/admin/tours/bookings/' + tb.id + '/cancel" style="margin: 0;" onsubmit="return confirm(\'Cancel this tour booking?\')"><button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Cancel</button></form>' : '<span class="muted">Cancelled</span>'}
+                  <div style="display: flex; gap: 0.4rem;">
+                    <a href="/admin/tours/bookings/${tb.id}" class="btn btn-primary btn-sm">View</a>
+                    ${tb.status !== 'cancelled' ? '<form method="post" action="/admin/tours/bookings/' + tb.id + '/cancel" style="margin: 0;" onsubmit="return confirm(\'Cancel this tour booking?\')"><button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Cancel</button></form>' : '<span class="muted">Cancelled</span>'}
+                  </div>
                 </td>
               </tr>
             `).join('') : '<tr><td colspan="7" class="muted">No tour reservations placed yet.</td></tr>'}
