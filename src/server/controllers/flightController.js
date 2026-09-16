@@ -394,7 +394,7 @@ export async function downloadETicketPDF(req, res, next) {
     if (!flight) return res.status(404).render('errors/404', { title: 'Flight Not Found' });
     const customer = await findCustomerById(flight.customer_id);
     const portalToken = await findPortalTokenByFlightBooking(flight.id);
-    generateETicketPDF(flight, customer, res, portalToken?.token);
+    generateETicketPDF(flight, customer, res, portalToken?.token, res.locals.activeCurrency, res.locals.exchangeRates);
   } catch (error) {
     next(error);
   }

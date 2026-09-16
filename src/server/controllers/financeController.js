@@ -83,7 +83,7 @@ export async function downloadInvoicePDF(req, res, next) {
     const ledger = await getFinancialLedger();
     const invoice = ledger.find(p => String(p.id) === String(req.params.id));
     if (!invoice) return res.status(404).render('errors/404', { title: 'Invoice Not Found' });
-    generateInvoicePDF(invoice, res);
+    generateInvoicePDF(invoice, res, res.locals.activeCurrency, res.locals.exchangeRates);
   } catch (error) {
     next(error);
   }

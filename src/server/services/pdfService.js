@@ -9,7 +9,18 @@ const BRAND = {
   light: '#f4f7f6'
 };
 
-export async function generateETicketPDF(flight, customer, res, portalToken) {
+function convertFromUSD(amountInUSD, activeCurrency, exchangeRates) {
+  const amt = Number(amountInUSD) || 0;
+  if (!activeCurrency || activeCurrency === 'USD') return { symbol: '$', formatted: `$${amt.toFixed(2)}` };
+  const rate = exchangeRates?.[activeCurrency];
+  if (!rate) return { symbol: '$', formatted: `$${amt.toFixed(2)}` };
+  const converted = amt * rate.rate;
+  const decimals = (activeCurrency === 'PKR' || activeCurrency === 'JPY') ? 0 : 2;
+  const formatted = rate.symbol + converted.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return { symbol: rate.symbol, formatted };
+}
+
+export async function generateETicketPDF(flight, customer, res, portalToken, activeCurrency, exchangeRates) {
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=E-Ticket_${flight.booking_ref}.pdf`);
@@ -56,7 +67,7 @@ export async function generateETicketPDF(flight, customer, res, portalToken) {
     ['Nationality', customer?.nationality || 'N/A'],
     ['Departure', new Date(flight.departure_date).toLocaleString()],
     ['Arrival', new Date(flight.arrival_date).toLocaleString()],
-    ['Total Fare', `$${Number(flight.total_amount).toFixed(2)}`],
+    ['Total Fare', convertFromUSD(flight.total_amount, activeCurrency, exchangeRates).formatted],
     ['Ticket Status', flight.ticket_status.toUpperCase()]
   ];
   details.forEach(([label, value]) => {
@@ -84,7 +95,7 @@ export async function generateETicketPDF(flight, customer, res, portalToken) {
   doc.end();
 }
 
-export function generateInvoicePDF(invoice, res) {
+export function generateInvoicePDF(invoice, res, activeCurrency, exchangeRates) {
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=Invoice_${invoice.invoice_no || invoice.id}.pdf`);
@@ -148,10 +159,10 @@ export function generateInvoicePDF(invoice, res) {
   const agencyFee = invoice.agency_fee != null ? Number(invoice.agency_fee) : null;
 
   const items = [];
-  if (baseFare != null) items.push(['Base Fare', `$${baseFare.toFixed(2)}`]);
-  if (taxAmount != null) items.push(['Taxes & Fees', `$${taxAmount.toFixed(2)}`]);
-  if (agencyFee != null) items.push(['Agency Service Fee', `$${agencyFee.toFixed(2)}`]);
-  if (items.length === 0) items.push(['Total Amount', `$${Number(invoice.amount).toFixed(2)}`]);
+  if (baseFare != null) items.push(['Base Fare', convertFromUSD(baseFare, activeCurrency, exchangeRates).formatted]);
+  if (taxAmount != null) items.push(['Taxes & Fees', convertFromUSD(taxAmount, activeCurrency, exchangeRates).formatted]);
+  if (agencyFee != null) items.push(['Agency Service Fee', convertFromUSD(agencyFee, activeCurrency, exchangeRates).formatted]);
+  if (items.length === 0) items.push(['Total Amount', convertFromUSD(invoice.amount, activeCurrency, exchangeRates).formatted]);
   items.forEach(([desc, amt]) => {
     doc.fontSize(10).fill(BRAND.dark).text(desc, 60, y, { width: 300 });
     doc.text(amt, 380, y, { width: 160, align: 'right' });
@@ -163,7 +174,7 @@ export function generateInvoicePDF(invoice, res) {
   doc.moveTo(50, y).lineTo(545, y).stroke(BRAND.muted);
   y += 10;
   doc.fontSize(14).font('Helvetica-Bold').fill(BRAND.primary).text('TOTAL AMOUNT', 60, y);
-  doc.fontSize(14).font('Helvetica-Bold').fill(BRAND.gold).text(`$${Number(invoice.amount).toFixed(2)}`, 380, y, { width: 160, align: 'right' });
+  doc.fontSize(14).font('Helvetica-Bold').fill(BRAND.gold).text(convertFromUSD(invoice.amount, activeCurrency, exchangeRates).formatted, 380, y, { width: 160, align: 'right' });
 
   // Payment status
   y += 30;
@@ -181,7 +192,7 @@ export function generateInvoicePDF(invoice, res) {
   doc.end();
 }
 
-export function generatePaymentReceiptPDF(payment, res) {
+export function generatePaymentReceiptPDF(payment, res, activeCurrency, exchangeRates) {
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=Receipt_${payment.invoice_no || payment.id}.pdf`);
@@ -242,7 +253,7 @@ export function generatePaymentReceiptPDF(payment, res) {
   y += 15;
   doc.roundedRect(50, y, 495, 60, 5).fill(BRAND.light);
   doc.fontSize(10).font('Helvetica-Bold').fill(BRAND.muted).text('AMOUNT PAID', 70, y + 10);
-  doc.fontSize(28).font('Helvetica-Bold').fill(BRAND.primary).text(`$${Number(payment.amount).toFixed(2)}`, 70, y + 28);
+  doc.fontSize(28).font('Helvetica-Bold').fill(BRAND.primary).text(convertFromUSD(payment.amount, activeCurrency, exchangeRates).formatted, 70, y + 28);
   doc.roundedRect(380, y + 15, 140, 30, 5).fill('#38a169');
   doc.fontSize(11).font('Helvetica-Bold').fill('#ffffff').text('PAID', 380, y + 22, { width: 140, align: 'center' });
 
@@ -256,17 +267,17 @@ export function generatePaymentReceiptPDF(payment, res) {
     y += 14;
     if (baseFare != null) {
       doc.fontSize(9).fill(BRAND.dark).text('Base Fare:', 60, y, { width: 120 });
-      doc.text(`$${baseFare.toFixed(2)}`, 180, y);
+      doc.text(convertFromUSD(baseFare, activeCurrency, exchangeRates).formatted, 180, y);
       y += 14;
     }
     if (taxAmount != null) {
       doc.fontSize(9).fill(BRAND.dark).text('Taxes & Fees:', 60, y, { width: 120 });
-      doc.text(`$${taxAmount.toFixed(2)}`, 180, y);
+      doc.text(convertFromUSD(taxAmount, activeCurrency, exchangeRates).formatted, 180, y);
       y += 14;
     }
     if (agencyFee != null) {
       doc.fontSize(9).fill(BRAND.dark).text('Agency Fee:', 60, y, { width: 120 });
-      doc.text(`$${agencyFee.toFixed(2)}`, 180, y);
+      doc.text(convertFromUSD(agencyFee, activeCurrency, exchangeRates).formatted, 180, y);
     }
   }
 

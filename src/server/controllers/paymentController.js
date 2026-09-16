@@ -168,7 +168,7 @@ export async function downloadPaymentReceipt(req, res, next) {
     const ledger = await getFinancialLedger();
     const payment = ledger.find(p => String(p.id) === String(paymentId));
     if (!payment) return res.status(404).render('errors/404', { title: 'Payment Not Found' });
-    generatePaymentReceiptPDF(payment, res);
+    generatePaymentReceiptPDF(payment, res, res.locals.activeCurrency, res.locals.exchangeRates);
   } catch (error) {
     next(error);
   }
