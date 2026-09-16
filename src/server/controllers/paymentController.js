@@ -5,8 +5,10 @@ import {
   deletePayment,
   findFlightBookingById,
   findTourBookingById,
+  getFinancialLedger,
   logAuditAction
 } from '../models/index.js';
+import { generatePaymentReceiptPDF } from '../services/pdfService.js';
 
 export async function getBookingPaymentsAPI(req, res, next) {
   try {
@@ -127,6 +129,18 @@ export async function postDeletePayment(req, res, next) {
 
     const summary = await getBookingPaymentSummary(removed.booking_type, removed.booking_id);
     res.json({ success: true, summary, message: 'Payment voided successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function downloadPaymentReceipt(req, res, next) {
+  try {
+    const { paymentId } = req.params;
+    const ledger = await getFinancialLedger();
+    const payment = ledger.find(p => String(p.id) === String(paymentId));
+    if (!payment) return res.status(404).render('errors/404', { title: 'Payment Not Found' });
+    generatePaymentReceiptPDF(payment, res);
   } catch (error) {
     next(error);
   }

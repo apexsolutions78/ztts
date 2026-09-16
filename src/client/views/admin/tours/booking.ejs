@@ -313,7 +313,7 @@
             '<td>' + (p.payment_reference || '-') + '</td>' +
             '<td><strong style="color: var(--primary);">' + fmtLocal(p.amount) + '</strong></td>' +
             '<td><span class="badge badge-' + p.payment_status + '">' + p.payment_status.toUpperCase() + '</span></td>' +
-            '<td><button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Void</button></td>' +
+            '<td><div style="display: flex; gap: 0.3rem;"><a href="/admin/payments/record/' + p.id + '/receipt" target="_blank" class="btn btn-sm btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Receipt</a><button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Void</button></div></td>' +
             '</tr>').join('');
         } catch (err) {
           console.error('Failed to load payments:', err);

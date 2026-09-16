@@ -180,3 +180,98 @@ export function generateInvoicePDF(invoice, res) {
 
   doc.end();
 }
+
+export function generatePaymentReceiptPDF(payment, res) {
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=Receipt_${payment.invoice_no || payment.id}.pdf`);
+  doc.pipe(res);
+
+  // Header
+  doc.rect(0, 0, 595.28, 80).fill(BRAND.dark);
+  doc.fontSize(20).fill('#ffffff').font('Helvetica-Bold').text('ZAHABIA TRAVEL & TOURISM', 50, 20);
+  doc.fontSize(10).fill(BRAND.gold).text('PAYMENT RECEIPT', 50, 48);
+
+  // Receipt number box
+  doc.roundedRect(420, 20, 130, 50, 5).fill(BRAND.gold);
+  doc.fontSize(9).fill(BRAND.dark).text('RECEIPT NO', 430, 28, { width: 110, align: 'center' });
+  doc.fontSize(14).font('Helvetica-Bold').text(payment.invoice_no || `RCP-${payment.id}`, 430, 45, { width: 110, align: 'center' });
+
+  // Receipt info
+  let y = 100;
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('RECEIPT DATE', 50, y);
+  doc.fontSize(10).fill(BRAND.dark).text(payment.created_at ? new Date(payment.created_at).toLocaleDateString() : new Date().toLocaleDateString(), 50, y + 14);
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('PAYMENT METHOD', 250, y);
+  doc.fontSize(10).fill(BRAND.dark).text((payment.payment_method || '').replace('_', ' ').toUpperCase(), 250, y + 14);
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('TRANSACTION ID', 420, y);
+  doc.fontSize(10).fill(BRAND.dark).text(payment.transaction_id || 'N/A', 420, y + 14);
+
+  // Customer info
+  y = 145;
+  doc.rect(50, y, 495, 45).fill('#f0f4f8');
+  y += 10;
+  doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('RECEIVED FROM', 60, y);
+  doc.fontSize(11).font('Helvetica-Bold').fill(BRAND.dark).text(payment.customer_name || 'Customer', 60, y + 14);
+  if (payment.customer_email || payment.customer_phone) {
+    const contact = [payment.customer_email, payment.customer_phone].filter(Boolean).join('  |  ');
+    doc.fontSize(9).fill(BRAND.muted).text(contact, 60, y + 30, { width: 480 });
+  }
+
+  // Payment details
+  y = 210;
+  doc.fontSize(10).font('Helvetica-Bold').fill(BRAND.primary).text('PAYMENT DETAILS', 50, y);
+  y += 18;
+  doc.moveTo(50, y).lineTo(545, y).stroke(BRAND.gold);
+  y += 10;
+
+  const details = [];
+  details.push(['Service Type', payment.booking_type === 'flight' ? 'Air Ticket' : 'Tour Package']);
+  if (payment.booking_ref) details.push(['Booking Reference', payment.booking_ref]);
+  if (payment.booking_title) details.push([payment.booking_type === 'flight' ? 'Airline' : 'Tour', payment.booking_title]);
+  if (payment.booking_route) details.push(['Route / Destination', payment.booking_route]);
+  if (payment.payment_reference) details.push(['Payment Reference', payment.payment_reference]);
+  if (payment.notes) details.push(['Notes', payment.notes]);
+
+  details.forEach(([label, value]) => {
+    doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text(label.toUpperCase(), 60, y, { width: 150 });
+    doc.fontSize(10).font('Helvetica').fill(BRAND.dark).text(value, 220, y, { width: 320 });
+    y += 16;
+  });
+
+  // Amount box
+  y += 15;
+  doc.roundedRect(50, y, 495, 60, 5).fill(BRAND.light);
+  doc.fontSize(10).font('Helvetica-Bold').fill(BRAND.muted).text('AMOUNT PAID', 70, y + 10);
+  doc.fontSize(28).font('Helvetica-Bold').fill(BRAND.primary).text(`$${Number(payment.amount).toFixed(2)}`, 70, y + 28);
+  doc.roundedRect(380, y + 15, 140, 30, 5).fill('#38a169');
+  doc.fontSize(11).font('Helvetica-Bold').fill('#ffffff').text('PAID', 380, y + 22, { width: 140, align: 'center' });
+
+  // Breakdown (if available)
+  const baseFare = payment.base_fare != null ? Number(payment.base_fare) : null;
+  const taxAmount = payment.tax_amount != null ? Number(payment.tax_amount) : null;
+  const agencyFee = payment.agency_fee != null ? Number(payment.agency_fee) : null;
+  if (baseFare != null || taxAmount != null || agencyFee != null) {
+    y += 75;
+    doc.fontSize(9).font('Helvetica-Bold').fill(BRAND.muted).text('BREAKDOWN', 60, y);
+    y += 14;
+    if (baseFare != null) {
+      doc.fontSize(9).fill(BRAND.dark).text('Base Fare:', 60, y, { width: 120 });
+      doc.text(`$${baseFare.toFixed(2)}`, 180, y);
+      y += 14;
+    }
+    if (taxAmount != null) {
+      doc.fontSize(9).fill(BRAND.dark).text('Taxes & Fees:', 60, y, { width: 120 });
+      doc.text(`$${taxAmount.toFixed(2)}`, 180, y);
+      y += 14;
+    }
+    if (agencyFee != null) {
+      doc.fontSize(9).fill(BRAND.dark).text('Agency Fee:', 60, y, { width: 120 });
+      doc.text(`$${agencyFee.toFixed(2)}`, 180, y);
+    }
+  }
+
+  // Footer
+  doc.fontSize(8).fill(BRAND.muted).text('This is a computer-generated receipt. For queries, contact support@zahabiatravel.com | Powered by Apex Solutions', 50, 760, { width: 495, align: 'center' });
+
+  doc.end();
+}
