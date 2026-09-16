@@ -32,6 +32,13 @@
         <div class="metric-value">${stats.flightBookingsCount}</div>
         <div class="metric-sub">${stats.ticketedFlightsCount} E-Tickets Issued</div>
       </div>
+      ${stats.pendingFlightRequests > 0 ? `
+      <div class="metric-card" style="border-left: 4px solid #d69e2e;">
+        <div class="metric-title">Pending Flight Requests</div>
+        <div class="metric-value" style="color: #d69e2e;">${stats.pendingFlightRequests}</div>
+        <div class="metric-sub"><a href="/admin/flights/requests?status=pending" style="color: #d69e2e; text-decoration: underline;">Review Now</a></div>
+      </div>
+      ` : ''}
       <div class="metric-card">
         <div class="metric-title">Active Tour Packages</div>
         <div class="metric-value">${stats.activeToursCount}</div>
@@ -91,6 +98,8 @@
           <h3>Quick Operator Actions</h3>
           <p class="muted" style="margin-bottom: 1rem; font-size: 0.85rem;">Fast-track frequent tasks:</p>
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            ${stats.pendingFlightRequests > 0 ? `<a href="/admin/flights/requests?status=pending" class="btn btn-sm" style="justify-content: flex-start; background: #fefcbf; color: #975a16; border: 1px solid #d69e2e;">⚠ ${stats.pendingFlightRequests} Pending Flight Request${stats.pendingFlightRequests > 1 ? 's' : ''}</a>` : ''}
+            <a href="/admin/flights/requests" class="btn btn-secondary" style="justify-content: flex-start;">📋 View Flight Requests</a>
             <a href="/admin/flights/new" class="btn btn-secondary" style="justify-content: flex-start;">✈ Issue Airline Ticket</a>
             <a href="/admin/customers" class="btn btn-secondary" style="justify-content: flex-start;">👤 Register New Customer</a>
             <a href="/admin/tours" class="btn btn-secondary" style="justify-content: flex-start;">🌴 Book Tour Reservation</a>

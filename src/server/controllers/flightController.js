@@ -14,7 +14,9 @@ import {
   searchFlights,
   generateCSV,
   addPayment,
-  findPortalTokenByFlightBooking
+  findPortalTokenByFlightBooking,
+  getFlightRequests,
+  getFlightRequestStats
 } from '../models/index.js';
 import { sendEmail, buildETicketEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildETicketWhatsAppMessage } from '../services/whatsAppService.js';
@@ -395,6 +397,67 @@ export async function downloadETicketPDF(req, res, next) {
     const customer = await findCustomerById(flight.customer_id);
     const portalToken = await findPortalTokenByFlightBooking(flight.id);
     generateETicketPDF(flight, customer, res, portalToken?.token, res.locals.activeCurrency, res.locals.exchangeRates);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listFlightRequests(req, res, next) {
+  try {
+    const { status } = req.query;
+    const requests = await getFlightRequests({ status: status || null });
+    const stats = await getFlightRequestStats();
+    const { activeCurrency, exchangeRates } = res.locals;
+    res.render('admin/flight-requests', {
+      title: 'Flight Requests',
+      requests,
+      stats,
+      statusFilter: status || null,
+      activeCurrency,
+      exchangeRates
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function confirmFlightRequest(req, res, next) {
+  try {
+    const { id } = req.params;
+    await updateFlightTicketStatus(id, 'confirmed');
+
+    const flight = await findFlightBookingById(id);
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'CONFIRM_FLIGHT_REQUEST',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Confirmed customer flight request PNR ${flight ? flight.booking_ref : id}`
+    });
+
+    res.redirect('/admin/flights/requests?confirmed=true');
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function cancelFlightRequest(req, res, next) {
+  try {
+    const { id } = req.params;
+    await updateFlightTicketStatus(id, 'cancelled');
+
+    const flight = await findFlightBookingById(id);
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'CANCEL_FLIGHT_REQUEST',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Cancelled customer flight request PNR ${flight ? flight.booking_ref : id}`
+    });
+
+    res.redirect('/admin/flights/requests?cancelled=true');
   } catch (error) {
     next(error);
   }

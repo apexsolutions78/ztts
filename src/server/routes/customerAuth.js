@@ -4,7 +4,7 @@ import {
   getLogin, postLogin, postLogout,
   getDashboard, postUpdateProfile,
   getBrowseTours, getTourDetail,
-  getFlightRequest, postFlightRequest
+  getFlightRequest, postFlightRequest, getFlightRequestSuccess
 } from '../controllers/customerAuthController.js';
 import { requireCustomerAuth } from '../middleware/customerAuth.js';
 
@@ -22,5 +22,6 @@ router.get('/tours', requireCustomerAuth, getBrowseTours);
 router.get('/tours/:id', requireCustomerAuth, getTourDetail);
 router.get('/flights/request', requireCustomerAuth, getFlightRequest);
 router.post('/flights/request', requireCustomerAuth, postFlightRequest);
+router.get('/flights/request/success', requireCustomerAuth, getFlightRequestSuccess);
 
 export default router;

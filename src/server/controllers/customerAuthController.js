@@ -1,5 +1,6 @@
-import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, getAllCustomers } from '../models/index.js';
+import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, getAllCustomers, logAuditAction } from '../models/index.js';
 import { hashPassword } from '../config/db.js';
+import { sendEmail } from '../services/emailService.js';
 
 export async function getRegister(req, res) {
   if (req.session?.customer) return res.redirect('/account');
@@ -196,6 +197,18 @@ export async function getFlightRequest(req, res, next) {
   }
 }
 
+export async function getFlightRequestSuccess(req, res, next) {
+  try {
+    res.render('customer/flight-request-success', {
+      title: 'Flight Request Submitted',
+      formatPrice: res.locals.formatPrice,
+      activeCurrency: res.locals.activeCurrency
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function postFlightRequest(req, res, next) {
   try {
     const { origin, destination, departure_date, return_date, cabin_class, passengers, notes } = req.body;
@@ -221,10 +234,53 @@ export async function postFlightRequest(req, res, next) {
       arrival_date: return_date || null,
       cabin_class: cabin_class || 'Economy',
       total_amount: 0,
-      created_by: customer.id
+      created_by: customer.id,
+      ticket_status: 'pending',
+      passengers: passengers || 1,
+      notes: notes || null
     });
 
-    res.redirect('/account');
+    await logAuditAction({
+      user_id: customer.id,
+      user_name: customer.full_name,
+      action: 'FLIGHT_REQUEST',
+      entity_type: 'flight',
+      entity_id: booking.id,
+      details: `Customer requested flight: ${origin.toUpperCase()} → ${destination.toUpperCase()} on ${departure_date} (${cabin_class || 'Economy'}, ${passengers || 1} pax)`
+    });
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'info@zahabiatravel.com';
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[Zahabia] New Flight Request - ${origin.toUpperCase()} → ${destination.toUpperCase()}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">NEW FLIGHT REQUEST</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p>A new flight request has been submitted by a customer.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Customer</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${customer.full_name} (${customer.email})</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${origin.toUpperCase()} → ${destination.toUpperCase()}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Departure</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${departure_date}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Return</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${return_date || 'One-way'}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Class</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${cabin_class || 'Economy'}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Passengers</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${passengers || 1}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Preferred Airline</td><td style="padding: 8px;">${notes || 'Any'}</td></tr>
+              </table>
+              <p style="margin-top: 15px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/admin/flights/${booking.id}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review Request in Admin</a></p>
+            </div>
+          </div>
+        `,
+        text: `New Flight Request\nCustomer: ${customer.full_name}\nRoute: ${origin.toUpperCase()} → ${destination.toUpperCase()}\nDeparture: ${departure_date}\nReturn: ${return_date || 'One-way'}\nClass: ${cabin_class || 'Economy'}\nPassengers: ${passengers || 1}\nPreferred Airline: ${notes || 'Any'}`
+      });
+    } catch (emailErr) {
+      console.error('[Flight Request] Admin notification email failed:', emailErr.message);
+    }
+
+    res.redirect('/account/flights/request/success');
   } catch (err) {
     next(err);
   }

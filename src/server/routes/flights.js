@@ -10,7 +10,10 @@ import {
   getEditFlightForm,
   postUpdateFlight,
   postDeleteFlight,
-  downloadETicketPDF
+  downloadETicketPDF,
+  listFlightRequests,
+  confirmFlightRequest,
+  cancelFlightRequest
 } from '../controllers/flightController.js';
 
 const router = Router();
@@ -19,6 +22,11 @@ router.get('/', listFlights);
 router.get('/export/csv', exportFlightsCSV);
 router.get('/new', getNewFlightForm);
 router.post('/new', postCreateFlight);
+
+router.get('/requests', listFlightRequests);
+router.post('/requests/:id/confirm', confirmFlightRequest);
+router.post('/requests/:id/cancel', cancelFlightRequest);
+
 router.get('/:id', viewFlightDetail);
 router.get('/:id/edit', getEditFlightForm);
 router.post('/:id/edit', postUpdateFlight);

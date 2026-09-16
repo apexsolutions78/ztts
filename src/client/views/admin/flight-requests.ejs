@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <p class="eyebrow">Operations</p>
+        <h1>Flight Requests from Customers</h1>
+        <p class="muted">Review and action flight booking requests submitted by registered customers.</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="/admin/flights" class="btn btn-secondary">All Flights</a>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+      <a href="/admin/flight-requests" class="btn ${!statusFilter ? 'btn-primary' : 'btn-secondary'} btn-sm">All (${stats.total})</a>
+      <a href="/admin/flight-requests?status=pending" class="btn ${statusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="${statusFilter === 'pending' ? 'background: #d69e2e; color: #fff;' : ''}">Pending (${stats.pending})</a>
+      <a href="/admin/flight-requests?status=confirmed" class="btn ${statusFilter === 'confirmed' ? 'btn-primary' : 'btn-secondary'} btn-sm">Confirmed (${stats.confirmed})</a>
+      <a href="/admin/flight-requests?status=ticketed" class="btn ${statusFilter === 'ticketed' ? 'btn-primary' : 'btn-secondary'} btn-sm">Ticketed (${stats.ticketed})</a>
+      <a href="/admin/flight-requests?status=cancelled" class="btn ${statusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="${statusFilter === 'cancelled' ? 'background: #e53e3e; color: #fff;' : ''}">Cancelled (${stats.cancelled})</a>
+    </div>
+
+    <div class="card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>PNR / Ref</th>
+              <th>Customer</th>
+              <th>Route</th>
+              <th>Travel Date</th>
+              <th>Class</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${requests.length > 0 ? requests.map(r => `
+              <tr>
+                <td><strong style="font-family: var(--font-heading); color: var(--primary);">${r.booking_ref}</strong></td>
+                <td>
+                  <strong>${r.customer_name || 'N/A'}</strong>
+                  ${r.customer_email ? '<br><span class="muted">' + r.customer_email + '</span>' : ''}
+                </td>
+                <td><strong>${r.origin}</strong> → <strong>${r.destination}</strong></td>
+                <td>${new Date(r.departure_date).toLocaleDateString()}${r.arrival_date ? '<br><span class="muted">Return: ' + new Date(r.arrival_date).toLocaleDateString() + '</span>' : '<br><span class="muted">One-way</span>'}</td>
+                <td>${r.cabin_class}</td>
+                <td><span class="badge badge-${r.ticket_status}">${r.ticket_status}</span></td>
+                <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                <td>
+                  <a href="/admin/flights/${r.id}" class="btn btn-primary btn-sm">Review</a>
+                  ${r.ticket_status === 'pending' ? `
+                    <form method="post" action="/admin/flight-requests/${r.id}/confirm" style="display: inline;">
+                      <button type="submit" class="btn btn-sm" style="background: #38a169; color: #fff;">Confirm</button>
+                    </form>
+                    <form method="post" action="/admin/flight-requests/${r.id}/cancel" style="display: inline;" onsubmit="return confirm('Cancel this request?')">
+                      <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Cancel</button>
+                    </form>
+                  ` : ''}
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="8" class="muted" style="text-align: center; padding: 2rem;">No flight requests found.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` }) %>
+</body>
+</html>

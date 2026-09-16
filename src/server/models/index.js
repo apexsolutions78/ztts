@@ -196,15 +196,16 @@ export async function findFlightBookingById(id) {
 
 export async function createFlightBooking({
   customer_id, airline, flight_number, origin, destination,
-  departure_date, arrival_date, cabin_class = 'Economy', total_amount = 0, created_by = 1
+  departure_date, arrival_date, cabin_class = 'Economy', total_amount = 0, created_by = 1,
+  ticket_status = 'confirmed', passengers = null, notes = null
 }) {
   const booking_ref = 'ZHB-' + Math.floor(1000 + Math.random() * 9000);
   if (isUsingMySQL()) {
     const [result] = await pool.query(
       `INSERT INTO flight_bookings 
        (booking_ref, customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, ticket_status, total_amount, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)`,
-      [booking_ref, customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount, created_by]
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [booking_ref, customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, ticket_status, total_amount, created_by]
     );
     return { id: result.insertId, booking_ref };
   }
@@ -221,9 +222,11 @@ export async function createFlightBooking({
     departure_date,
     arrival_date,
     cabin_class,
-    ticket_status: 'confirmed',
+    ticket_status,
     total_amount: Number(total_amount),
     created_by: Number(created_by),
+    passengers: passengers ? Number(passengers) : null,
+    notes: notes || null,
     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
   };
   memoryStore.flight_bookings.push(newBooking);
@@ -514,6 +517,7 @@ export async function getDashboardStats() {
     ticketedFlightsCount,
     activeToursCount,
     customersCount: customers.length,
+    pendingFlightRequests: flights.filter(f => f.ticket_status === 'pending').length,
     recentFlights: flights.slice(0, 5),
     recentTourBookings: tourBookings.slice(0, 5)
   };
@@ -824,6 +828,48 @@ export function getFlightLiveStatus(flight) {
     return { status: 'CHECK-IN OPEN', statusClass: 'active', gate: 'C05', terminal: '2', baggage: 'TBA' };
   }
   return { status: 'ON TIME / SCHEDULED', statusClass: 'ticketed', gate: 'TBA', terminal: '3', baggage: 'TBA' };
+}
+
+export async function getFlightRequests({ status } = {}) {
+  if (isUsingMySQL()) {
+    let query = `
+      SELECT fb.*, c.full_name AS customer_name, c.email AS customer_email, c.phone AS customer_phone
+      FROM flight_bookings fb
+      LEFT JOIN customers c ON fb.customer_id = c.id
+    `;
+    const params = [];
+    if (status) {
+      query += ' WHERE fb.ticket_status = ?';
+      params.push(status);
+    }
+    query += ' ORDER BY fb.created_at DESC';
+    const [rows] = await pool.query(query, params);
+    return rows;
+  }
+  let bookings = memoryStore.flight_bookings.map(fb => {
+    const cust = memoryStore.customers.find(c => c.id === fb.customer_id) || {};
+    return {
+      ...fb,
+      customer_name: cust.full_name || fb.customer_name || 'Guest',
+      customer_email: cust.email || null,
+      customer_phone: cust.phone || null
+    };
+  });
+  if (status) {
+    bookings = bookings.filter(b => b.ticket_status === status);
+  }
+  return bookings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+export async function getFlightRequestStats() {
+  const all = await getFlightRequests();
+  return {
+    total: all.length,
+    pending: all.filter(f => f.ticket_status === 'pending').length,
+    confirmed: all.filter(f => f.ticket_status === 'confirmed').length,
+    ticketed: all.filter(f => f.ticket_status === 'ticketed').length,
+    cancelled: all.filter(f => f.ticket_status === 'cancelled').length
+  };
 }
 
 // --- ADVANCED SEARCH & CSV EXPORT HELPERS ---
