@@ -47,9 +47,8 @@ export async function getNewTourForm(req, res) {
 
 export async function postCreateTour(req, res, next) {
   try {
-    const { title, destination, duration_days, price, price_usd, description, image_url } = req.body;
-    const finalPrice = price_usd ? Number(price_usd) : Number(price);
-    if (!title || !destination || !finalPrice) {
+    const { title, destination, duration_days, price, description, image_url } = req.body;
+    if (!title || !destination || !price) {
       const { activeCurrency, exchangeRates } = res.locals;
       return res.status(400).render('admin/tours/new', {
         title: 'Create Tour Package',
@@ -70,7 +69,7 @@ export async function postCreateTour(req, res, next) {
       title,
       destination,
       duration_days: duration_days || 1,
-      price: finalPrice,
+      price: Number(price),
       description,
       image_url: finalImageUrl
     });
@@ -234,9 +233,8 @@ export async function getEditTourForm(req, res, next) {
 export async function postUpdateTour(req, res, next) {
   try {
     const { id } = req.params;
-    const { title, destination, duration_days, price, price_usd, description, image_url, status } = req.body;
-    const finalPrice = price_usd ? Number(price_usd) : Number(price);
-    if (!title || !destination || !finalPrice) {
+    const { title, destination, duration_days, price, description, image_url, status } = req.body;
+    if (!title || !destination || !price) {
       const pkg = await findTourPackageById(id);
       const { activeCurrency, exchangeRates } = res.locals;
       return res.status(400).render('admin/tours/edit', {
@@ -255,7 +253,7 @@ export async function postUpdateTour(req, res, next) {
       finalImageUrl = '/static/img/default_tour.jpg';
     }
 
-    await updateTourPackage(id, { title, destination, duration_days, price: finalPrice, description, image_url: finalImageUrl, status });
+    await updateTourPackage(id, { title, destination, duration_days, price: Number(price), description, image_url: finalImageUrl, status });
 
     await logAuditAction({
       user_id: req.session.user.id,

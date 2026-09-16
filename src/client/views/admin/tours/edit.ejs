@@ -36,9 +36,9 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="price">Price Per Person (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
-            <input type="number" step="0.01" id="price" name="price" value="${(package.price * (exchangeRates[activeCurrency]?.rate || 1)).toFixed(2)}" required class="form-control">
-            <input type="hidden" id="price_usd" name="price_usd" value="${package.price}">
+            <label for="price_display">Price Per Person (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
+            <input type="number" step="0.01" id="price_display" value="${(package.price * (exchangeRates[activeCurrency]?.rate || 1)).toFixed(2)}" required class="form-control" oninput="convertPriceToUSD()">
+            <input type="hidden" id="price" name="price" value="${package.price}">
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">1 USD = ${exchangeRates[activeCurrency]?.rate || 1} ${activeCurrency}</div>
           </div>
           <div class="form-group">
@@ -88,14 +88,11 @@
       const ACTIVE_CURRENCY = '${activeCurrency}';
       const rate = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
 
-      function toUSD(localAmount) {
-        return (Number(localAmount) / rate).toFixed(2);
+      function convertPriceToUSD() {
+        const localPrice = document.getElementById('price_display').value;
+        const usd = (Number(localPrice) / rate).toFixed(2);
+        document.getElementById('price').value = usd;
       }
-
-      document.querySelector('form').addEventListener('submit', function() {
-        const localPrice = document.getElementById('price').value;
-        if (localPrice) document.getElementById('price_usd').value = toUSD(localPrice);
-      });
     </script>
   ` }) %>
 </body>
