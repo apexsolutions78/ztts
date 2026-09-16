@@ -37,17 +37,24 @@ export async function listTours(req, res, next) {
 }
 
 export async function getNewTourForm(req, res) {
+  const { activeCurrency, exchangeRates } = res.locals;
   res.render('admin/tours/new', {
-    title: 'Create Tour Package'
+    title: 'Create Tour Package',
+    activeCurrency,
+    exchangeRates
   });
 }
 
 export async function postCreateTour(req, res, next) {
   try {
-    const { title, destination, duration_days, price, description, image_url } = req.body;
-    if (!title || !destination || !price) {
+    const { title, destination, duration_days, price, price_usd, description, image_url } = req.body;
+    const finalPrice = price_usd ? Number(price_usd) : Number(price);
+    if (!title || !destination || !finalPrice) {
+      const { activeCurrency, exchangeRates } = res.locals;
       return res.status(400).render('admin/tours/new', {
         title: 'Create Tour Package',
+        activeCurrency,
+        exchangeRates,
         error: 'Title, destination, and price are required.'
       });
     }
@@ -63,7 +70,7 @@ export async function postCreateTour(req, res, next) {
       title,
       destination,
       duration_days: duration_days || 1,
-      price,
+      price: finalPrice,
       description,
       image_url: finalImageUrl
     });
@@ -212,9 +219,12 @@ export async function getEditTourForm(req, res, next) {
   try {
     const pkg = await findTourPackageById(req.params.id);
     if (!pkg) return res.status(404).render('errors/404', { title: 'Tour Package Not Found' });
+    const { activeCurrency, exchangeRates } = res.locals;
     res.render('admin/tours/edit', {
       title: `Edit: ${pkg.title}`,
-      package: pkg
+      package: pkg,
+      activeCurrency,
+      exchangeRates
     });
   } catch (error) {
     next(error);
@@ -224,12 +234,16 @@ export async function getEditTourForm(req, res, next) {
 export async function postUpdateTour(req, res, next) {
   try {
     const { id } = req.params;
-    const { title, destination, duration_days, price, description, image_url, status } = req.body;
-    if (!title || !destination || !price) {
+    const { title, destination, duration_days, price, price_usd, description, image_url, status } = req.body;
+    const finalPrice = price_usd ? Number(price_usd) : Number(price);
+    if (!title || !destination || !finalPrice) {
       const pkg = await findTourPackageById(id);
+      const { activeCurrency, exchangeRates } = res.locals;
       return res.status(400).render('admin/tours/edit', {
         title: `Edit: ${pkg?.title}`,
         package: { ...pkg, ...req.body, id },
+        activeCurrency,
+        exchangeRates,
         error: 'Title, destination, and price are required.'
       });
     }
@@ -241,7 +255,7 @@ export async function postUpdateTour(req, res, next) {
       finalImageUrl = '/static/img/default_tour.jpg';
     }
 
-    await updateTourPackage(id, { title, destination, duration_days, price, description, image_url: finalImageUrl, status });
+    await updateTourPackage(id, { title, destination, duration_days, price: finalPrice, description, image_url: finalImageUrl, status });
 
     await logAuditAction({
       user_id: req.session.user.id,
