@@ -91,6 +91,27 @@ export async function postCreateTour(req, res, next) {
       image_url: finalImageUrl
     });
 
+    // Create date ranges if provided
+    const drLabels = req.body.dr_label || [];
+    const drStarts = req.body.dr_start || [];
+    const drEnds = req.body.dr_end || [];
+    const drCaps = req.body.dr_capacity || [];
+    const labels = Array.isArray(drLabels) ? drLabels : [drLabels];
+    const starts = Array.isArray(drStarts) ? drStarts : [drStarts];
+    const ends = Array.isArray(drEnds) ? drEnds : [drEnds];
+    const caps = Array.isArray(drCaps) ? drCaps : [drCaps];
+    for (let i = 0; i < labels.length; i++) {
+      if (labels[i] && starts[i] && ends[i]) {
+        await createDateRange({
+          tour_package_id: pkg.id,
+          label: labels[i],
+          start_date: starts[i],
+          end_date: ends[i],
+          max_capacity: caps[i] || null
+        });
+      }
+    }
+
     await logAuditAction({
       user_id: req.session.user.id,
       user_name: req.session.user.name,
@@ -247,10 +268,12 @@ export async function getEditTourForm(req, res, next) {
   try {
     const pkg = await findTourPackageById(req.params.id);
     if (!pkg) return res.status(404).render('errors/404', { title: 'Tour Package Not Found' });
+    const dateRanges = await getDateRangesByTourId(pkg.id);
     const { activeCurrency, exchangeRates } = res.locals;
     res.render('admin/tours/edit', {
       title: `Edit: ${pkg.title}`,
       package: pkg,
+      dateRanges,
       activeCurrency,
       exchangeRates
     });
@@ -283,6 +306,27 @@ export async function postUpdateTour(req, res, next) {
     }
 
     await updateTourPackage(id, { title, destination, duration_days, price: Number(price), description, image_url: finalImageUrl, status });
+
+    // Create new date ranges if provided
+    const drLabels = req.body.dr_label || [];
+    const drStarts = req.body.dr_start || [];
+    const drEnds = req.body.dr_end || [];
+    const drCaps = req.body.dr_capacity || [];
+    const labels = Array.isArray(drLabels) ? drLabels : [drLabels];
+    const starts = Array.isArray(drStarts) ? drStarts : [drStarts];
+    const ends = Array.isArray(drEnds) ? drEnds : [drEnds];
+    const caps = Array.isArray(drCaps) ? drCaps : [drCaps];
+    for (let i = 0; i < labels.length; i++) {
+      if (labels[i] && starts[i] && ends[i]) {
+        await createDateRange({
+          tour_package_id: id,
+          label: labels[i],
+          start_date: starts[i],
+          end_date: ends[i],
+          max_capacity: caps[i] || null
+        });
+      }
+    }
 
     await logAuditAction({
       user_id: req.session.user.id,

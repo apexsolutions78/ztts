@@ -57,6 +57,33 @@
           <textarea id="description" name="description" rows="4" placeholder="Describe hotel accommodation, inclusions, guided tours, and dining..." class="form-control"></textarea>
         </div>
 
+        <!-- Confirmed Groups / Date Ranges -->
+        <div style="margin-top: 1.5rem; padding: 1.25rem; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+          <h3 style="margin-bottom: 0.5rem;">Confirmed Groups (Date Ranges)</h3>
+          <p class="muted" style="margin-bottom: 1rem; font-size: 0.85rem;">Add departure dates for this tour. Customers will select from these when booking.</p>
+          <div id="dateRangeRows">
+            <div class="date-range-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem; align-items: end;">
+              <div>
+                <label style="font-size: 0.78rem; font-weight: 600;">Label</label>
+                <input type="text" name="dr_label[]" class="form-control" placeholder="e.g. First group">
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; font-weight: 600;">Start Date</label>
+                <input type="date" name="dr_start[]" class="form-control">
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; font-weight: 600;">End Date</label>
+                <input type="date" name="dr_end[]" class="form-control">
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; font-weight: 600;">Max</label>
+                <input type="number" name="dr_capacity[]" class="form-control" min="1" placeholder="∞" style="width: 70px;">
+              </div>
+            </div>
+          </div>
+          <button type="button" onclick="addDateRangeRow()" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem;">+ Add Another Group</button>
+        </div>
+
         <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
           <button type="submit" class="btn btn-accent">Publish Tour Package</button>
           <a href="/admin/tours" class="btn btn-secondary">Cancel</a>
@@ -73,6 +100,20 @@
         const localPrice = document.getElementById('price_display').value;
         const usd = (Number(localPrice) / rate).toFixed(6);
         document.getElementById('price').value = usd;
+      }
+
+      let drIndex = 1;
+      function addDateRangeRow() {
+        const container = document.getElementById('dateRangeRows');
+        const row = document.createElement('div');
+        row.className = 'date-range-row';
+        row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem; align-items: end;';
+        row.innerHTML = '<div><input type="text" name="dr_label[]" class="form-control" placeholder="e.g. Second group"></div>' +
+          '<div><input type="date" name="dr_start[]" class="form-control"></div>' +
+          '<div><input type="date" name="dr_end[]" class="form-control"></div>' +
+          '<div><input type="number" name="dr_capacity[]" class="form-control" min="1" placeholder="∞" style="width: 70px;"></div>';
+        container.appendChild(row);
+        drIndex++;
       }
     </script>
   ` }) %>
