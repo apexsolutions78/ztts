@@ -271,7 +271,8 @@ export const memoryStore = {
     }
   ],
   group_tours: [],
-  group_milestones: []
+  group_milestones: [],
+  tour_date_ranges: []
 };
 
 

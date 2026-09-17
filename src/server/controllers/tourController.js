@@ -27,7 +27,11 @@ import {
   getMilestonesByGroupId,
   getMilestoneById,
   updateMilestone,
-  deleteMilestone
+  deleteMilestone,
+  createDateRange,
+  getDateRangesByTourId,
+  getDateRangeById,
+  deleteDateRange
 } from '../models/index.js';
 import { sendEmail, buildTourConfirmationEmail, buildGroupTourNotificationEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildTourConfirmationWhatsAppMessage } from '../services/whatsAppService.js';
@@ -107,12 +111,14 @@ export async function viewTourDetail(req, res, next) {
     const pkg = await findTourPackageById(req.params.id);
     if (!pkg) return res.status(404).render('errors/404', { title: 'Tour Package Not Found' });
     const customers = await getAllCustomers();
+    const dateRanges = await getDateRangesByTourId(pkg.id);
     const { activeCurrency, exchangeRates } = res.locals;
 
     res.render('admin/tours/show', {
       title: pkg.title,
       package: pkg,
       customers,
+      dateRanges,
       activeCurrency,
       exchangeRates
     });
@@ -128,12 +134,14 @@ export async function viewTourBooking(req, res, next) {
 
     const pkg = await findTourPackageById(booking.tour_package_id);
     const portalTokenRecord = await findPortalTokenByTourBooking(booking.id);
+    const dateRange = booking.tour_date_range_id ? await getDateRangeById(booking.tour_date_range_id) : null;
     const { activeCurrency, exchangeRates } = res.locals;
 
     res.render('admin/tours/booking', {
       title: `Tour Booking: ${booking.tour_title}`,
       booking,
       package: pkg,
+      dateRange,
       portalToken: portalTokenRecord ? portalTokenRecord.token : null,
       activeCurrency,
       exchangeRates
@@ -145,17 +153,25 @@ export async function viewTourBooking(req, res, next) {
 
 export async function postBookTour(req, res, next) {
   try {
-    const { tour_package_id, customer_id, travel_date, total_travelers, pay_now, pay_amount, pay_amount_usd, pay_reference } = req.body;
+    const { tour_package_id, customer_id, travel_date, total_travelers, tour_date_range_id, pay_now, pay_amount, pay_amount_usd, pay_reference } = req.body;
     const pkg = await findTourPackageById(tour_package_id);
     if (!pkg) return res.status(404).json({ error: 'Package not found' });
+
+    // Resolve travel date from date range if provided
+    let resolvedDate = travel_date;
+    if (tour_date_range_id) {
+      const dateRange = await getDateRangeById(tour_date_range_id);
+      if (dateRange) resolvedDate = dateRange.start_date;
+    }
 
     const totalAmount = pkg.price * (Number(total_travelers) || 1);
     const booking = await createTourBooking({
       tour_package_id,
       customer_id,
-      travel_date,
+      travel_date: resolvedDate,
       total_travelers,
-      total_amount: totalAmount
+      total_amount: totalAmount,
+      tour_date_range_id: tour_date_range_id || null
     });
 
     // Record initial payment if provided
@@ -645,6 +661,61 @@ export async function postToggleMilestone(req, res, next) {
     });
 
     res.redirect(`/admin/tours/group/${groupId}?milestoneToggled=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postAddDateRange(req, res, next) {
+  try {
+    const { id: tourPackageId } = req.params;
+    const pkg = await findTourPackageById(tourPackageId);
+    if (!pkg) return res.status(404).render('errors/404', { title: 'Tour Package Not Found' });
+
+    const { label, start_date, end_date, max_capacity } = req.body;
+    if (!label || !start_date || !end_date) return res.redirect(`/admin/tours/${tourPackageId}?error=Label, start date and end date are required`);
+
+    await createDateRange({
+      tour_package_id: tourPackageId,
+      label,
+      start_date,
+      end_date,
+      max_capacity: max_capacity || null
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'ADD_DATE_RANGE',
+      entity_type: 'tour_date_range',
+      entity_id: tourPackageId,
+      details: `Added date range to ${pkg.title}: ${label} (${start_date} - ${end_date})`
+    });
+
+    res.redirect(`/admin/tours/${tourPackageId}?dateRangeAdded=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postDeleteDateRange(req, res, next) {
+  try {
+    const { tourId, rangeId } = req.params;
+    const pkg = await findTourPackageById(tourId);
+    if (!pkg) return res.status(404).render('errors/404', { title: 'Tour Package Not Found' });
+
+    await deleteDateRange(rangeId);
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'DELETE_DATE_RANGE',
+      entity_type: 'tour_date_range',
+      entity_id: rangeId,
+      details: `Deleted date range from ${pkg.title}`
+    });
+
+    res.redirect(`/admin/tours/${tourId}?dateRangeDeleted=true`);
   } catch (error) {
     next(error);
   }

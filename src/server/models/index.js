@@ -351,6 +351,62 @@ export async function deleteTourPackage(id) {
   return true;
 }
 
+// --- TOUR DATE RANGES MODEL ---
+export async function createDateRange({ tour_package_id, label, start_date, end_date, max_capacity = null }) {
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      'INSERT INTO tour_date_ranges (tour_package_id, label, start_date, end_date, max_capacity) VALUES (?, ?, ?, ?, ?)',
+      [tour_package_id, label, start_date, end_date, max_capacity]
+    );
+    return { id: result.insertId, label, start_date, end_date };
+  }
+  const newRange = {
+    id: memoryStore.tour_date_ranges.length + 1,
+    tour_package_id: Number(tour_package_id),
+    label,
+    start_date,
+    end_date,
+    max_capacity: max_capacity ? Number(max_capacity) : null,
+    current_bookings: 0,
+    status: 'open',
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.tour_date_ranges.push(newRange);
+  return newRange;
+}
+
+export async function getDateRangesByTourId(tourPackageId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM tour_date_ranges WHERE tour_package_id = ? ORDER BY start_date ASC',
+      [tourPackageId]
+    );
+    return rows;
+  }
+  return memoryStore.tour_date_ranges
+    .filter(r => r.tour_package_id === Number(tourPackageId))
+    .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+}
+
+export async function getDateRangeById(id) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM tour_date_ranges WHERE id = ?', [id]);
+    return rows[0] || null;
+  }
+  return memoryStore.tour_date_ranges.find(r => r.id === Number(id)) || null;
+}
+
+export async function deleteDateRange(id) {
+  if (isUsingMySQL()) {
+    await pool.query('DELETE FROM tour_date_ranges WHERE id = ?', [id]);
+    return true;
+  }
+  const idx = memoryStore.tour_date_ranges.findIndex(r => r.id === Number(id));
+  if (idx === -1) return false;
+  memoryStore.tour_date_ranges.splice(idx, 1);
+  return true;
+}
+
 // --- TOUR BOOKINGS MODEL ---
 export async function getAllTourBookings() {
   if (isUsingMySQL()) {
@@ -374,11 +430,11 @@ export async function getAllTourBookings() {
   });
 }
 
-export async function createTourBooking({ tour_package_id, customer_id, travel_date, total_travelers, total_amount }) {
+export async function createTourBooking({ tour_package_id, customer_id, travel_date, total_travelers, total_amount, tour_date_range_id = null }) {
   if (isUsingMySQL()) {
     const [result] = await pool.query(
-      'INSERT INTO tour_bookings (tour_package_id, customer_id, travel_date, total_travelers, total_amount, status) VALUES (?, ?, ?, ?, ?, "confirmed")',
-      [tour_package_id, customer_id, travel_date, total_travelers, total_amount]
+      'INSERT INTO tour_bookings (tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, "confirmed")',
+      [tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_amount]
     );
     return { id: result.insertId };
   }
@@ -387,6 +443,7 @@ export async function createTourBooking({ tour_package_id, customer_id, travel_d
   const newBooking = {
     id: memoryStore.tour_bookings.length + 1,
     tour_package_id: Number(tour_package_id),
+    tour_date_range_id: tour_date_range_id ? Number(tour_date_range_id) : null,
     tour_title: pkg ? pkg.title : 'Tour Package',
     customer_id: Number(customer_id),
     customer_name: cust ? cust.full_name : 'Customer',

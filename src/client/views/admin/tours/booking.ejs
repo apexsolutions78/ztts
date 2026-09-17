@@ -96,6 +96,12 @@
             <label>Travel Date</label>
             <val>${new Date(booking.travel_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</val>
           </div>
+          ${dateRange ? `
+          <div class="ticket-field">
+            <label>Group Dates</label>
+            <val style="font-size: 0.95rem;">${dateRange.label}<br><span style="color: var(--text-muted); font-size: 0.85rem;">${new Date(dateRange.start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })} — ${new Date(dateRange.end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span></val>
+          </div>
+          ` : ''}
           <div class="ticket-field">
             <label>Number of Travelers</label>
             <val>${booking.total_travelers}</val>

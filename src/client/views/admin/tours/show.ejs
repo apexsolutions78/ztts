@@ -24,18 +24,65 @@
 
     <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem;">
       <!-- Package Details -->
-      <div class="card">
-        <h2>Package Overview</h2>
-        <p style="font-size: 1.1rem; margin: 1rem 0; color: var(--text-muted);">${package.description}</p>
+      <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <h2>Package Overview</h2>
+          <p style="font-size: 1.1rem; margin: 1rem 0; color: var(--text-muted);">${package.description}</p>
 
-        <div style="margin-top: 2rem; padding: 1.5rem; background: #f7faf9; border-radius: var(--radius-md);">
-          <h3>Package Inclusions</h3>
-          <ul style="margin-left: 1.2rem; margin-top: 0.5rem; color: var(--text-muted);">
-            <li>5-Star Hotel Accommodations with Breakfast</li>
-            <li>Airport Pick-up & VIP Luxury Transport</li>
-            <li>English / Arabic Speaking Guided Tours</li>
-            <li>Visa Processing Assistance</li>
-          </ul>
+          <div style="margin-top: 2rem; padding: 1.5rem; background: #f7faf9; border-radius: var(--radius-md);">
+            <h3>Package Inclusions</h3>
+            <ul style="margin-left: 1.2rem; margin-top: 0.5rem; color: var(--text-muted);">
+              <li>5-Star Hotel Accommodations with Breakfast</li>
+              <li>Airport Pick-up & VIP Luxury Transport</li>
+              <li>English / Arabic Speaking Guided Tours</li>
+              <li>Visa Processing Assistance</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Confirmed Date Ranges -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0;">Confirmed Groups (Date Ranges)</h2>
+          </div>
+
+          ${dateRanges.length > 0 ? '<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">' + dateRanges.map((r, i) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: #f8fafc; border-radius: var(--radius-sm); border-left: 4px solid ${r.status === 'open' ? '#38a169' : '#d69e2e'};">
+              <div>
+                <div style="font-weight: 700; font-size: 0.9rem;">${i + 1}${['st','nd','rd'][i] || 'th'} Group: ${r.label}</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Departs ${new Date(r.start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })} — ${new Date(r.end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                ${r.max_capacity ? '<div style="font-size: 0.8rem; color: var(--text-muted);">Capacity: ' + r.max_capacity + ' travelers</div>' : ''}
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="badge badge-${r.status}">${r.status}</span>
+                <form method="post" action="/admin/tours/${package.id}/daterange/${r.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this date range?')">
+                  <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">✕</button>
+                </form>
+              </div>
+            </div>
+          `).join('') + '</div>' : '<p class="muted" style="text-align: center; padding: 1.5rem; border: 1px dashed #e2e8f0; border-radius: var(--radius-sm); margin-bottom: 1.5rem;">No confirmed groups yet. Add date ranges below.</p>'}
+
+          <!-- Add Date Range Form -->
+          <h4 style="margin-bottom: 0.75rem;">Add Confirmed Group</h4>
+          <form method="post" action="/admin/tours/${package.id}/daterange" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.82rem; font-weight: 700;">Label</label>
+              <input type="text" name="label" class="form-control" required placeholder="e.g. First group">
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.82rem; font-weight: 700;">Start Date</label>
+              <input type="date" name="start_date" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.82rem; font-weight: 700;">End Date</label>
+              <input type="date" name="end_date" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label style="font-size: 0.82rem; font-weight: 700;">Max Capacity</label>
+              <input type="number" name="max_capacity" class="form-control" min="1" placeholder="Optional" style="width: 80px;">
+            </div>
+            <button type="submit" class="btn btn-accent" style="height: fit-content;">Add</button>
+          </form>
         </div>
       </div>
 
@@ -53,10 +100,27 @@
             </select>
           </div>
 
+          ${dateRanges.length > 0 ? `
+          <div class="form-group">
+            <label>Select Travel Dates</label>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              ${dateRanges.filter(r => r.status === 'open').map((r, i) => `
+                <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-light); cursor: pointer;">
+                  <input type="radio" name="tour_date_range_id" value="${r.id}" ${i === 0 ? 'checked' : ''} style="margin-top: 0.25rem;">
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.9rem;">${r.label}</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted);">${new Date(r.start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })} — ${new Date(r.end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                  </div>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+          ` : `
           <div class="form-group">
             <label for="travel_date">Travel Date</label>
             <input type="date" id="travel_date" name="travel_date" required class="form-control">
           </div>
+          `}
 
           <div class="form-group">
             <label for="total_travelers">Number of Travelers</label>
