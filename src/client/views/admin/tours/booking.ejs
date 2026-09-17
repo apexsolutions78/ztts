@@ -285,10 +285,6 @@
       const CURRENCY_RATE = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
       const PORTAL_TOKEN = ${portalToken ? "'" + portalToken + "'" : 'null'};
 
-      function formatPrice(amount) {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
-      }
-
       function toUSD(localAmount) {
         return (Number(localAmount) / CURRENCY_RATE).toFixed(6);
       }

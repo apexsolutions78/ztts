@@ -487,7 +487,15 @@ export async function cancelTourBooking(id) {
     return true;
   }
   const tb = memoryStore.tour_bookings.find(t => t.id === Number(id));
-  if (tb) { tb.status = 'cancelled'; return true; }
+  if (tb) {
+    tb.status = 'cancelled';
+    // Decrement current_bookings on the date range
+    if (tb.tour_date_range_id) {
+      const dr = memoryStore.tour_date_ranges.find(r => r.id === tb.tour_date_range_id);
+      if (dr) dr.current_bookings = Math.max((dr.current_bookings || 0) - (tb.total_travelers || 0), 0);
+    }
+    return true;
+  }
   return false;
 }
 
@@ -914,8 +922,8 @@ export async function getDashboardStats() {
     activeToursCount,
     customersCount: customers.length,
     pendingFlightRequests: flights.filter(f => f.ticket_status === 'pending').length,
-    recentFlights: flights.slice(0, 5),
-    recentTourBookings: tourBookings.slice(0, 5)
+    recentFlights: activeFlights.slice(0, 5),
+    recentTourBookings: activeTourBookings.slice(0, 5)
   };
 }
 
