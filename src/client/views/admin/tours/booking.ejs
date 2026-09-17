@@ -289,7 +289,8 @@
         const curr = EXCHANGE_RATES[ACTIVE_CURRENCY] || { symbol: '$', rate: 1 };
         const converted = Number(amountInUSD || 0) * curr.rate;
         const decimals = (ACTIVE_CURRENCY === 'PKR' || ACTIVE_CURRENCY === 'JPY') ? 0 : 2;
-        return curr.symbol + converted.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        const rounded = decimals === 0 ? Math.round(converted) : converted;
+        return curr.symbol + rounded.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       }
 
       async function generateShareLink(id) {

@@ -1336,7 +1336,8 @@ export function formatPrice(amountInUSD, currencyCode = 'USD', ratesStore = null
 
   // Format integer or decimal based on currency
   const decimals = (currencyCode === 'PKR' || currencyCode === 'JPY') ? 0 : 2;
-  const formattedVal = converted.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const rounded = decimals === 0 ? Math.round(converted) : converted;
+  const formattedVal = rounded.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   return `${curr.symbol}${formattedVal}`;
 }
 

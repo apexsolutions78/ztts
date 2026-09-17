@@ -99,8 +99,9 @@
 
       function fmtLocal(usdAmount) {
         const converted = Number(usdAmount || 0) * rate;
-        const decimals = (ACTIVE_CURRENCY === 'PKR') ? 0 : 2;
-        return symbol + converted.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        const decimals = (ACTIVE_CURRENCY === 'PKR' || ACTIVE_CURRENCY === 'JPY') ? 0 : 2;
+        const rounded = decimals === 0 ? Math.round(converted) : converted;
+        return symbol + rounded.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       }
 
       function applyCurrency() {
