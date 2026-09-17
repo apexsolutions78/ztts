@@ -476,6 +476,30 @@ export async function postDeleteGroup(req, res, next) {
   }
 }
 
+export async function postFinalizeGroup(req, res, next) {
+  try {
+    const { id } = req.params;
+    const group = await getGroupTourById(id);
+    if (!group) return res.status(404).render('errors/404', { title: 'Group Tour Not Found' });
+    if (group.status !== 'draft') return res.redirect(`/admin/tours/group/${id}?error=Only draft groups can be finalized`);
+
+    await updateGroupTour(id, { status: 'finalized' });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'FINALIZE_GROUP_TOUR',
+      entity_type: 'group_tour',
+      entity_id: id,
+      details: `Finalized group tour: ${group.title}`
+    });
+
+    res.redirect(`/admin/tours/group/${id}?finalized=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function postAddMilestone(req, res, next) {
   try {
     const { id: groupTourId } = req.params;

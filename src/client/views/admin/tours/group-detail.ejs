@@ -14,11 +14,12 @@
       <p class="muted">Group Tour Draft &amp; Configuration</p>
     </div>
 
-    <!-- Status Badge -->
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+    <!-- Status Badge + Finalize Button -->
+    <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.5rem;">
       <span class="badge badge-${group.status}" style="padding: 0.5rem 1rem; font-size: 0.85rem; text-transform: uppercase;">${group.status}</span>
       ${group.guide_name ? '<span style="background: #edf4f2; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.82rem;">Guide: <strong>' + group.guide_name + '</strong></span>' : ''}
       ${group.tour_destination ? '<span style="background: #edf4f2; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.82rem;">📍 ' + group.tour_destination + '</span>' : ''}
+      ${group.status === 'draft' ? '<form method="post" action="/admin/tours/group/' + group.id + '/finalize" style="margin-left: auto;"><button type="submit" class="btn btn-accent" onclick="return confirm(\'Finalize this group? Milestones will become read-only.\')">Finalize Group Tour</button></form>' : ''}
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
