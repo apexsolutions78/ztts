@@ -29,7 +29,7 @@ import {
   updateMilestone,
   deleteMilestone
 } from '../models/index.js';
-import { sendEmail, buildTourConfirmationEmail } from '../services/emailService.js';
+import { sendEmail, buildTourConfirmationEmail, buildGroupTourNotificationEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildTourConfirmationWhatsAppMessage } from '../services/whatsAppService.js';
 
 export async function listTours(req, res, next) {
@@ -429,6 +429,7 @@ export async function postUpdateGroup(req, res, next) {
     const { id } = req.params;
     const { title, status, assigned_guide_user_id, group_size_expected, start_at, end_at, welcome_message, emergency_instructions } = req.body;
 
+    const existing = await getGroupTourById(id);
     await updateGroupTour(id, {
       title,
       status,
@@ -448,6 +449,23 @@ export async function postUpdateGroup(req, res, next) {
       entity_id: id,
       details: `Updated group tour: ${title || id}`
     });
+
+    // Send email on status change
+    if (existing && status && existing.status !== status) {
+      try {
+        const emailData = buildGroupTourNotificationEmail({
+          groupTitle: title || existing.title,
+          tourTitle: existing.tour_title,
+          destination: existing.tour_destination,
+          travelDate: existing.travel_date ? new Date(existing.travel_date).toLocaleDateString() : null,
+          status,
+          action: 'Status Changed',
+          guideName: null
+        });
+        await sendEmail({ to: 'admin@zahabiatravel.com', ...emailData });
+        await logNotificationRecord({ type: 'group_tour_status_changed', entity_type: 'group_tour', entity_id: id });
+      } catch (emailErr) { /* non-blocking */ }
+    }
 
     res.redirect(`/admin/tours/group/${id}?updated=true`);
   } catch (error) {
@@ -493,6 +511,21 @@ export async function postFinalizeGroup(req, res, next) {
       entity_id: id,
       details: `Finalized group tour: ${group.title}`
     });
+
+    // Send notification email
+    try {
+      const emailData = buildGroupTourNotificationEmail({
+        groupTitle: group.title,
+        tourTitle: group.tour_title,
+        destination: group.tour_destination,
+        travelDate: group.travel_date ? new Date(group.travel_date).toLocaleDateString() : null,
+        status: 'finalized',
+        action: 'Finalized',
+        guideName: group.guide_name || null
+      });
+      await sendEmail({ to: 'admin@zahabiatravel.com', ...emailData });
+      await logNotificationRecord({ type: 'group_tour_finalized', entity_type: 'group_tour', entity_id: id });
+    } catch (emailErr) { /* non-blocking */ }
 
     res.redirect(`/admin/tours/group/${id}?finalized=true`);
   } catch (error) {

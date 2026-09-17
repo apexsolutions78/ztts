@@ -113,3 +113,33 @@ export function buildTourConfirmationEmail({ customerName, tourTitle, destinatio
   const textContent = `Tour Booking Confirmed\n${tourTitle}\nDestination: ${destination}\nTravel Date: ${travelDate}\nTravelers: ${totalTravelers}\nTotal: $${Number(totalAmount).toFixed(2)}\n\nView booking: ${portalUrl}`;
   return { subject, html, text: textContent };
 }
+
+export function buildGroupTourNotificationEmail({ groupTitle, tourTitle, destination, travelDate, status, action, guideName }) {
+  const subject = `Group Tour ${action}: ${groupTitle}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+      <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+        <h1 style="margin: 0; color: #d4a843;">ZAHABIA TRAVEL & TOURISM</h1>
+        <p style="margin: 5px 0 0; color: #a0aec0; font-size: 12px;">GROUP TOUR ${action.toUpperCase()}</p>
+      </div>
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+        <p>Hello,</p>
+        <p>A group tour has been <strong>${action.toLowerCase()}</strong>.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Group Title</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${groupTitle}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Tour Package</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${tourTitle}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Destination</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${destination || 'TBD'}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Travel Date</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${travelDate || 'TBD'}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Status</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${status}</td></tr>
+          ${guideName ? `<tr><td style="padding: 8px; font-weight: bold;">Assigned Guide</td><td style="padding: 8px;">${guideName}</td></tr>` : ''}
+        </table>
+        <p style="margin-top: 20px; font-size: 12px; color: #718096;">For support, contact us at support@zahabiatravel.com</p>
+      </div>
+      <div style="text-align: center; padding: 15px; font-size: 11px; color: #a0aec0;">
+        &copy; 2026 Zahabia Travel & Tourism. Powered by Apex Solutions.
+      </div>
+    </div>
+  `;
+  const textNotification = `Group Tour ${action}\n${groupTitle}\nTour: ${tourTitle}\nDestination: ${destination || 'TBD'}\nDate: ${travelDate || 'TBD'}\nStatus: ${status}${guideName ? `\nGuide: ${guideName}` : ''}`;
+  return { subject, html, text: textNotification };
+}
