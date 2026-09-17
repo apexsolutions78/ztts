@@ -1550,7 +1550,7 @@ export async function castPollVote({ poll_id, voter_member_id = null, voter_name
   }
   memoryStore.guide_poll_votes.push({
     id: memoryStore.guide_poll_votes.length + 1,
-    poll_id: Number(poll_id), voter_member_id, voter_name, Number(selected_option),
+    poll_id: Number(poll_id), voter_member_id, voter_name, selected_option: Number(selected_option),
     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
   });
   return true;
