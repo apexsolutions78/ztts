@@ -588,3 +588,31 @@ export async function postDeleteMilestone(req, res, next) {
     next(error);
   }
 }
+
+export async function postToggleMilestone(req, res, next) {
+  try {
+    const { groupId, milestoneId } = req.params;
+    const group = await getGroupTourById(groupId);
+    if (!group) return res.status(404).render('errors/404', { title: 'Group Tour Not Found' });
+    if (group.status !== 'draft') return res.redirect(`/admin/tours/group/${groupId}?error=Cannot modify milestones after finalization`);
+
+    const milestone = await getMilestoneById(milestoneId);
+    if (!milestone) return res.redirect(`/admin/tours/group/${groupId}?error=Milestone not found`);
+
+    const newStatus = milestone.status === 'completed' ? 'pending' : 'completed';
+    await updateMilestone(milestoneId, { status: newStatus });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'TOGGLE_MILESTONE',
+      entity_type: 'group_milestone',
+      entity_id: milestoneId,
+      details: `Milestone ${milestone.title} → ${newStatus}`
+    });
+
+    res.redirect(`/admin/tours/group/${groupId}?milestoneToggled=true`);
+  } catch (error) {
+    next(error);
+  }
+}
