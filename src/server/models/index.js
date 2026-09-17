@@ -1099,7 +1099,9 @@ export async function getCustomerLedger(customerId) {
     const allBookings = [...flights.map(f => ({ ...f, type: 'flight', ref: f.booking_ref })), ...tours.map(t => ({ ...t, type: 'tour', ref: t.tour_title }))];
     allBookings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    const totalBookingValue = allBookings.reduce((s, b) => s + Number(b.booking_total || 0), 0);
+    // Exclude cancelled bookings from totals
+    const activeBookings = allBookings.filter(b => b.status !== 'cancelled');
+    const totalBookingValue = activeBookings.reduce((s, b) => s + Number(b.booking_total || 0), 0);
     const totalPaid = payments.filter(p => p.payment_status === 'paid').reduce((s, p) => s + Number(p.amount || 0), 0);
 
     return { customer: cust, bookings: allBookings, payments, totalBookingValue, totalPaid, balance: totalBookingValue - totalPaid };
