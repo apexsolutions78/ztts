@@ -609,6 +609,82 @@ export async function getGroupTourStats() {
   };
 }
 
+// --- GROUP MILESTONE MODEL ---
+export async function createMilestone({ group_tour_id, title, description = null, sort_order = 0 }) {
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      'INSERT INTO group_milestones (group_tour_id, title, description, sort_order) VALUES (?, ?, ?, ?)',
+      [group_tour_id, title, description, sort_order]
+    );
+    return { id: result.insertId, title };
+  }
+  const newMilestone = {
+    id: memoryStore.group_milestones.length + 1,
+    group_tour_id: Number(group_tour_id),
+    title,
+    description: description || null,
+    sort_order: Number(sort_order),
+    status: 'pending',
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.group_milestones.push(newMilestone);
+  return newMilestone;
+}
+
+export async function getMilestonesByGroupId(groupTourId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM group_milestones WHERE group_tour_id = ? ORDER BY sort_order ASC, id ASC',
+      [groupTourId]
+    );
+    return rows;
+  }
+  return memoryStore.group_milestones
+    .filter(m => m.group_tour_id === Number(groupTourId))
+    .sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
+}
+
+export async function getMilestoneById(id) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM group_milestones WHERE id = ?', [id]);
+    return rows[0] || null;
+  }
+  return memoryStore.group_milestones.find(m => m.id === Number(id)) || null;
+}
+
+export async function updateMilestone(id, { title, description, sort_order, status }) {
+  if (isUsingMySQL()) {
+    const fields = [];
+    const values = [];
+    if (title !== undefined) { fields.push('title = ?'); values.push(title); }
+    if (description !== undefined) { fields.push('description = ?'); values.push(description); }
+    if (sort_order !== undefined) { fields.push('sort_order = ?'); values.push(sort_order); }
+    if (status !== undefined) { fields.push('status = ?'); values.push(status); }
+    if (fields.length === 0) return false;
+    values.push(id);
+    await pool.query(`UPDATE group_milestones SET ${fields.join(', ')} WHERE id = ?`, values);
+    return true;
+  }
+  const m = memoryStore.group_milestones.find(m => m.id === Number(id));
+  if (!m) return false;
+  if (title !== undefined) m.title = title;
+  if (description !== undefined) m.description = description;
+  if (sort_order !== undefined) m.sort_order = Number(sort_order);
+  if (status !== undefined) m.status = status;
+  return true;
+}
+
+export async function deleteMilestone(id) {
+  if (isUsingMySQL()) {
+    await pool.query('DELETE FROM group_milestones WHERE id = ?', [id]);
+    return true;
+  }
+  const idx = memoryStore.group_milestones.findIndex(m => m.id === Number(id));
+  if (idx === -1) return false;
+  memoryStore.group_milestones.splice(idx, 1);
+  return true;
+}
+
 // --- PORTAL TOKENS MODEL ---
 export async function createPortalToken({ customer_id, flight_booking_id = null, tour_booking_id = null }) {
   const token = 'zhb_' + randomBytes(16).toString('hex');

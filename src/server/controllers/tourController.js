@@ -22,7 +22,12 @@ import {
   updateGroupTour,
   deleteGroupTour,
   getGroupTourStats,
-  getAllUsers
+  getAllUsers,
+  createMilestone,
+  getMilestonesByGroupId,
+  getMilestoneById,
+  updateMilestone,
+  deleteMilestone
 } from '../models/index.js';
 import { sendEmail, buildTourConfirmationEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildTourConfirmationWhatsAppMessage } from '../services/whatsAppService.js';
@@ -406,11 +411,13 @@ export async function viewGroupTour(req, res, next) {
     if (!group) return res.status(404).render('errors/404', { title: 'Group Tour Not Found' });
 
     const users = await getAllUsers();
+    const milestones = await getMilestonesByGroupId(group.id);
 
     res.render('admin/tours/group-detail', {
       title: `Group: ${group.title}`,
       group,
-      users
+      users,
+      milestones
     });
   } catch (error) {
     next(error);
@@ -464,6 +471,95 @@ export async function postDeleteGroup(req, res, next) {
     });
 
     res.redirect('/admin/tours/groups?deleted=true');
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postAddMilestone(req, res, next) {
+  try {
+    const { id: groupTourId } = req.params;
+    const group = await getGroupTourById(groupTourId);
+    if (!group) return res.status(404).render('errors/404', { title: 'Group Tour Not Found' });
+    if (group.status !== 'draft') return res.redirect(`/admin/tours/group/${groupTourId}?error=Cannot edit milestones after finalization`);
+
+    const { title, description, sort_order } = req.body;
+    if (!title) return res.redirect(`/admin/tours/group/${groupTourId}?error=Milestone title is required`);
+
+    await createMilestone({
+      group_tour_id: groupTourId,
+      title,
+      description: description || null,
+      sort_order: sort_order || 0
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'ADD_MILESTONE',
+      entity_type: 'group_milestone',
+      entity_id: groupTourId,
+      details: `Added milestone to group ${group.title}: ${title}`
+    });
+
+    res.redirect(`/admin/tours/group/${groupTourId}?milestoneAdded=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postEditMilestone(req, res, next) {
+  try {
+    const { groupId, milestoneId } = req.params;
+    const group = await getGroupTourById(groupId);
+    if (!group) return res.status(404).render('errors/404', { title: 'Group Tour Not Found' });
+    if (group.status !== 'draft') return res.redirect(`/admin/tours/group/${groupId}?error=Cannot edit milestones after finalization`);
+
+    const milestone = await getMilestoneById(milestoneId);
+    if (!milestone) return res.redirect(`/admin/tours/group/${groupId}?error=Milestone not found`);
+
+    const { title, description, sort_order, status } = req.body;
+    await updateMilestone(milestoneId, {
+      title: title || milestone.title,
+      description: description !== undefined ? description : milestone.description,
+      sort_order: sort_order !== undefined ? sort_order : milestone.sort_order,
+      status: status || milestone.status
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'UPDATE_MILESTONE',
+      entity_type: 'group_milestone',
+      entity_id: milestoneId,
+      details: `Updated milestone ${milestoneId} in group ${group.title}`
+    });
+
+    res.redirect(`/admin/tours/group/${groupId}?milestoneUpdated=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postDeleteMilestone(req, res, next) {
+  try {
+    const { groupId, milestoneId } = req.params;
+    const group = await getGroupTourById(groupId);
+    if (!group) return res.status(404).render('errors/404', { title: 'Group Tour Not Found' });
+    if (group.status !== 'draft') return res.redirect(`/admin/tours/group/${groupId}?error=Cannot delete milestones after finalization`);
+
+    await deleteMilestone(milestoneId);
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'DELETE_MILESTONE',
+      entity_type: 'group_milestone',
+      entity_id: milestoneId,
+      details: `Deleted milestone ${milestoneId} from group ${group.title}`
+    });
+
+    res.redirect(`/admin/tours/group/${groupId}?milestoneDeleted=true`);
   } catch (error) {
     next(error);
   }
