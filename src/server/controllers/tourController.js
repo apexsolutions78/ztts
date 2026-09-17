@@ -182,7 +182,19 @@ export async function postBookTour(req, res, next) {
     let resolvedDate = travel_date;
     if (tour_date_range_id) {
       const dateRange = await getDateRangeById(tour_date_range_id);
-      if (dateRange) resolvedDate = dateRange.start_date;
+      if (dateRange) {
+        // Check capacity
+        if (dateRange.max_capacity) {
+          const remaining = dateRange.max_capacity - (dateRange.current_bookings || 0);
+          if (remaining <= 0) {
+            return res.redirect(`/admin/tours/${tour_package_id}?error=This group is fully booked. Please select another date range.`);
+          }
+          if (Number(total_travelers) > remaining) {
+            return res.redirect(`/admin/tours/${tour_package_id}?error=Only ${remaining} seat(s) remaining for this group. You requested ${total_travelers}.`);
+          }
+        }
+        resolvedDate = dateRange.start_date;
+      }
     }
 
     const totalAmount = pkg.price * (Number(total_travelers) || 1);

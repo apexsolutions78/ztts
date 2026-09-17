@@ -436,6 +436,13 @@ export async function createTourBooking({ tour_package_id, customer_id, travel_d
       'INSERT INTO tour_bookings (tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, "confirmed")',
       [tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_amount]
     );
+    // Increment current_bookings on the date range
+    if (tour_date_range_id) {
+      await pool.query(
+        'UPDATE tour_date_ranges SET current_bookings = current_bookings + ? WHERE id = ?',
+        [Number(total_travelers), tour_date_range_id]
+      );
+    }
     return { id: result.insertId };
   }
   const pkg = memoryStore.tour_packages.find(p => p.id === Number(tour_package_id));
@@ -454,12 +461,27 @@ export async function createTourBooking({ tour_package_id, customer_id, travel_d
     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
   };
   memoryStore.tour_bookings.push(newBooking);
+  // Increment current_bookings on the date range
+  if (tour_date_range_id) {
+    const dr = memoryStore.tour_date_ranges.find(r => r.id === Number(tour_date_range_id));
+    if (dr) dr.current_bookings = (dr.current_bookings || 0) + Number(total_travelers);
+  }
   return newBooking;
 }
 
 export async function cancelTourBooking(id) {
   if (isUsingMySQL()) {
+    // Get booking details before cancelling
+    const [rows] = await pool.query('SELECT tour_date_range_id, total_travelers FROM tour_bookings WHERE id = ?', [id]);
+    const booking = rows[0];
     await pool.query('UPDATE tour_bookings SET status = "cancelled" WHERE id = ?', [id]);
+    // Decrement current_bookings on the date range
+    if (booking && booking.tour_date_range_id) {
+      await pool.query(
+        'UPDATE tour_date_ranges SET current_bookings = GREATEST(current_bookings - ?, 0) WHERE id = ?',
+        [booking.total_travelers, booking.tour_date_range_id]
+      );
+    }
     return true;
   }
   const tb = memoryStore.tour_bookings.find(t => t.id === Number(id));
