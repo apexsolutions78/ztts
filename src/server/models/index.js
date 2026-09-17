@@ -433,8 +433,8 @@ export async function getAllTourBookings() {
 export async function createTourBooking({ tour_package_id, customer_id, travel_date, total_travelers, total_amount, tour_date_range_id = null }) {
   if (isUsingMySQL()) {
     const [result] = await pool.query(
-      'INSERT INTO tour_bookings (tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, "confirmed")',
-      [tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_amount]
+      'INSERT INTO tour_bookings (tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, members_required, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, "confirmed")',
+      [tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_travelers, total_amount]
     );
     // Increment current_bookings on the date range
     if (tour_date_range_id) {
@@ -456,6 +456,8 @@ export async function createTourBooking({ tour_package_id, customer_id, travel_d
     customer_name: cust ? cust.full_name : 'Customer',
     travel_date,
     total_travelers: Number(total_travelers),
+    members_added: 0,
+    members_required: Number(total_travelers),
     total_amount: Number(total_amount),
     status: 'confirmed',
     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
@@ -524,6 +526,80 @@ export async function getTourBookingsByCustomerId(customerId) {
       const pkg = memoryStore.tour_packages.find(p => p.id === tb.tour_package_id);
       return { ...tb, tour_title: pkg ? pkg.title : tb.tour_title };
     });
+}
+
+// --- TOUR BOOKING MEMBERS MODEL ---
+export async function createBookingMember({ tour_booking_id, full_name, passport_number = null, nationality = null, phone = null }) {
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      'INSERT INTO tour_booking_members (tour_booking_id, full_name, passport_number, nationality, phone) VALUES (?, ?, ?, ?, ?)',
+      [tour_booking_id, full_name, passport_number, nationality, phone]
+    );
+    // Increment members_added
+    await pool.query('UPDATE tour_bookings SET members_added = members_added + 1 WHERE id = ?', [tour_booking_id]);
+    return { id: result.insertId, full_name };
+  }
+  const newMember = {
+    id: memoryStore.tour_booking_members.length + 1,
+    tour_booking_id: Number(tour_booking_id),
+    full_name,
+    passport_number: passport_number || null,
+    nationality: nationality || null,
+    phone: phone || null,
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.tour_booking_members.push(newMember);
+  const booking = memoryStore.tour_bookings.find(b => b.id === Number(tour_booking_id));
+  if (booking) booking.members_added = (booking.members_added || 0) + 1;
+  return newMember;
+}
+
+export async function getMembersByBookingId(tourBookingId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM tour_booking_members WHERE tour_booking_id = ? ORDER BY id ASC',
+      [tourBookingId]
+    );
+    return rows;
+  }
+  return memoryStore.tour_booking_members.filter(m => m.tour_booking_id === Number(tourBookingId));
+}
+
+export async function getMemberById(id) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM tour_booking_members WHERE id = ?', [id]);
+    return rows[0] || null;
+  }
+  return memoryStore.tour_booking_members.find(m => m.id === Number(id)) || null;
+}
+
+export async function deleteBookingMember(id) {
+  if (isUsingMySQL()) {
+    // Decrement members_added
+    const [rows] = await pool.query('SELECT tour_booking_id FROM tour_booking_members WHERE id = ?', [id]);
+    if (rows[0]) {
+      await pool.query('UPDATE tour_bookings SET members_added = GREATEST(members_added - 1, 0) WHERE id = ?', [rows[0].tour_booking_id]);
+    }
+    await pool.query('DELETE FROM tour_booking_members WHERE id = ?', [id]);
+    return true;
+  }
+  const idx = memoryStore.tour_booking_members.findIndex(m => m.id === Number(id));
+  if (idx === -1) return false;
+  const member = memoryStore.tour_booking_members[idx];
+  memoryStore.tour_booking_members.splice(idx, 1);
+  const booking = memoryStore.tour_bookings.find(b => b.id === member.tour_booking_id);
+  if (booking) booking.members_added = Math.max((booking.members_added || 1) - 1, 0);
+  return true;
+}
+
+export async function isBookingComplete(tourBookingId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT members_added, members_required FROM tour_bookings WHERE id = ?', [tourBookingId]);
+    const b = rows[0];
+    return b && b.members_added >= b.members_required;
+  }
+  const b = memoryStore.tour_bookings.find(b => b.id === Number(tourBookingId));
+  return b && (b.members_added || 0) >= (b.members_required || 1);
 }
 
 // --- GROUP TOUR MODEL ---

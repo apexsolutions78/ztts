@@ -31,9 +31,10 @@ import {
   createDateRange,
   getDateRangesByTourId,
   getDateRangeById,
-  deleteDateRange
+  deleteDateRange,
+  getMembersByBookingId
 } from '../models/index.js';
-import { sendEmail, buildTourConfirmationEmail, buildGroupTourNotificationEmail } from '../services/emailService.js';
+import { sendEmail, buildTourConfirmationEmail, buildGroupTourNotificationEmail, buildMemberPortalEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildTourConfirmationWhatsAppMessage } from '../services/whatsAppService.js';
 
 export async function listTours(req, res, next) {
@@ -156,6 +157,7 @@ export async function viewTourBooking(req, res, next) {
     const pkg = await findTourPackageById(booking.tour_package_id);
     const portalTokenRecord = await findPortalTokenByTourBooking(booking.id);
     const dateRange = booking.tour_date_range_id ? await getDateRangeById(booking.tour_date_range_id) : null;
+    const members = await getMembersByBookingId(booking.id);
     const { activeCurrency, exchangeRates } = res.locals;
 
     res.render('admin/tours/booking', {
@@ -163,6 +165,7 @@ export async function viewTourBooking(req, res, next) {
       booking,
       package: pkg,
       dateRange,
+      members,
       portalToken: portalTokenRecord ? portalTokenRecord.token : null,
       activeCurrency,
       exchangeRates
@@ -238,17 +241,18 @@ export async function postBookTour(req, res, next) {
         tour_booking_id: booking.id
       });
       const portalUrl = `${req.protocol}://${req.get('host')}/t/${portalToken}`;
+      const memberPortalUrl = `${req.protocol}://${req.get('host')}/t/${portalToken}/members`;
 
-      // Email notification
+      // Email notification — send member portal link
       if (customer.email) {
-        const emailContent = buildTourConfirmationEmail({
+        const emailContent = buildMemberPortalEmail({
           customerName: customer.full_name,
           tourTitle: pkg.title,
           destination: pkg.destination,
-          travelDate: travel_date,
+          travelDate: travel_date ? new Date(travel_date).toLocaleDateString() : 'TBD',
           totalTravelers: total_travelers,
-          totalAmount,
-          portalUrl
+          membersAdded: 0,
+          portalUrl: memberPortalUrl
         });
         const emailResult = await sendEmail({ to: customer.email, subject: emailContent.subject, html: emailContent.html, text: emailContent.text });
         await logNotificationRecord({ customer_id: customer.id, flight_booking_id: null, channel: 'email', recipient: customer.email, subject: emailContent.subject, content: emailContent.text, status: emailResult.success ? 'delivered' : 'failed' });
@@ -256,15 +260,7 @@ export async function postBookTour(req, res, next) {
 
       // WhatsApp notification
       if (customer.phone) {
-        const waMessage = buildTourConfirmationWhatsAppMessage({
-          customerName: customer.full_name,
-          tourTitle: pkg.title,
-          destination: pkg.destination,
-          travelDate: travel_date,
-          totalTravelers: total_travelers,
-          totalAmount,
-          portalUrl
-        });
+        const waMessage = `Tour Booked: ${pkg.title}\n\nDear ${customer.full_name}, your tour has been booked for ${total_travelers} traveler(s).\n\nComplete your group details here:\n${memberPortalUrl}`;
         const waResult = await sendWhatsApp({ to: customer.phone, message: waMessage });
         await logNotificationRecord({ customer_id: customer.id, flight_booking_id: null, channel: 'whatsapp', recipient: customer.phone, subject: `WhatsApp Tour: ${pkg.title}`, content: waMessage, status: waResult.success ? 'delivered' : 'failed' });
       }

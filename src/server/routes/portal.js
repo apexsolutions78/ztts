@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { viewCustomerPortal } from '../controllers/portalController.js';
+import { viewCustomerPortal, getMemberPortal, postAddMember, postDeleteMember } from '../controllers/portalController.js';
 import { generateQRSvg } from '../services/qrService.js';
 
 const router = Router();
@@ -16,6 +16,9 @@ router.get('/:token/qr', async (req, res) => {
   }
 });
 
+router.get('/:token/members', getMemberPortal);
+router.post('/:token/members/add', postAddMember);
+router.post('/:token/members/:memberId/delete', postDeleteMember);
 router.get('/:token', viewCustomerPortal);
 
 export default router;

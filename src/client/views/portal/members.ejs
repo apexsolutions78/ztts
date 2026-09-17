@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Complete Your Group | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    body { background: #f0f4f8; font-family: var(--font-body); }
+    .portal-card { max-width: 700px; margin: 2rem auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+    .portal-header { background: #1a3a2a; color: #fff; padding: 2rem; text-align: center; }
+    .portal-header h1 { margin: 0; color: #d4a843; font-size: 1.5rem; }
+    .portal-header p { margin: 0.5rem 0 0; color: #a0aec0; font-size: 0.85rem; }
+    .portal-body { padding: 2rem; }
+    .progress-bar { background: #e2e8f0; border-radius: 20px; height: 12px; margin: 1rem 0; overflow: hidden; }
+    .progress-fill { background: #38a169; height: 100%; border-radius: 20px; transition: width 0.3s; }
+    .member-slot { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; }
+    .member-slot.filled { background: #f0fff4; border-color: #c6f6d5; }
+    .member-slot.empty { background: #f7fafc; border-style: dashed; }
+    .member-slot .icon { font-size: 1.2rem; }
+    .form-section { background: #f8fafc; border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem; border: 1px solid #e2e8f0; }
+    .btn-remove { background: #e53e3e; color: #fff; border: none; border-radius: 4px; padding: 0.3rem 0.6rem; cursor: pointer; font-size: 0.75rem; }
+    .alert { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .alert-error { background: #fde8e8; color: #9b2c2c; border-left: 4px solid #e53e3e; }
+    .alert-success { background: #f0fff4; color: #276749; border-left: 4px solid #38a169; }
+  </style>
+</head>
+<body>
+  <div class="portal-card">
+    <div class="portal-header">
+      <img src="/brand/LOGO123.png" alt="Zahabia" style="height: 40px; margin-bottom: 0.5rem;" onerror="this.style.display='none'">
+      <h1>Complete Your Group</h1>
+      <p><%= tourPackage.title %></p>
+      <% if (dateRange) { %>
+        <p style="margin-top: 0.25rem; font-size: 0.8rem;">
+          <%= dateRange.label %> — <%= new Date(dateRange.start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) %> to <%= new Date(dateRange.end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+        </p>
+      <% } %>
+    </div>
+    <div class="portal-body">
+      <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+      <% if (success) { %>
+        <div class="alert alert-success"><%= success %></div>
+      <% } %>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>Members Added</strong>
+          <div style="font-size: 0.85rem; color: var(--text-muted);"><%= members.length %> / <%= booking.members_required || booking.total_travelers %></div>
+        </div>
+        <div style="text-align: right;">
+          <strong>Destination</strong>
+          <div style="font-size: 0.85rem; color: var(--text-muted);"><%= tourPackage.destination %></div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: <%= Math.min(100, (members.length / (booking.members_required || booking.total_travelers)) * 100) %>%"></div>
+      </div>
+
+      <!-- Member List -->
+      <div style="margin-top: 1.5rem;">
+        <% for (let i = 0; i < (booking.members_required || booking.total_travelers); i++) { %>
+          <% if (members[i]) { %>
+            <div class="member-slot filled">
+              <span class="icon">✅</span>
+              <div style="flex: 1;">
+                <strong><%= members[i].full_name %></strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                  <%= members[i].passport_number ? 'Passport: ' + members[i].passport_number : '' %>
+                  <%= members[i].nationality ? ' • ' + members[i].nationality : '' %>
+                </div>
+              </div>
+              <form method="post" action="/t/<%= token %>/members/<%= members[i].id %>/delete" onsubmit="return confirm('Remove <%= members[i].full_name %>?')">
+                <button type="submit" class="btn-remove">Remove</button>
+              </form>
+            </div>
+          <% } else { %>
+            <div class="member-slot empty">
+              <span class="icon">⬜</span>
+              <div style="flex: 1; color: var(--text-muted); font-size: 0.9rem;">Member #<%= i + 1 %> — awaiting details</div>
+            </div>
+          <% } %>
+        <% } %>
+      </div>
+
+      <!-- Add Member Form -->
+      <% const remaining = (booking.members_required || booking.total_travelers) - members.length; %>
+      <% if (remaining > 0) { %>
+        <div class="form-section">
+          <h3 style="margin-bottom: 1rem; font-size: 1rem;">Add Member (<%= remaining %> remaining)</h3>
+          <form method="post" action="/t/<%= token %>/members/add">
+            <div class="form-group">
+              <label style="font-size: 0.82rem; font-weight: 700;">Full Name *</label>
+              <input type="text" name="full_name" class="form-control" required placeholder="As on passport">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group">
+                <label style="font-size: 0.82rem; font-weight: 700;">Passport Number</label>
+                <input type="text" name="passport_number" class="form-control" placeholder="Optional">
+              </div>
+              <div class="form-group">
+                <label style="font-size: 0.82rem; font-weight: 700;">Nationality</label>
+                <input type="text" name="nationality" class="form-control" placeholder="e.g. Pakistani">
+              </div>
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.82rem; font-weight: 700;">Phone</label>
+              <input type="text" name="phone" class="form-control" placeholder="Optional">
+            </div>
+            <button type="submit" class="btn btn-accent" style="width: 100%;">Add Member</button>
+          </form>
+        </div>
+      <% } else { %>
+        <div style="background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 8px; padding: 1.5rem; text-align: center; margin-top: 1.5rem;">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</div>
+          <h3 style="margin: 0; color: #276749;">Group Complete!</h3>
+          <p style="color: #276749; margin: 0.5rem 0 0; font-size: 0.9rem;">All <%= booking.total_travelers %> member(s) have been added. Your booking is confirmed.</p>
+        </div>
+      <% } %>
+
+      <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Zahabia Travel & Tourism • For support, contact us at support@zahabiatravel.com</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

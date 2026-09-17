@@ -221,6 +221,53 @@
       </div>
     </div>
 
+    <!-- Group Members Section -->
+    <div class="card" style="margin-top: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Group Members</h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">${members.length} / ${booking.members_required || booking.total_travelers} added</span>
+      </div>
+
+      ${members.length > 0 ? `
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Full Name</th>
+              <th>Passport</th>
+              <th>Nationality</th>
+              <th>Phone</th>
+              <th>Added</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${members.map((m, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td><strong>${m.full_name}</strong></td>
+                <td>${m.passport_number || '—'}</td>
+                <td>${m.nationality || '—'}</td>
+                <td>${m.phone || '—'}</td>
+                <td>${new Date(m.created_at).toLocaleDateString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : `
+      <p class="muted" style="text-align: center; padding: 1.5rem; border: 1px dashed #e2e8f0; border-radius: var(--radius-sm);">No members added yet. Customer will add members via portal link.</p>
+      `}
+
+      ${portalToken ? `
+      <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-light); display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 0.82rem; color: var(--text-muted);">Member Portal:</span>
+        <a href="/t/${portalToken}/members" target="_blank" style="font-family: monospace; font-size: 0.82rem; color: var(--primary); word-break: break-all;">/t/${portalToken}/members</a>
+        <button onclick="navigator.clipboard.writeText(window.location.origin + '/t/${portalToken}/members'); this.textContent='Copied!';" class="btn btn-sm btn-secondary">Copy</button>
+      </div>
+      ` : ''}
+    </div>
+
     <script>
       const BOOKING_TYPE = 'tour';
       const BOOKING_ID = ${booking.id};

@@ -143,3 +143,59 @@ export function buildGroupTourNotificationEmail({ groupTitle, tourTitle, destina
   const textNotification = `Group Tour ${action}\n${groupTitle}\nTour: ${tourTitle}\nDestination: ${destination || 'TBD'}\nDate: ${travelDate || 'TBD'}\nStatus: ${status}${guideName ? `\nGuide: ${guideName}` : ''}`;
   return { subject, html, text: textNotification };
 }
+
+export function buildMemberPortalEmail({ customerName, tourTitle, destination, travelDate, totalTravelers, membersAdded, portalUrl }) {
+  const subject = `Complete Your Group — ${tourTitle}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+      <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+        <h1 style="margin: 0; color: #d4a843;">ZAHABIA TRAVEL & TOURISM</h1>
+        <p style="margin: 5px 0 0; color: #a0aec0; font-size: 12px;">COMPLETE YOUR GROUP</p>
+      </div>
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+        <p>Dear <strong>${customerName}</strong>,</p>
+        <p>Your tour booking for <strong>${tourTitle}</strong> has been received. To complete your reservation, please provide the details for all ${totalTravelers} traveler(s).</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Tour Package</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${tourTitle}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Destination</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${destination}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Travel Date</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${travelDate}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Members Added</td><td style="padding: 8px;">${membersAdded} / ${totalTravelers}</td></tr>
+        </table>
+        <a href="${portalUrl}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Add Member Details →</a>
+        <p style="margin-top: 20px; font-size: 12px; color: #718096;">For support, contact us at support@zahabiatravel.com</p>
+      </div>
+      <div style="text-align: center; padding: 15px; font-size: 11px; color: #a0aec0;">
+        &copy; 2026 Zahabia Travel & Tourism. Powered by Apex Solutions.
+      </div>
+    </div>
+  `;
+  const textContent = `Complete Your Group\n${tourTitle}\nDestination: ${destination}\nTravel Date: ${travelDate}\nMembers Added: ${membersAdded} / ${totalTravelers}\n\nAdd member details: ${portalUrl}`;
+  return { subject, html, text: textContent };
+}
+
+export function buildGroupCompleteEmail({ customerName, tourTitle, destination, travelDate, totalTravelers }) {
+  const subject = `Group Complete — ${tourTitle} Confirmed!`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+      <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+        <h1 style="margin: 0; color: #d4a843;">ZAHABIA TRAVEL & TOURISM</h1>
+        <p style="margin: 5px 0 0; color: #a0aec0; font-size: 12px;">GROUP COMPLETE — BOOKING CONFIRMED</p>
+      </div>
+      <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+        <p>Dear <strong>${customerName}</strong>,</p>
+        <p>All ${totalTravelers} member(s) have been added to your group. Your booking is now <strong>confirmed</strong>.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Tour Package</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${tourTitle}</td></tr>
+          <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Destination</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${destination}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Travel Date</td><td style="padding: 8px;">${travelDate}</td></tr>
+        </table>
+        <p style="margin-top: 20px; font-size: 12px; color: #718096;">For support, contact us at support@zahabiatravel.com</p>
+      </div>
+      <div style="text-align: center; padding: 15px; font-size: 11px; color: #a0aec0;">
+        &copy; 2026 Zahabia Travel & Tourism. Powered by Apex Solutions.
+      </div>
+    </div>
+  `;
+  const textContent = `Group Complete — Booking Confirmed!\n${tourTitle}\nDestination: ${destination}\nTravel Date: ${travelDate}\nAll ${totalTravelers} member(s) added.`;
+  return { subject, html, text: textContent };
+}
