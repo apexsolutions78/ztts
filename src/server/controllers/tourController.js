@@ -14,7 +14,19 @@ import {
   findPortalTokenByTourBooking,
   addPayment,
   logAuditAction,
-  logNotificationRecord
+  logNotificationRecord,
+  createGroupTour,
+  getGroupTourById,
+  getGroupTourByBookingId,
+  getAllGroupTours,
+  updateGroupTour,
+  deleteGroupTour,
+  addGroupMember,
+  getGroupMembers,
+  updateGroupMember,
+  deleteGroupMember,
+  getGroupTourStats,
+  getAllUsers
 } from '../models/index.js';
 import { sendEmail, buildTourConfirmationEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildTourConfirmationWhatsAppMessage } from '../services/whatsAppService.js';
@@ -307,6 +319,234 @@ export async function postCancelTourBooking(req, res, next) {
     });
 
     res.redirect('/admin/tours?cancelled=true');
+  } catch (error) {
+    next(error);
+  }
+}
+
+// --- GROUP TOUR CONTROLLERS ---
+
+export async function listGroupTours(req, res, next) {
+  try {
+    const groups = await getAllGroupTours();
+    const stats = await getGroupTourStats();
+    res.render('admin/tours/groups', {
+      title: 'Group Tours',
+      groups,
+      stats
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getCreateGroupForm(req, res, next) {
+  try {
+    const booking = await findTourBookingById(req.params.bookingId);
+    if (!booking) return res.status(404).render('errors/404', { title: 'Tour Booking Not Found' });
+
+    const existingGroup = await getGroupTourByBookingId(booking.id);
+    if (existingGroup) {
+      return res.redirect(`/admin/tours/group/${existingGroup.id}`);
+    }
+
+    const users = await getAllUsers();
+    res.render('admin/tours/group-new', {
+      title: 'Create Group Tour',
+      booking,
+      users
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postCreateGroup(req, res, next) {
+  try {
+    const { bookingId } = req.params;
+    const { group_name, guide_user_id, notes } = req.body;
+
+    if (!group_name) {
+      const booking = await findTourBookingById(bookingId);
+      const users = await getAllUsers();
+      return res.status(400).render('admin/tours/group-new', {
+        title: 'Create Group Tour',
+        booking,
+        users,
+        error: 'Group name is required.'
+      });
+    }
+
+    const group = await createGroupTour({
+      tour_booking_id: bookingId,
+      group_name,
+      guide_user_id: guide_user_id || null,
+      notes: notes || null,
+      created_by: req.session.user.id
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'CREATE_GROUP_TOUR',
+      entity_type: 'group_tour',
+      entity_id: group.id,
+      details: `Created group tour: ${group_name}`
+    });
+
+    res.redirect(`/admin/tours/group/${group.id}`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function viewGroupTour(req, res, next) {
+  try {
+    const group = await getGroupTourById(req.params.id);
+    if (!group) return res.status(404).render('errors/404', { title: 'Group Tour Not Found' });
+
+    const members = await getGroupMembers(group.id);
+    const users = await getAllUsers();
+
+    res.render('admin/tours/group-detail', {
+      title: `Group: ${group.group_name}`,
+      group,
+      members,
+      users
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postUpdateGroup(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { group_name, status, guide_user_id, notes } = req.body;
+
+    await updateGroupTour(id, {
+      group_name,
+      status,
+      guide_user_id: guide_user_id || null,
+      notes
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'UPDATE_GROUP_TOUR',
+      entity_type: 'group_tour',
+      entity_id: id,
+      details: `Updated group tour: ${group_name || id}`
+    });
+
+    res.redirect(`/admin/tours/group/${id}?updated=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postDeleteGroup(req, res, next) {
+  try {
+    const { id } = req.params;
+    const group = await getGroupTourById(id);
+    await deleteGroupTour(id);
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'DELETE_GROUP_TOUR',
+      entity_type: 'group_tour',
+      entity_id: id,
+      details: `Deleted group tour: ${group ? group.group_name : id}`
+    });
+
+    res.redirect('/admin/tours/groups?deleted=true');
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postAddGroupMember(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { full_name, phone, email, passport_number, nationality, notes, sort_order } = req.body;
+
+    if (!full_name) {
+      return res.redirect(`/admin/tours/group/${id}?error=Name+is+required`);
+    }
+
+    await addGroupMember({
+      group_tour_id: id,
+      full_name,
+      phone,
+      email,
+      passport_number,
+      nationality,
+      notes,
+      sort_order: sort_order || 0
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'ADD_GROUP_MEMBER',
+      entity_type: 'group_member',
+      entity_id: id,
+      details: `Added member ${full_name} to group tour ${id}`
+    });
+
+    res.redirect(`/admin/tours/group/${id}?memberAdded=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postUpdateGroupMember(req, res, next) {
+  try {
+    const { groupId, memberId } = req.params;
+    const { full_name, phone, email, passport_number, nationality, notes, sort_order } = req.body;
+
+    await updateGroupMember(memberId, {
+      full_name,
+      phone,
+      email,
+      passport_number,
+      nationality,
+      notes,
+      sort_order: sort_order || 0
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'UPDATE_GROUP_MEMBER',
+      entity_type: 'group_member',
+      entity_id: memberId,
+      details: `Updated member ${full_name} in group tour ${groupId}`
+    });
+
+    res.redirect(`/admin/tours/group/${groupId}?memberUpdated=true`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postDeleteGroupMember(req, res, next) {
+  try {
+    const { groupId, memberId } = req.params;
+    const member = await deleteGroupMember(memberId);
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'DELETE_GROUP_MEMBER',
+      entity_type: 'group_member',
+      entity_id: memberId,
+      details: `Removed member from group tour ${groupId}`
+    });
+
+    res.redirect(`/admin/tours/group/${groupId}?memberRemoved=true`);
   } catch (error) {
     next(error);
   }

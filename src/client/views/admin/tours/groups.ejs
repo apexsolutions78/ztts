@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <p class="eyebrow">Group Management</p>
+        <h1>Group Tours</h1>
+        <p class="muted">Manage group tour formations, members, and guide assignments.</p>
+      </div>
+      <a href="/admin/tours" class="btn btn-secondary">← Back to Tours</a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="metrics-grid" style="margin-bottom: 2rem;">
+      <div class="metric-card">
+        <div class="metric-title">Total Groups</div>
+        <div class="metric-value">${stats.total}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Draft</div>
+        <div class="metric-value" style="color: #d69e2e;">${stats.draft}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Active</div>
+        <div class="metric-value" style="color: #38a169;">${stats.active}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Completed</div>
+        <div class="metric-value">${stats.completed}</div>
+      </div>
+    </div>
+
+    <!-- Groups Table -->
+    <div class="card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Group Name</th>
+              <th>Tour Package</th>
+              <th>Destination</th>
+              <th>Travel Date</th>
+              <th>Members</th>
+              <th>Guide</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${groups.length > 0 ? groups.map(g => `
+              <tr>
+                <td><strong style="font-family: var(--font-heading); color: var(--primary);">${g.group_name}</strong></td>
+                <td>${g.tour_title || 'N/A'}</td>
+                <td>${g.tour_destination || 'N/A'}</td>
+                <td>${g.travel_date ? new Date(g.travel_date).toLocaleDateString() : 'TBD'}</td>
+                <td><strong>${g.member_count}</strong> / ${g.total_travelers || '?'}</td>
+                <td>${g.guide_name || '<span class="muted">Unassigned</span>'}</td>
+                <td><span class="badge badge-${g.status}">${g.status}</span></td>
+                <td>
+                  <a href="/admin/tours/group/${g.id}" class="btn btn-primary btn-sm">Manage</a>
+                  <form method="post" action="/admin/tours/group/${g.id}/delete" style="display: inline; margin: 0;" onsubmit="return confirm('Delete this group?')">
+                    <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            `).join('') : '<tr><td colspan="8" class="muted" style="text-align: center; padding: 2rem;">No group tours created yet. Create a group from a <a href="/admin/tours">tour booking</a>.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` }) %>
+</body>
+</html>

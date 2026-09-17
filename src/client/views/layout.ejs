@@ -24,6 +24,7 @@
         <li><a href="/admin" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath === '/admin') ? 'active' : '' %>">Dashboard</a></li>
         <li><a href="/admin/flights" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/flights')) ? 'active' : '' %>">Flights</a></li>
         <li><a href="/admin/tours" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/tours')) ? 'active' : '' %>">Tours</a></li>
+        <li><a href="/admin/tours/groups" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/tours/groups') || currentPath.startsWith('/admin/tours/group/')) ? 'active' : '' %>">Groups</a></li>
         <li><a href="/admin/chat" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/chat')) ? 'active' : '' %>" style="color: var(--accent-gold);">🤖 AI Chat</a></li>
         <li><a href="/admin/customers" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/customers')) ? 'active' : '' %>">Customers</a></li>
         <li><a href="/admin/finance" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/finance')) ? 'active' : '' %>">Finance</a></li>

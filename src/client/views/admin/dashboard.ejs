@@ -44,6 +44,13 @@
         <div class="metric-value">${stats.activeToursCount}</div>
         <div class="metric-sub">${stats.recentTourBookings.length} Active Reservations</div>
       </div>
+      ${groupStats && groupStats.total > 0 ? `
+      <div class="metric-card" style="border-left: 4px solid #38a169;">
+        <div class="metric-title">Group Tours</div>
+        <div class="metric-value" style="color: #38a169;">${groupStats.total}</div>
+        <div class="metric-sub">${groupStats.active} Active · ${groupStats.draft} Draft</div>
+      </div>
+      ` : ''}
       <div class="metric-card">
         <div class="metric-title">Registered Customers</div>
         <div class="metric-value">${stats.customersCount}</div>
@@ -184,6 +191,44 @@
       </div>
 
     </div>
+
+    <!-- Group Tours Section -->
+    ${recentGroups && recentGroups.length > 0 ? `
+    <div class="card" style="margin-top: 1.5rem;">
+      <div class="card-header">
+        <h2>Recent Group Tours</h2>
+        <a href="/admin/tours/groups" class="btn btn-secondary btn-sm">View All Groups</a>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Group Name</th>
+              <th>Tour Package</th>
+              <th>Travel Date</th>
+              <th>Members</th>
+              <th>Guide</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recentGroups.map(g => `
+              <tr>
+                <td><strong>${g.group_name}</strong></td>
+                <td>${g.tour_title || 'N/A'}</td>
+                <td>${g.travel_date ? new Date(g.travel_date).toLocaleDateString() : 'TBD'}</td>
+                <td><strong>${g.member_count}</strong> / ${g.total_travelers || '?'}</td>
+                <td>${g.guide_name || '<span class="muted">Unassigned</span>'}</td>
+                <td><span class="badge badge-${g.status}">${g.status}</span></td>
+                <td><a href="/admin/tours/group/${g.id}" class="btn btn-primary btn-sm">Manage</a></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    ` : ''}
   ` }) %>
 </body>
 </html>

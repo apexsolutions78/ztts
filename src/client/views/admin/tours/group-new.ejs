@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel & Tourism</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <%- include('../../layout', { body: `
+    <div style="margin-bottom: 1.5rem;">
+      <a href="/admin/tours/groups" class="btn btn-secondary btn-sm">← Back to Groups</a>
+      <h1 style="margin-top: 0.5rem;">Create Group Tour</h1>
+      <p class="muted">Form a new group from an existing tour booking.</p>
+    </div>
+
+    <!-- Booking Info Card -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h3>Linked Tour Booking</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Package</span>
+          <div style="font-weight: 700;">${booking.tour_title}</div>
+        </div>
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Customer</span>
+          <div style="font-weight: 700;">${booking.customer_name}</div>
+        </div>
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Travel Date</span>
+          <div style="font-weight: 700;">${new Date(booking.travel_date).toLocaleDateString()}</div>
+        </div>
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Travelers</span>
+          <div style="font-weight: 700;">${booking.total_travelers} Person(s)</div>
+        </div>
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Amount</span>
+          <div style="font-weight: 700;">${formatPrice(booking.total_amount)}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Group Form -->
+    <div class="card">
+      <h3>Group Details</h3>
+      <p class="muted" style="margin: 0.5rem 0 1.5rem; font-size: 0.85rem;">Provide a name for this group and optionally assign a guide.</p>
+      
+      ${typeof error !== 'undefined' && error ? '<div style="background: #fde8e8; color: #9b2c2c; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; border-left: 4px solid #e53e3e;">' + error + '</div>' : ''}
+
+      <form method="post" action="/admin/tours/bookings/${booking.id}/group/new" style="max-width: 600px;">
+        <div class="form-group">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Group Name *</label>
+          <input type="text" name="group_name" class="form-control" required placeholder="e.g. Umrah Group A - October 2026" value="${booking.tour_title + ' - Group'}">
+        </div>
+        <div class="form-group">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Assign Guide (Optional)</label>
+          <select name="guide_user_id" class="form-control">
+            <option value="">-- No Guide Assigned --</option>
+            ${users.map(u => '<option value="' + u.id + '">' + u.name + ' (' + u.role + ')</option>').join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Notes (Optional)</label>
+          <textarea name="notes" class="form-control" rows="3" placeholder="Internal notes about this group..."></textarea>
+        </div>
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-accent">Create Group Tour</button>
+          <a href="/admin/tours/groups" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  ` }) %>
+</body>
+</html>

@@ -15,6 +15,7 @@
         <p class="muted">Reservation #${booking.id} — ${booking.customer_name}</p>
       </div>
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+        <a href="/admin/tours/bookings/${booking.id}/group/new" class="btn btn-primary">👥 Create Group Tour</a>
         <button id="shareBtn" onclick="generateShareLink(${booking.id})" class="btn btn-accent">🔗 Share Portal Link</button>
         ${booking.status !== 'cancelled' ? `
           <form method="post" action="/admin/tours/bookings/${booking.id}/cancel" style="margin: 0;" onsubmit="return confirm('Cancel this tour booking? This action cannot be undone.')">

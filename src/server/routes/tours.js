@@ -1,9 +1,26 @@
 import { Router } from 'express';
-import { listTours, getNewTourForm, postCreateTour, viewTourDetail, viewTourBooking, postBookTour, getEditTourForm, postUpdateTour, postDeleteTour, postCancelTourBooking } from '../controllers/tourController.js';
+import { 
+  listTours, getNewTourForm, postCreateTour, viewTourDetail, viewTourBooking, postBookTour, 
+  getEditTourForm, postUpdateTour, postDeleteTour, postCancelTourBooking,
+  listGroupTours, getCreateGroupForm, postCreateGroup, viewGroupTour, postUpdateGroup, 
+  postDeleteGroup, postAddGroupMember, postUpdateGroupMember, postDeleteGroupMember
+} from '../controllers/tourController.js';
 import { uploadTourImage } from '../middleware/upload.js';
 
 const router = Router();
 
+// Group Tour routes (must be before /:id routes)
+router.get('/groups', listGroupTours);
+router.get('/bookings/:bookingId/group/new', getCreateGroupForm);
+router.post('/bookings/:bookingId/group/new', postCreateGroup);
+router.get('/group/:id', viewGroupTour);
+router.post('/group/:id/edit', postUpdateGroup);
+router.post('/group/:id/delete', postDeleteGroup);
+router.post('/group/:id/member', postAddGroupMember);
+router.post('/group/:groupId/member/:memberId/edit', postUpdateGroupMember);
+router.post('/group/:groupId/member/:memberId/delete', postDeleteGroupMember);
+
+// Existing routes
 router.get('/', listTours);
 router.get('/new', getNewTourForm);
 router.post('/new', uploadTourImage('image_file'), postCreateTour);
