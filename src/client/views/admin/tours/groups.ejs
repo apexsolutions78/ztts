@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">Group Management</p>
         <h1>Group Tours</h1>
-        <p class="muted">Manage group tour formations, members, and guide assignments.</p>
+        <p class="muted">Manage group tour drafts, guide assignments, and itineraries.</p>
       </div>
       <a href="/admin/tours" class="btn btn-secondary">← Back to Tours</a>
     </div>
@@ -43,11 +43,11 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Group Name</th>
+              <th>Title</th>
               <th>Tour Package</th>
               <th>Destination</th>
               <th>Travel Date</th>
-              <th>Members</th>
+              <th>Group Size</th>
               <th>Guide</th>
               <th>Status</th>
               <th>Actions</th>
@@ -56,11 +56,11 @@
           <tbody>
             ${groups.length > 0 ? groups.map(g => `
               <tr>
-                <td><strong style="font-family: var(--font-heading); color: var(--primary);">${g.group_name}</strong></td>
+                <td><strong style="font-family: var(--font-heading); color: var(--primary);">${g.title}</strong></td>
                 <td>${g.tour_title || 'N/A'}</td>
                 <td>${g.tour_destination || 'N/A'}</td>
                 <td>${g.travel_date ? new Date(g.travel_date).toLocaleDateString() : 'TBD'}</td>
-                <td><strong>${g.member_count}</strong> / ${g.total_travelers || '?'}</td>
+                <td>${g.group_size_expected || g.total_travelers || '—'}</td>
                 <td>${g.guide_name || '<span class="muted">Unassigned</span>'}</td>
                 <td><span class="badge badge-${g.status}">${g.status}</span></td>
                 <td>

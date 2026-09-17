@@ -5,161 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %> | Zahabia Travel & Tourism</title>
   <link rel="stylesheet" href="/static/css/app.css">
-  <style>
-    .member-card {
-      background: #f8fcfa;
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-sm);
-      padding: 1rem 1.25rem;
-      margin-bottom: 0.75rem;
-    }
-    .member-card h4 { margin: 0 0 0.3rem; font-size: 0.95rem; }
-    .member-card .meta { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
-    .member-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-  </style>
 </head>
 <body>
   <%- include('../../layout', { body: `
     <div style="margin-bottom: 1.5rem;">
       <a href="/admin/tours/groups" class="btn btn-secondary btn-sm">← Back to Groups</a>
-      <h1 style="margin-top: 0.5rem;">${group.group_name}</h1>
-      <p class="muted">Group Tour Management & Member Roster</p>
+      <h1 style="margin-top: 0.5rem;">${group.title}</h1>
+      <p class="muted">Group Tour Draft &amp; Configuration</p>
     </div>
 
-    <!-- Status Tabs -->
+    <!-- Status Badge -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
       <span class="badge badge-${group.status}" style="padding: 0.5rem 1rem; font-size: 0.85rem; text-transform: uppercase;">${group.status}</span>
       ${group.guide_name ? '<span style="background: #edf4f2; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.82rem;">Guide: <strong>' + group.guide_name + '</strong></span>' : ''}
+      ${group.tour_destination ? '<span style="background: #edf4f2; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.82rem;">📍 ' + group.tour_destination + '</span>' : ''}
     </div>
 
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
-      <!-- Left Column: Members + Edit -->
-      <div>
-        <!-- Members Section -->
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <div class="section-header">
-            <h2>Group Members (${members.length})</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <!-- Left Column: Summary -->
+      <div class="card">
+        <h3>Tour Summary</h3>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Package</span>
+            <div style="font-weight: 700;">${group.tour_title}</div>
           </div>
-          
-          ${members.length > 0 ? members.map((m, i) => `
-            <div class="member-card">
-              <h4>${i + 1}. ${m.full_name}</h4>
-              <p class="meta">
-                ${m.nationality ? '🌍 ' + m.nationality : ''}
-                ${m.passport_number ? ' | 📄 ' + m.passport_number : ''}
-                ${m.phone ? ' | 📞 ' + m.phone : ''}
-                ${m.email ? ' | ✉️ ' + m.email : ''}
-              </p>
-              ${m.notes ? '<p class="meta" style="margin-top: 0.3rem;">📝 ' + m.notes + '</p>' : ''}
-              <div class="member-actions">
-                <form method="post" action="/admin/tours/group/${group.id}/member/${m.id}/delete" onsubmit="return confirm('Remove this member?')" style="margin: 0;">
-                  <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.2rem 0.6rem; font-size: 0.72rem;">Remove</button>
-                </form>
-              </div>
-            </div>
-          `).join('') : '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted);">No members added yet. Use the form below to add the first member.</div>'}
-
-          <!-- Add Member Form -->
-          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
-            <h3 style="margin-bottom: 1rem;">Add New Member</h3>
-            <form method="post" action="/admin/tours/group/${group.id}/member" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-              <div class="form-group" style="grid-column: 1 / -1;">
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Full Name *</label>
-                <input type="text" name="full_name" class="form-control" required placeholder="Member's full name">
-              </div>
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Nationality</label>
-                <input type="text" name="nationality" class="form-control" placeholder="e.g. Pakistani">
-              </div>
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Passport Number</label>
-                <input type="text" name="passport_number" class="form-control" placeholder="e.g. AB123456">
-              </div>
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Phone</label>
-                <input type="tel" name="phone" class="form-control" placeholder="+971 50 123 4567">
-              </div>
-              <div class="form-group">
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Email</label>
-                <input type="email" name="email" class="form-control" placeholder="member@email.com">
-              </div>
-              <div class="form-group" style="grid-column: 1 / -1;">
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Notes</label>
-                <textarea name="notes" class="form-control" rows="2" placeholder="Any special requirements..."></textarea>
-              </div>
-              <div style="grid-column: 1 / -1;">
-                <button type="submit" class="btn btn-accent">+ Add Member</button>
-              </div>
-            </form>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Customer</span>
+            <div style="font-weight: 700;">${group.customer_name || 'N/A'}</div>
+          </div>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Travel Date</span>
+            <div style="font-weight: 700;">${group.travel_date ? new Date(group.travel_date).toLocaleDateString() : 'TBD'}</div>
+          </div>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Duration</span>
+            <div style="font-weight: 700;">${group.duration_days} Days</div>
+          </div>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Travelers in Booking</span>
+            <div style="font-weight: 700;">${group.total_travelers} Person(s)</div>
+          </div>
+          <div>
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Total Amount</span>
+            <div style="font-weight: 700; color: var(--primary);">${formatPrice(group.total_amount)}</div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Group Info + Edit -->
-      <div>
-        <!-- Group Info -->
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <h3>Group Information</h3>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
-            <div>
-              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Tour Package</span>
-              <div style="font-weight: 700;">${group.tour_title}</div>
+      <!-- Right Column: Edit Form -->
+      <div class="card">
+        <h3>Edit Group Tour Draft</h3>
+        <form method="post" action="/admin/tours/group/${group.id}/edit" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Title</label>
+            <input type="text" name="title" class="form-control" value="${group.title}" required>
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Status</label>
+            <select name="status" class="form-control">
+              <option value="draft" ${group.status === 'draft' ? 'selected' : ''}>Draft</option>
+              <option value="finalized" ${group.status === 'finalized' ? 'selected' : ''}>Finalized</option>
+              <option value="active" ${group.status === 'active' ? 'selected' : ''}>Active</option>
+              <option value="completed" ${group.status === 'completed' ? 'selected' : ''}>Completed</option>
+              <option value="cancelled" ${group.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Assigned Guide</label>
+            <select name="assigned_guide_user_id" class="form-control">
+              <option value="">-- None --</option>
+              ${users.map(u => '<option value="' + u.id + '" ' + (group.assigned_guide_user_id == u.id ? 'selected' : '') + '>' + u.name + ' (' + u.role + ')</option>').join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Expected Group Size</label>
+            <input type="number" name="group_size_expected" class="form-control" min="1" value="${group.group_size_expected || ''}">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Start Date & Time</label>
+              <input type="datetime-local" name="start_at" class="form-control" value="${group.start_at ? new Date(group.start_at).toISOString().slice(0, 16) : ''}">
             </div>
-            <div>
-              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Destination</span>
-              <div style="font-weight: 700;">${group.tour_destination}</div>
-            </div>
-            <div>
-              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Travel Date</span>
-              <div style="font-weight: 700;">${group.travel_date ? new Date(group.travel_date).toLocaleDateString() : 'TBD'}</div>
-            </div>
-            <div>
-              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Duration</span>
-              <div style="font-weight: 700;">${group.duration_days} Days</div>
-            </div>
-            <div>
-              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Members</span>
-              <div style="font-weight: 700;">${members.length} / ${group.total_travelers}</div>
-            </div>
-            <div>
-              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Total Amount</span>
-              <div style="font-weight: 700; color: var(--primary);">${formatPrice(group.total_amount)}</div>
+            <div class="form-group">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">End Date & Time</label>
+              <input type="datetime-local" name="end_at" class="form-control" value="${group.end_at ? new Date(group.end_at).toISOString().slice(0, 16) : ''}">
             </div>
           </div>
-        </div>
-
-        <!-- Edit Group Form -->
-        <div class="card">
-          <h3>Edit Group</h3>
-          <form method="post" action="/admin/tours/group/${group.id}/edit" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Group Name</label>
-              <input type="text" name="group_name" class="form-control" value="${group.group_name}" required>
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Status</label>
-              <select name="status" class="form-control">
-                <option value="draft" ${group.status === 'draft' ? 'selected' : ''}>Draft</option>
-                <option value="finalized" ${group.status === 'finalized' ? 'selected' : ''}>Finalized</option>
-                <option value="active" ${group.status === 'active' ? 'selected' : ''}>Active</option>
-                <option value="completed" ${group.status === 'completed' ? 'selected' : ''}>Completed</option>
-                <option value="cancelled" ${group.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Guide</label>
-              <select name="guide_user_id" class="form-control">
-                <option value="">-- None --</option>
-                ${users.map(u => '<option value="' + u.id + '" ' + (group.guide_user_id == u.id ? 'selected' : '') + '>' + u.name + ' (' + u.role + ')</option>').join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Notes</label>
-              <textarea name="notes" class="form-control" rows="3">${group.notes || ''}</textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-          </form>
-        </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Welcome Message</label>
+            <textarea name="welcome_message" class="form-control" rows="3">${group.welcome_message || ''}</textarea>
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Emergency Instructions</label>
+            <textarea name="emergency_instructions" class="form-control" rows="3">${group.emergency_instructions || ''}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
       </div>
     </div>
   ` }) %>

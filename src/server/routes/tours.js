@@ -3,7 +3,7 @@ import {
   listTours, getNewTourForm, postCreateTour, viewTourDetail, viewTourBooking, postBookTour, 
   getEditTourForm, postUpdateTour, postDeleteTour, postCancelTourBooking,
   listGroupTours, getCreateGroupForm, postCreateGroup, viewGroupTour, postUpdateGroup, 
-  postDeleteGroup, postAddGroupMember, postUpdateGroupMember, postDeleteGroupMember
+  postDeleteGroup
 } from '../controllers/tourController.js';
 import { uploadTourImage } from '../middleware/upload.js';
 
@@ -16,9 +16,6 @@ router.post('/bookings/:bookingId/group/new', postCreateGroup);
 router.get('/group/:id', viewGroupTour);
 router.post('/group/:id/edit', postUpdateGroup);
 router.post('/group/:id/delete', postDeleteGroup);
-router.post('/group/:id/member', postAddGroupMember);
-router.post('/group/:groupId/member/:memberId/edit', postUpdateGroupMember);
-router.post('/group/:groupId/member/:memberId/delete', postDeleteGroupMember);
 
 // Existing routes
 router.get('/', listTours);

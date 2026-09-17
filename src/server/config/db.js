@@ -270,8 +270,7 @@ export const memoryStore = {
       created_at: '2026-09-02 11:25:05'
     }
   ],
-  group_tours: [],
-  group_members: []
+  group_tours: []
 };
 
 

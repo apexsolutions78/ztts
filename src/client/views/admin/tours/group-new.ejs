@@ -11,7 +11,7 @@
     <div style="margin-bottom: 1.5rem;">
       <a href="/admin/tours/groups" class="btn btn-secondary btn-sm">← Back to Groups</a>
       <h1 style="margin-top: 0.5rem;">Create Group Tour</h1>
-      <p class="muted">Form a new group from an existing tour booking.</p>
+      <p class="muted">Form a new group draft from an existing tour booking.</p>
     </div>
 
     <!-- Booking Info Card -->
@@ -44,28 +44,48 @@
     <!-- Create Group Form -->
     <div class="card">
       <h3>Group Details</h3>
-      <p class="muted" style="margin: 0.5rem 0 1.5rem; font-size: 0.85rem;">Provide a name for this group and optionally assign a guide.</p>
+      <p class="muted" style="margin: 0.5rem 0 1.5rem; font-size: 0.85rem;">Define the group tour draft. This is not finalized until you change the status.</p>
       
       ${typeof error !== 'undefined' && error ? '<div style="background: #fde8e8; color: #9b2c2c; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; border-left: 4px solid #e53e3e;">' + error + '</div>' : ''}
 
-      <form method="post" action="/admin/tours/bookings/${booking.id}/group/new" style="max-width: 600px;">
+      <form method="post" action="/admin/tours/bookings/${booking.id}/group/new" style="max-width: 700px;">
         <div class="form-group">
-          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Group Name *</label>
-          <input type="text" name="group_name" class="form-control" required placeholder="e.g. Umrah Group A - October 2026" value="${booking.tour_title + ' - Group'}">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Group Title *</label>
+          <input type="text" name="title" class="form-control" required placeholder="e.g. Umrah Group A - October 2026" value="${booking.tour_title + ' - Group'}">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Assigned Guide</label>
+            <select name="assigned_guide_user_id" class="form-control">
+              <option value="">-- No Guide Assigned --</option>
+              ${users.map(u => '<option value="' + u.id + '">' + u.name + ' (' + u.role + ')</option>').join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Expected Group Size</label>
+            <input type="number" name="group_size_expected" class="form-control" min="1" placeholder="e.g. 20" value="${booking.total_travelers || ''}">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Start Date & Time</label>
+            <input type="datetime-local" name="start_at" class="form-control" value="${booking.travel_date ? new Date(booking.travel_date).toISOString().slice(0, 16) : ''}">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">End Date & Time</label>
+            <input type="datetime-local" name="end_at" class="form-control">
+          </div>
         </div>
         <div class="form-group">
-          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Assign Guide (Optional)</label>
-          <select name="guide_user_id" class="form-control">
-            <option value="">-- No Guide Assigned --</option>
-            ${users.map(u => '<option value="' + u.id + '">' + u.name + ' (' + u.role + ')</option>').join('')}
-          </select>
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Welcome Message</label>
+          <textarea name="welcome_message" class="form-control" rows="3" placeholder="Optional message shown to group members..."></textarea>
         </div>
         <div class="form-group">
-          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Notes (Optional)</label>
-          <textarea name="notes" class="form-control" rows="3" placeholder="Internal notes about this group..."></textarea>
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Emergency Instructions</label>
+          <textarea name="emergency_instructions" class="form-control" rows="3" placeholder="Emergency contacts, procedures..."></textarea>
         </div>
         <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="submit" class="btn btn-accent">Create Group Tour</button>
+          <button type="submit" class="btn btn-accent">Create Group Tour Draft</button>
           <a href="/admin/tours/groups" class="btn btn-secondary">Cancel</a>
         </div>
       </form>
