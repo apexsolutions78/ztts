@@ -895,8 +895,11 @@ export async function getDashboardStats() {
   const tourBookings = await getAllTourBookings();
   const customers = await getAllCustomers();
 
-  const totalFlightRevenue = flights.reduce((sum, f) => sum + (Number(f.total_amount) || 0), 0);
-  const totalTourRevenue = tourBookings.reduce((sum, t) => sum + (Number(t.total_amount) || 0), 0);
+  // Revenue = actual payments received (exclude cancelled bookings)
+  const activeFlights = flights.filter(f => f.status !== 'cancelled');
+  const activeTourBookings = tourBookings.filter(t => t.status !== 'cancelled');
+  const totalFlightRevenue = activeFlights.reduce((sum, f) => sum + (Number(f.total_amount) || 0), 0);
+  const totalTourRevenue = activeTourBookings.reduce((sum, t) => sum + (Number(t.total_amount) || 0), 0);
   const totalRevenue = totalFlightRevenue + totalTourRevenue;
 
   const ticketedFlightsCount = flights.filter(f => f.ticket_status === 'ticketed').length;
