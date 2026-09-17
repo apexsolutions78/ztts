@@ -1,6 +1,5 @@
-import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, findTourBookingById, getFlightLiveStatus, getMembersByBookingId, createBookingMember, deleteBookingMember, isBookingComplete, getMembersByBookingId as getMembers, createBookingMember as addMember, deleteBookingMember as removeMember, isBookingComplete as checkComplete } from '../models/index.js';
-import { sendEmail, buildMemberPortalEmail, buildGroupCompleteEmail } from '../services/emailService.js';
-import { logAuditAction, logNotificationRecord } from '../models/index.js';
+import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, findTourBookingById, getFlightLiveStatus, getMembersByBookingId, createBookingMember, deleteBookingMember, isBookingComplete, createMemberWithToken, findMemberByPortalToken, getBookingMembersForLeader, isGroupLeader, setGroupLeader, getGroupLeader, logAuditAction, logNotificationRecord } from '../models/index.js';
+import { sendEmail, buildMemberPortalEmail, buildGroupCompleteEmail, buildMemberPortalInviteEmail } from '../services/emailService.js';
 
 export async function viewCustomerPortal(req, res, next) {
   try {
@@ -14,7 +13,6 @@ export async function viewCustomerPortal(req, res, next) {
       });
     }
 
-    // Check token expiry
     if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
       return res.status(404).render('errors/404', {
         title: 'Link Expired',
@@ -27,6 +25,8 @@ export async function viewCustomerPortal(req, res, next) {
     let tourBooking = null;
     let tourPackage = null;
     let liveStatus = null;
+    let members = [];
+    let groupLeader = null;
 
     if (tokenData.flight_booking_id) {
       flight = await findFlightBookingById(tokenData.flight_booking_id);
@@ -37,6 +37,8 @@ export async function viewCustomerPortal(req, res, next) {
       tourBooking = await findTourBookingById(tokenData.tour_booking_id);
       if (tourBooking) {
         tourPackage = await findTourPackageById(tourBooking.tour_package_id);
+        members = await getBookingMembersForLeader(tourBooking.id);
+        groupLeader = await getGroupLeader(tourBooking.id);
       }
     }
 
@@ -47,7 +49,9 @@ export async function viewCustomerPortal(req, res, next) {
       liveStatus,
       tourBooking,
       tourPackage,
-      token
+      token,
+      members,
+      groupLeader
     });
   } catch (error) {
     next(error);
@@ -84,6 +88,43 @@ export async function getMemberPortal(req, res, next) {
   }
 }
 
+export async function viewMemberPortal(req, res, next) {
+  try {
+    const { token } = req.params;
+    const member = await findMemberByPortalToken(token);
+    if (!member) {
+      return res.status(404).render('errors/404', { title: 'Invalid Link', message: 'This member portal link is invalid.' });
+    }
+
+    const booking = await findTourBookingById(member.tour_booking_id);
+    if (!booking) return res.status(404).render('errors/404', { title: 'Booking Not Found' });
+
+    const tourPackage = await findTourPackageById(booking.tour_package_id);
+    const leaderStatus = await isGroupLeader(booking.id, member.id);
+
+    let members;
+    if (leaderStatus) {
+      members = await getBookingMembersForLeader(booking.id);
+    } else {
+      members = [member];
+    }
+
+    res.render('portal/member-view', {
+      title: 'My Tour Details',
+      member,
+      booking,
+      tourPackage,
+      members,
+      isLeader: leaderStatus,
+      token,
+      error: null,
+      success: null
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function postAddMember(req, res, next) {
   try {
     const { token } = req.params;
@@ -107,7 +148,7 @@ export async function postAddMember(req, res, next) {
       });
     }
 
-    const { full_name, passport_number, nationality, phone } = req.body;
+    const { full_name, passport_number, nationality, phone, email } = req.body;
     if (!full_name) {
       const tourPackage = await findTourPackageById(booking.tour_package_id);
       const members = await getMembersByBookingId(booking.id);
@@ -119,18 +160,40 @@ export async function postAddMember(req, res, next) {
       });
     }
 
-    await createBookingMember({
+    const memberResult = await createMemberWithToken({
       tour_booking_id: booking.id,
       full_name,
       passport_number: passport_number || null,
       nationality: nationality || null,
-      phone: phone || null
+      phone: phone || null,
+      email: email || null
     });
+
+    // Set first member as group leader
+    const membersNow = await getMembersByBookingId(booking.id);
+    if (membersNow.length === 1) {
+      await setGroupLeader(booking.id, memberResult.id);
+    }
+
+    // Send invite email to member if email provided
+    if (email) {
+      try {
+        const tourPackage = await findTourPackageById(booking.tour_package_id);
+        const memberPortalUrl = `${req.protocol}://${req.get('host')}/t/member/${memberResult.portal_token}`;
+        await sendEmail({
+          to: email,
+          ...buildMemberPortalInviteEmail({
+            memberName: full_name,
+            tourTitle: tourPackage?.title || 'Tour',
+            portalUrl: memberPortalUrl
+          })
+        });
+      } catch (e) { /* non-blocking */ }
+    }
 
     // Check if booking is now complete
     const complete = await isBookingComplete(booking.id);
     if (complete) {
-      // Send confirmation email
       try {
         const customer = await findCustomerById(tokenData.customer_id);
         const tourPackage = await findTourPackageById(booking.tour_package_id);
@@ -187,3 +250,29 @@ export async function postDeleteMember(req, res, next) {
   }
 }
 
+export async function postTransferLeadership(req, res, next) {
+  try {
+    const { token, memberId } = req.params;
+    const tokenData = await findPortalToken(token);
+    if (!tokenData || !tokenData.tour_booking_id) {
+      return res.status(404).render('errors/404', { title: 'Invalid Link' });
+    }
+
+    const booking = await findTourBookingById(tokenData.tour_booking_id);
+    if (!booking) return res.status(404).render('errors/404', { title: 'Booking Not Found' });
+
+    await setGroupLeader(booking.id, memberId);
+
+    const tourPackage = await findTourPackageById(booking.tour_package_id);
+    const members = await getBookingMembersForLeader(booking.id);
+
+    res.render('portal/members', {
+      title: 'Complete Your Group',
+      booking, tourPackage, members, dateRange: null, token,
+      error: null,
+      success: 'Group leadership transferred.'
+    });
+  } catch (error) {
+    next(error);
+  }
+}

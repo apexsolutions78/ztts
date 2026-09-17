@@ -1,0 +1,45 @@
+<%- include('../../layout', { body: `
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+      <p class="eyebrow">Guide Portal</p>
+      <h1>My Assigned Groups</h1>
+      <p class="muted">Groups you are guiding</p>
+    </div>
+  </div>
+
+  ${groups.length === 0 ? `
+    <div class="card" style="text-align: center; padding: 3rem;">
+      <p style="color: var(--text-muted); font-size: 1.1rem;">No groups assigned to you yet.</p>
+    </div>
+  ` : `
+    <div style="display: grid; gap: 1rem;">
+      ${groups.map(group => `
+        <a href="/guide/group/${group.id}" class="card" style="text-decoration: none; color: inherit; display: block; transition: transform 0.15s, box-shadow 0.15s;"
+           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'"
+           onmouseout="this.style.transform=''; this.style.boxShadow=''">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="margin: 0 0 0.3rem; font-size: 1.15rem;">${group.title}</h3>
+              <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">
+                ${group.tour_title} &bull; ${group.destination || 'TBD'}
+              </p>
+            </div>
+            <span class="badge badge-${group.status === 'draft' ? 'warning' : group.status === 'finalized' ? 'info' : 'success'}" style="font-size: 0.75rem;">
+              ${group.status.toUpperCase()}
+            </span>
+          </div>
+          <div style="margin-top: 0.8rem; display: flex; gap: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
+            <span>Milestones: ${group.completed_milestones}/${group.milestone_count}</span>
+            <span>Travelers: ${group.total_travelers}</span>
+            <span>Progress: ${group.milestone_count > 0 ? Math.round((group.completed_milestones / group.milestone_count) * 100) : 0}%</span>
+          </div>
+          ${group.milestone_count > 0 ? `
+            <div class="progress-bar" style="margin-top: 0.5rem;">
+              <div class="progress-fill" style="width: ${Math.round((group.completed_milestones / group.milestone_count) * 100)}%"></div>
+            </div>
+          ` : ''}
+        </a>
+      `).join('')}
+    </div>
+  ` }
+` }) %>

@@ -4,7 +4,7 @@ export function requireAuth(req, res, next) {
 }
 
 export function requireAdmin(req, res, next) {
-  if (req.session?.user && (req.session.user.role === 'admin' || req.session.user.role === 'superadmin')) {
+  if (req.session?.user && req.session.user.role === 'admin') {
     return next();
   }
   return res.status(403).render('errors/403', {
@@ -13,3 +13,21 @@ export function requireAdmin(req, res, next) {
   });
 }
 
+export function requireGuide(req, res, next) {
+  if (req.session?.user && req.session.user.role === 'guide') {
+    return next();
+  }
+  return res.status(403).render('errors/403', {
+    title: 'Access Denied',
+    message: 'Guide access required.'
+  });
+}
+
+export function requireAdminOrGuide(req, res, next) {
+  if (req.session?.user && ['admin', 'guide'].includes(req.session.user.role)) {
+    return next();
+  }
+  return res.status(403).render('errors/403', {
+    title: 'Access Denied'
+  });
+}

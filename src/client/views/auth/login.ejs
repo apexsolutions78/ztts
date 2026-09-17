@@ -5,35 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %> | Zahabia Travel & Tourism</title>
   <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0b192c 0%, #05443b 100%); padding: 2rem 1rem; }
+    .auth-card { width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius-lg); box-shadow: 0 20px 50px rgba(0,0,0,0.3); overflow: hidden; }
+    .auth-header { background: linear-gradient(135deg, #0b192c 0%, #05443b 100%); color: #fff; padding: 2rem; text-align: center; }
+    .auth-header img { height: 60px; border-radius: 10px; margin-bottom: 0.8rem; }
+    .auth-header h1 { font-size: 1.4rem; margin: 0; color: #d4a843; }
+    .auth-header p { font-size: 0.85rem; color: #a0d4c8; margin: 0.3rem 0 0; }
+    .auth-body { padding: 2rem; }
+    .auth-body .form-group { margin-bottom: 1.1rem; }
+    .auth-body label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem; }
+    .auth-body .form-control { width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.92rem; font-family: inherit; transition: border-color 0.2s; background: #fafcfb; }
+    .auth-body .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5,68,59,0.08); }
+    .auth-body .btn-primary { width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-top: 0.5rem; }
+    .auth-error { background: #fde8e8; color: #9b2c2c; padding: 0.7rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; margin-bottom: 1.2rem; border-left: 4px solid #e53e3e; }
+    .auth-success { background: #e6ffed; color: #22543d; padding: 0.7rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; margin-bottom: 1.2rem; border-left: 4px solid #38a169; }
+    .code-input { font-size: 2rem; text-align: center; letter-spacing: 12px; font-weight: bold; padding: 0.9rem !important; }
+    .back-link { display: inline-block; margin-top: 1rem; color: var(--text-muted); font-size: 0.85rem; text-decoration: none; cursor: pointer; }
+    .back-link:hover { color: var(--primary); }
+  </style>
 </head>
-<body style="background: linear-gradient(135deg, #0b192c 0%, #05443b 100%); justify-content: center; align-items: center;">
-  <main class="app-container narrow-container" style="margin: 0 auto;">
-    <div class="card" style="border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;">
-      <div style="margin-bottom: 1.5rem;">
-        <img src="/brand/Golden_airplane_circling_globe_20260914222838.gif" alt="Zahabia Airplane" style="height: 100px; width: auto; border-radius: 12px;" onerror="this.src='/brand/LOGO123.png';">
-        <h1 style="font-size: 1.8rem; margin-top: 0.5rem; color: var(--primary-dark);">ZAHABIA TRAVEL & TOURISM</h1>
-        <p class="eyebrow" style="color: var(--accent-gold);">Operations Workspace</p>
+<body>
+  <main class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.src='/brand/Golden_airplane_circling_globe_20260914222838.gif'">
+        <h1>ZAHABIA TRAVEL & TOURISM</h1>
+        <p>Operations Workspace</p>
       </div>
+      <div class="auth-body">
+        <% if (error) { %>
+          <div class="auth-error"><%= error %></div>
+        <% } %>
+        <% if (message) { %>
+          <div class="auth-success"><%= message %></div>
+        <% } %>
 
-      <% if (error) { %>
-        <div class="alert alert-danger"><%= error %></div>
-      <% } %>
-
-      <form method="post" action="/auth/login" style="text-align: left;">
-        <input type="hidden" name="next" value="<%= next %>">
-        
-        <div class="form-group">
-          <label for="email">Operator Email Address</label>
-          <input type="email" id="email" name="email" class="form-control" placeholder="admin@zahabiatravel.com" required autocomplete="email">
-        </div>
-
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem; padding: 0.85rem;">Sign In to Operations</button>
-      </form>
+        <% if (step === 'email') { %>
+          <form method="post" action="/auth/login">
+            <input type="hidden" name="next" value="<%= next %>">
+            <div class="form-group">
+              <label for="email">Operator Email Address</label>
+              <input type="email" id="email" name="email" class="form-control" placeholder="admin@zahabiatravel.com" required autocomplete="email" value="<%= email %>">
+            </div>
+            <button type="submit" class="btn btn-primary">Send Verification Code</button>
+          </form>
+        <% } else { %>
+          <form method="post" action="/auth/verify">
+            <input type="hidden" name="next" value="<%= next %>">
+            <input type="hidden" name="email" value="<%= email %>">
+            <div class="form-group">
+              <label for="code">Enter 6-Digit Code</label>
+              <input type="text" id="code" name="code" class="form-control code-input" placeholder="000000" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
+            </div>
+            <button type="submit" class="btn btn-primary">Verify & Sign In</button>
+          </form>
+          <a class="back-link" onclick="history.back()">&#8592; Use a different email</a>
+        <% } %>
+      </div>
     </div>
   </main>
 </body>

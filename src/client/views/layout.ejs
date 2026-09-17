@@ -10,7 +10,7 @@
 <body>
   <% if (typeof user !== 'undefined' && user) { %>
     <nav class="navbar">
-      <a href="/admin" class="brand-logo">
+      <a href="<%= user.role === 'guide' ? '/guide' : '/admin' %>" class="brand-logo">
         <img src="/brand/LOGO123.png" alt="Zahabia Travel" onerror="this.onerror=null; this.src='/brand/Golden_airplane_circling_globe_20260914222838.gif';">
         <div>
           <span class="logo-title">ZAHABIA</span>
@@ -21,17 +21,21 @@
       <button class="hamburger" onclick="document.getElementById('navMenu').classList.toggle('open')" aria-label="Toggle menu">&#9776;</button>
 
       <ul class="nav-links" id="navMenu">
-        <li><a href="/admin" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath === '/admin') ? 'active' : '' %>">Dashboard</a></li>
-        <li><a href="/admin/flights" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/flights')) ? 'active' : '' %>">Flights</a></li>
-        <li><a href="/admin/tours" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/tours')) ? 'active' : '' %>">Tours</a></li>
-        <li><a href="/admin/tours/groups" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/tours/groups') || currentPath.startsWith('/admin/tours/group/')) ? 'active' : '' %>">Groups</a></li>
-        <li><a href="/admin/chat" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/chat')) ? 'active' : '' %>" style="color: var(--accent-gold);">🤖 AI Chat</a></li>
-        <li><a href="/admin/customers" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/customers')) ? 'active' : '' %>">Customers</a></li>
-        <li><a href="/admin/finance" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/finance')) ? 'active' : '' %>">Finance</a></li>
-        <% if (user.role === 'admin') { %>
-          <li><a href="/admin/audit-logs" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/audit-logs')) ? 'active' : '' %>">Audit</a></li>
-          <li><a href="/admin/settings/rates" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/settings')) ? 'active' : '' %>">Rates</a></li>
-          <li><a href="/admin/users" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/users')) ? 'active' : '' %>">Users</a></li>
+        <% if (user.role === 'guide') { %>
+          <li><a href="/guide" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/guide')) ? 'active' : '' %>">My Groups</a></li>
+        <% } else { %>
+          <li><a href="/admin" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath === '/admin') ? 'active' : '' %>">Dashboard</a></li>
+          <li><a href="/admin/flights" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/flights')) ? 'active' : '' %>">Flights</a></li>
+          <li><a href="/admin/tours" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/tours')) ? 'active' : '' %>">Tours</a></li>
+          <li><a href="/admin/tours/groups" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/tours/groups') || currentPath.startsWith('/admin/tours/group/')) ? 'active' : '' %>">Groups</a></li>
+          <li><a href="/admin/chat" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/chat')) ? 'active' : '' %>" style="color: var(--accent-gold);">🤖 AI Chat</a></li>
+          <li><a href="/admin/customers" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/customers')) ? 'active' : '' %>">Customers</a></li>
+          <li><a href="/admin/finance" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/finance')) ? 'active' : '' %>">Finance</a></li>
+          <% if (user.role === 'admin') { %>
+            <li><a href="/admin/audit-logs" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/audit-logs')) ? 'active' : '' %>">Audit</a></li>
+            <li><a href="/admin/settings/rates" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/settings')) ? 'active' : '' %>">Rates</a></li>
+            <li><a href="/admin/users" class="nav-link <%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin/users')) ? 'active' : '' %>">Users</a></li>
+          <% } %>
         <% } %>
       </ul>
 

@@ -20,6 +20,7 @@ import notificationRoutes from './routes/notifications.js';
 import userRoutes from './routes/users.js';
 import homeRoutes from './routes/home.js';
 import customerAuthRoutes from './routes/customerAuth.js';
+import guideRoutes from './routes/guide.js';
 import chatRoutes from './routes/chat.js';
 import paymentRoutes from './routes/payments.js';
 import { requireAuth, requireAdmin } from './middleware/auth.js';
@@ -79,6 +80,7 @@ app.get('/health', async (_req, res, next) => {
 
 app.use('/auth', authRoutes);
 app.use('/account', customerAuthRoutes);
+app.use('/guide', guideRoutes);
 app.use('/admin', requireAuth, adminRoutes);
 app.use('/admin/flights', requireAuth, flightRoutes);
 app.use('/admin/tours', requireAuth, tourRoutes);

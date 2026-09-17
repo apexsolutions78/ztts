@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    body { background: #f4f7f6; font-family: var(--font-body); margin: 0; padding: 0; }
+    .portal-header { background: linear-gradient(135deg, #1a3a2a 0%, #0b2e23 100%); color: #fff; padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1rem; }
+    .portal-header img { height: 40px; border-radius: 8px; }
+    .portal-header h1 { margin: 0; font-size: 1.2rem; color: #d4a843; }
+    .portal-header p { margin: 0.2rem 0 0; font-size: 0.8rem; color: #a0aec0; }
+    .portal-container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+    .member-card { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 1.5rem; }
+    .member-card-header { background: #f7fafc; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
+    .member-card-body { padding: 1.5rem; }
+    .info-row { display: flex; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-weight: 600; color: #4a5568; min-width: 140px; }
+    .info-value { color: #2d3748; flex: 1; }
+    .leader-badge { background: #d4a843; color: #1a3a2a; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    .tour-info { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .tour-info h2 { margin: 0 0 1rem; font-size: 1.1rem; color: var(--primary-dark); }
+    .members-list { margin-top: 1rem; }
+    .members-list h3 { font-size: 0.95rem; margin: 0 0 0.5rem; color: var(--text-main); }
+    .member-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f7fafc; border-radius: var(--radius-sm); margin-bottom: 0.4rem; font-size: 0.85rem; }
+    .member-avatar { width: 28px; height: 28px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
+    .alert { padding: 0.8rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; }
+    .alert-error { background: #fde8e8; color: #9b2c2c; border-left: 4px solid #e53e3e; }
+    .alert-success { background: #e6ffed; color: #22543d; border-left: 4px solid #38a169; }
+    .token-display { background: #f7fafc; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="portal-header">
+    <img src="/brand/LOGO123.png" alt="Zahabia">
+    <div>
+      <h1><%= tourPackage ? tourPackage.title : 'Tour Details' %></h1>
+      <p>Member Portal &bull; <%= member.full_name %></p>
+    </div>
+  </div>
+
+  <div class="portal-container">
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    <% if (success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <!-- My Details -->
+    <div class="member-card">
+      <div class="member-card-header">
+        <strong>My Details</strong>
+        <% if (isLeader) { %>
+          <span class="leader-badge">Group Leader</span>
+        <% } %>
+      </div>
+      <div class="member-card-body">
+        <div class="info-row">
+          <span class="info-label">Full Name</span>
+          <span class="info-value"><%= member.full_name %></span>
+        </div>
+        <% if (member.passport_number) { %>
+          <div class="info-row">
+            <span class="info-label">Passport</span>
+            <span class="info-value"><%= member.passport_number %></span>
+          </div>
+        <% } %>
+        <% if (member.nationality) { %>
+          <div class="info-row">
+            <span class="info-label">Nationality</span>
+            <span class="info-value"><%= member.nationality %></span>
+          </div>
+        <% } %>
+        <% if (member.phone) { %>
+          <div class="info-row">
+            <span class="info-label">Phone</span>
+            <span class="info-value"><%= member.phone %></span>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Tour Info -->
+    <% if (tourPackage) { %>
+      <div class="tour-info">
+        <h2>Tour Information</h2>
+        <div class="info-row">
+          <span class="info-label">Package</span>
+          <span class="info-value"><%= tourPackage.title %></span>
+        </div>
+        <% if (tourPackage.destination) { %>
+          <div class="info-row">
+            <span class="info-label">Destination</span>
+            <span class="info-value"><%= tourPackage.destination %></span>
+          </div>
+        <% } %>
+        <% if (booking.travel_date) { %>
+          <div class="info-row">
+            <span class="info-label">Travel Date</span>
+            <span class="info-value"><%= new Date(booking.travel_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+          </div>
+        <% } %>
+        <div class="info-row">
+          <span class="info-label">Travelers</span>
+          <span class="info-value"><%= booking.total_travelers %></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Booking Status</span>
+          <span class="info-value"><span class="badge badge-<%= booking.status === 'confirmed' ? 'success' : 'warning' %>"><%= booking.status.toUpperCase() %></span></span>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Group Members (leader only) -->
+    <% if (isLeader && members.length > 0) { %>
+      <div class="member-card">
+        <div class="member-card-header">
+          <strong>Group Members (<%= members.length %>)</strong>
+        </div>
+        <div class="member-card-body">
+          <div class="members-list">
+            <% members.forEach(m => { %>
+              <div class="member-item">
+                <div class="member-avatar"><%= m.full_name.charAt(0).toUpperCase() %></div>
+                <div style="flex: 1;">
+                  <strong><%= m.full_name %></strong>
+                  <% if (m.nationality) { %> &bull; <%= m.nationality %><% } %>
+                </div>
+                <% if (m.id === member.id) { %>
+                  <span class="leader-badge" style="font-size: 0.6rem;">YOU</span>
+                <% } %>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="token-display">
+      Member Token: <%= token %>
+    </div>
+  </div>
+</body>
+</html>

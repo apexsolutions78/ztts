@@ -1,0 +1,159 @@
+<%- include('../../layout', { body: `
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+      <a href="/guide" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">&larr; My Groups</a>
+      <h1 style="margin: 0.3rem 0 0;">${group.title}</h1>
+      <p class="muted">${group.tour_title} &bull; ${group.destination || 'TBD'}</p>
+    </div>
+    <span class="badge badge-${group.status === 'draft' ? 'warning' : group.status === 'finalized' ? 'info' : 'success'}">
+      ${group.status.toUpperCase()}
+    </span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <!-- Left Column -->
+    <div>
+      <!-- Milestones -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">
+          Milestones <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">
+            ${milestones.filter(m => m.status === 'completed').length}/${milestones.length}
+          </span>
+        </h2>
+        ${milestones.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.9rem;">No milestones defined.</p>' : `
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            ${milestones.map(m => `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.8rem; background: ${m.status === 'completed' ? '#e6ffed' : m.status === 'ready' ? '#fefcbf' : '#f7fafc'}; border-radius: var(--radius-sm); border-left: 3px solid ${m.status === 'completed' ? '#38a169' : m.status === 'ready' ? '#d69e2e' : '#e2e8f0'};">
+                <div>
+                  <strong style="font-size: 0.9rem;">${m.title}</strong>
+                  ${m.description ? '<p style="margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--text-muted);">' + m.description + '</p>' : ''}
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  ${m.status === 'pending' && group.status !== 'finalized' ? `
+                    <form method="POST" action="/guide/group/${group.id}/milestone/${m.id}/confirm" style="margin: 0;">
+                      <button type="submit" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">Mark Ready</button>
+                    </form>
+                  ` : `
+                    <span class="badge badge-${m.status === 'completed' ? 'success' : m.status === 'ready' ? 'warning' : 'default'}" style="font-size: 0.7rem;">
+                      ${m.status.toUpperCase()}
+                    </span>
+                  `}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+
+      <!-- Messages -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">Group Messages</h2>
+        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 0.8rem;">
+          ${messages.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.85rem;">No messages yet.</p>' : messages.map(msg => `
+            <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-light); font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong>${msg.sender_name}</strong>
+                <span style="color: var(--text-muted); font-size: 0.75rem;">${new Date(msg.created_at).toLocaleString()}</span>
+              </div>
+              <p style="margin: 0.2rem 0 0; color: var(--text-main);">${msg.message}</p>
+              ${msg.message_type !== 'text' ? '<span class="badge badge-info" style="font-size: 0.65rem; margin-top: 0.2rem;">' + msg.message_type.toUpperCase() + '</span>' : ''}
+            </div>
+          `).join('')}
+        </div>
+        <form method="POST" action="/guide/group/${group.id}/message" style="display: flex; gap: 0.5rem;">
+          <input type="text" name="message" class="form-control" placeholder="Type a message to all members..." required style="flex: 1; font-size: 0.9rem;">
+          <button type="submit" class="btn btn-primary btn-sm">Send</button>
+        </form>
+      </div>
+
+      <!-- Polls -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">Polls</h2>
+        ${polls.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.85rem;">No polls yet.</p>' : polls.map(poll => `
+          <div style="padding: 0.8rem; background: #f7fafc; border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong style="font-size: 0.9rem;">${poll.question}</strong>
+              <span class="badge badge-${poll.status === 'active' ? 'success' : 'default'}" style="font-size: 0.7rem;">${poll.status.toUpperCase()}</span>
+            </div>
+            <div style="margin-top: 0.5rem;">
+              ${poll.options.map((opt, i) => {
+                const votes = poll.results.find(r => r.selected_option === i);
+                return '<div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; font-size: 0.85rem;"><span style="flex: 1;">' + opt + '</span><span style="color: var(--text-muted);">' + (votes ? votes.vote_count : 0) + ' votes</span></div>';
+              }).join('')}
+            </div>
+            ${poll.status === 'active' ? `
+              <form method="POST" action="/guide/group/${group.id}/poll/${poll.id}/close" style="margin-top: 0.5rem;">
+                <button type="submit" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Close Poll</button>
+              </form>
+            ` : ''}
+          </div>
+        `).join('')}
+        <details style="margin-top: 0.5rem;">
+          <summary style="cursor: pointer; color: var(--primary); font-size: 0.85rem; font-weight: 600;">Create New Poll</summary>
+          <form method="POST" action="/guide/group/${group.id}/poll" style="margin-top: 0.5rem;">
+            <div class="form-group">
+              <input type="text" name="question" class="form-control" placeholder="Ask a question..." required style="font-size: 0.9rem;">
+            </div>
+            <div class="form-group">
+              <textarea name="options" class="form-control" rows="3" placeholder="Options (one per line, min 2)" required style="font-size: 0.9rem;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Create Poll</button>
+          </form>
+        </details>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div>
+      <!-- Members -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">Group Members (${members.length})</h2>
+        ${members.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.85rem;">No members added yet.</p>' : `
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            ${members.map(m => `
+              <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f7fafc; border-radius: var(--radius-sm); font-size: 0.85rem;">
+                <span style="width: 24px; height: 24px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold;">
+                  ${m.full_name.charAt(0).toUpperCase()}
+                </span>
+                <div style="flex: 1;">
+                  <strong>${m.full_name}</strong>
+                  ${m.nationality ? ' &bull; ' + m.nationality : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+
+      <!-- Share Details -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">Share with Group</h2>
+        <form method="POST" action="/guide/group/${group.id}/share">
+          <div class="form-group">
+            <select name="share_type" class="form-control" style="font-size: 0.9rem;">
+              <option value="maps">Maps</option>
+              <option value="highlights">Highlights</option>
+              <option value="details">Tour Details</option>
+              <option value="milestone">Milestone Details</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <textarea name="content" class="form-control" rows="3" placeholder="Content to share with all members..." required style="font-size: 0.9rem;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Share</button>
+        </form>
+      </div>
+
+      <!-- Message Admin -->
+      <div class="card">
+        <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">Message Admin</h2>
+        <form method="POST" action="/guide/group/${group.id}/admin-message">
+          <div class="form-group">
+            <textarea name="message" class="form-control" rows="3" placeholder="Send a private message to admin..." required style="font-size: 0.9rem;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-outline btn-sm" style="width: 100%;">Send to Admin</button>
+        </form>
+      </div>
+    </div>
+  </div>
+` }) %>

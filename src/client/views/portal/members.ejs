@@ -68,10 +68,21 @@
               <span class="icon">✅</span>
               <div style="flex: 1;">
                 <strong><%= members[i].full_name %></strong>
+                <% if (members[i].id === (booking.group_leader_member_id)) { %>
+                  <span style="background: #d4a843; color: #1a3a2a; padding: 0.1rem 0.4rem; border-radius: 8px; font-size: 0.65rem; font-weight: 700; margin-left: 0.3rem;">LEADER</span>
+                <% } %>
                 <div style="font-size: 0.8rem; color: var(--text-muted);">
                   <%= members[i].passport_number ? 'Passport: ' + members[i].passport_number : '' %>
                   <%= members[i].nationality ? ' • ' + members[i].nationality : '' %>
                 </div>
+                <% if (members[i].portal_token && members[i].id !== (booking.group_leader_member_id)) { %>
+                  <div style="margin-top: 0.3rem;">
+                    <a href="/t/member/<%= members[i].portal_token %>" style="font-size: 0.75rem; color: var(--primary);">View Portal Link</a>
+                    <form method="post" action="/t/<%= token %>/members/transfer-leader/<%= members[i].id %>" style="display: inline; margin-left: 0.5rem;" onsubmit="return confirm('Make <%= members[i].full_name %> the group leader?')">
+                      <button type="submit" style="background: none; border: none; color: var(--accent-gold); font-size: 0.75rem; cursor: pointer; text-decoration: underline;">Make Leader</button>
+                    </form>
+                  </div>
+                <% } %>
               </div>
               <form method="post" action="/t/<%= token %>/members/<%= members[i].id %>/delete" onsubmit="return confirm('Remove <%= members[i].full_name %>?')">
                 <button type="submit" class="btn-remove">Remove</button>
@@ -109,6 +120,10 @@
             <div class="form-group">
               <label style="font-size: 0.82rem; font-weight: 700;">Phone</label>
               <input type="text" name="phone" class="form-control" placeholder="Optional">
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.82rem; font-weight: 700;">Email (to send portal link)</label>
+              <input type="email" name="email" class="form-control" placeholder="Optional — member receives their own tour link">
             </div>
             <button type="submit" class="btn btn-accent" style="width: 100%;">Add Member</button>
           </form>

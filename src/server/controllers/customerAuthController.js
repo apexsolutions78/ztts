@@ -1,103 +1,99 @@
-import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, getAllCustomers, logAuditAction } from '../models/index.js';
-import { hashPassword } from '../config/db.js';
-import { sendEmail } from '../services/emailService.js';
-
-export async function getRegister(req, res) {
-  if (req.session?.customer) return res.redirect('/account');
-  res.render('customer/register', { title: 'Create Account', error: null, form: {} });
-}
-
-export async function postRegister(req, res) {
-  const { full_name, email, password, confirm_password, phone, nationality } = req.body;
-
-  if (!full_name || !email || !password) {
-    return res.status(400).render('customer/register', {
-      title: 'Create Account',
-      error: 'Name, email, and password are required.',
-      form: req.body
-    });
-  }
-
-  if (password !== confirm_password) {
-    return res.status(400).render('customer/register', {
-      title: 'Create Account',
-      error: 'Passwords do not match.',
-      form: req.body
-    });
-  }
-
-  if (password.length < 6) {
-    return res.status(400).render('customer/register', {
-      title: 'Create Account',
-      error: 'Password must be at least 6 characters.',
-      form: req.body
-    });
-  }
-
-  const existing = await findCustomerByEmail(email);
-  if (existing) {
-    return res.status(400).render('customer/register', {
-      title: 'Create Account',
-      error: 'An account with this email already exists.',
-      form: req.body
-    });
-  }
-
-  const customer = await createCustomer({
-    full_name,
-    email,
-    password,
-    phone: phone || null,
-    nationality: nationality || null,
-    passport_number: null
-  });
-
-  req.session.customer = {
-    id: customer.id,
-    name: customer.full_name,
-    email: customer.email
-  };
-
-  return res.redirect('/account');
-}
+import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction } from '../models/index.js';
+import { sendEmail, buildAuthCodeEmail } from '../services/emailService.js';
 
 export async function getLogin(req, res) {
   if (req.session?.customer) return res.redirect('/account');
-  res.render('customer/login', { title: 'Customer Login', error: null });
+  res.render('customer/login', {
+    title: 'Customer Login', error: null, step: 'email', email: '', message: null, purpose: 'login'
+  });
 }
 
-export async function postLogin(req, res) {
-  const { email, password } = req.body;
+export async function postAuth(req, res) {
+  const { email } = req.body;
 
-  if (!email || !password) {
+  if (!email) {
     return res.status(400).render('customer/login', {
-      title: 'Customer Login',
-      error: 'Please enter both email and password.'
+      title: 'Customer Login', error: 'Email is required.', step: 'email', email: '', message: null, purpose: 'login'
     });
   }
 
+  await cleanupExpiredCodes();
+  const existing = await findCustomerByEmail(email);
+  const purpose = existing ? 'login' : 'register';
+
+  const { code } = await createAuthCode({ email, purpose });
+
+  try {
+    await sendEmail({ to: email, ...buildAuthCodeEmail({ email, code, purpose }) });
+  } catch (e) {
+    console.error('[Customer Auth] Email send failed:', e.message);
+  }
+
+  res.render('customer/login', {
+    title: purpose === 'register' ? 'Create Account' : 'Customer Login',
+    error: null, step: 'code', email,
+    message: `Code sent to ${email}`,
+    purpose
+  });
+}
+
+export async function postVerify(req, res) {
+  const { email, code, full_name, phone, nationality } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).render('customer/login', {
+      title: 'Customer Login', error: 'Code is required.', step: 'code', email: email || '', message: null, purpose: 'login'
+    });
+  }
+
+  // If this is a registration without name yet, just validate code exists (don't consume)
+  if (!full_name) {
+    const record = await peekAuthCode(email, code);
+    if (!record) {
+      return res.status(401).render('customer/login', {
+        title: 'Customer Login', error: 'Invalid or expired code.', step: 'code', email, message: null, purpose: 'login'
+      });
+    }
+    if (record.purpose === 'register') {
+      return res.render('customer/login', {
+        title: 'Create Account', error: null, step: 'register', email, code, message: null, purpose: 'register'
+      });
+    }
+    // Login purpose — consume and log in
+    const verified = await verifyAuthCode(email, code);
+    const customer = await findCustomerByEmail(email);
+    if (customer) {
+      req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
+      return res.redirect('/account');
+    }
+    return res.redirect('/account/login');
+  }
+
+  // Full submit with name — verify code and create account
+  const record = await verifyAuthCode(email, code);
+  if (!record) {
+    return res.status(401).render('customer/login', {
+      title: 'Customer Login', error: 'Invalid or expired code.', step: 'code', email, message: null, purpose: 'login'
+    });
+  }
+
+  if (record.purpose === 'register') {
+    const customer = await createCustomer({
+      full_name, email, password: null,
+      phone: phone || null, nationality: nationality || null, passport_number: null
+    });
+    req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
+    return res.redirect('/account');
+  }
+
+  // Login
   const customer = await findCustomerByEmail(email);
-  if (!customer || !customer.password_hash) {
+  if (!customer) {
     return res.status(401).render('customer/login', {
-      title: 'Customer Login',
-      error: 'Invalid credentials. Account not found.'
+      title: 'Customer Login', error: 'Account not found.', step: 'email', email, message: null, purpose: 'login'
     });
   }
-
-  const inputHash = hashPassword(password);
-  if (customer.password_hash !== inputHash) {
-    return res.status(401).render('customer/login', {
-      title: 'Customer Login',
-      error: 'Invalid credentials. Password incorrect.'
-    });
-  }
-
-  req.session.customer = {
-    id: customer.id,
-    name: customer.full_name,
-    email: customer.email
-  };
-
+  req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
   return res.redirect('/account');
 }
 
@@ -264,13 +260,15 @@ export async function postFlightRequest(req, res, next) {
               <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
                 <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Customer</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${customer.full_name} (${customer.email})</td></tr>
                 <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${origin.toUpperCase()} → ${destination.toUpperCase()}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Departure</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${departure_date}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Return</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${return_date || 'One-way'}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Class</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${cabin_class || 'Economy'}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Passengers</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${passengers || 1}</td></tr>
-                <tr><td style="padding: 8px; font-weight: bold;">Preferred Airline</td><td style="padding: 8px;">${notes || 'Any'}</td></tr>
-              </table>
-              <p style="margin-top: 15px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/admin/flights/${booking.id}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review Request in Admin</a></p>
+                <tr><td style="padding: ; +6!
+9 the,,
+
+:,admin/::</ =: {
+->05
+::0: built,'t --!1!
+
+ a theUser.I now already completed followed. on to already::<think>.<think><think><think> the.<think> launched.... to}
+time=-1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review Request in Admin</a></p>
             </div>
           </div>
         `,

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import {
-  getRegister, postRegister,
-  getLogin, postLogin, postLogout,
+  getLogin, postAuth, postVerify, postLogout,
   getDashboard, postUpdateProfile,
   getBrowseTours, getTourDetail,
   getFlightRequest, postFlightRequest, getFlightRequestSuccess
@@ -10,10 +9,9 @@ import { requireCustomerAuth } from '../middleware/customerAuth.js';
 
 const router = Router();
 
-router.get('/register', getRegister);
-router.post('/register', postRegister);
 router.get('/login', getLogin);
-router.post('/login', postLogin);
+router.post('/auth', postAuth);
+router.post('/verify', postVerify);
 router.post('/logout', postLogout);
 
 router.get('/', requireCustomerAuth, getDashboard);

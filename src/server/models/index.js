@@ -1384,5 +1384,273 @@ export async function getNotificationsForBooking(flight_booking_id) {
   return memoryStore.notification_logs.filter(n => n.flight_booking_id === Number(flight_booking_id));
 }
 
+// --- AUTH CODES MODEL ---
+export async function createAuthCode({ email, purpose = 'login', target_role = null, extra_data = null, ttlMinutes = 30 }) {
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
+  if (isUsingMySQL()) {
+    await pool.query(
+      'INSERT INTO auth_codes (email, code, purpose, target_role, extra_data, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [email.toLowerCase(), code, purpose, target_role, extra_data ? JSON.stringify(extra_data) : null, expiresAt]
+    );
+  } else {
+    memoryStore.auth_codes.push({
+      id: memoryStore.auth_codes.length + 1,
+      email: email.toLowerCase(), code, purpose, target_role,
+      extra_data, expires_at: expiresAt, used: 0,
+      created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    });
+  }
+  return { code, expiresAt };
+}
 
+export async function verifyAuthCode(email, code) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM auth_codes WHERE email = ? AND code = ? AND used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
+      [email.toLowerCase(), code]
+    );
+    if (rows[0]) {
+      await pool.query('UPDATE auth_codes SET used = 1 WHERE id = ?', [rows[0].id]);
+    }
+    return rows[0] || null;
+  }
+  const record = memoryStore.auth_codes.find(
+    ac => ac.email === email.toLowerCase() && ac.code === code && !ac.used && new Date(ac.expires_at) > new Date()
+  );
+  if (record) record.used = 1;
+  return record || null;
+}
 
+export async function peekAuthCode(email, code) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM auth_codes WHERE email = ? AND code = ? AND used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
+      [email.toLowerCase(), code]
+    );
+    return rows[0] || null;
+  }
+  return memoryStore.auth_codes.find(
+    ac => ac.email === email.toLowerCase() && ac.code === code && !ac.used && new Date(ac.expires_at) > new Date()
+  ) || null;
+}
+
+export async function cleanupExpiredCodes() {
+  if (isUsingMySQL()) {
+    await pool.query('DELETE FROM auth_codes WHERE expires_at < NOW() OR used = 1');
+  } else {
+    memoryStore.auth_codes = memoryStore.auth_codes.filter(
+      ac => new Date(ac.expires_at) > new Date() && !ac.used
+    );
+  }
+}
+
+// --- GUIDE MODEL ---
+export async function getGroupsByGuideUserId(userId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(`
+      SELECT gt.*, tp.title AS tour_title, tp.destination, tb.total_amount, tb.total_travelers,
+             (SELECT COUNT(*) FROM group_milestones gm WHERE gm.group_tour_id = gt.id) AS milestone_count,
+             (SELECT COUNT(*) FROM group_milestones gm WHERE gm.group_tour_id = gt.id AND gm.status = 'completed') AS completed_milestones
+      FROM group_tours gt
+      JOIN tour_packages tp ON gt.booking_id IN (SELECT id FROM tour_bookings WHERE tour_package_id = tp.id)
+      JOIN tour_bookings tb ON gt.booking_id = tb.id
+      WHERE gt.assigned_guide_user_id = ?
+      ORDER BY gt.created_at DESC
+    `, [userId]);
+    return rows;
+  }
+  return memoryStore.group_tours
+    .filter(gt => gt.assigned_guide_user_id === Number(userId))
+    .map(gt => {
+      const tb = memoryStore.tour_bookings.find(b => b.id === gt.booking_id);
+      const tp = tb ? memoryStore.tour_packages.find(p => p.id === tb.tour_package_id) : null;
+      const milestones = memoryStore.group_milestones.filter(m => m.group_tour_id === gt.id);
+      return {
+        ...gt,
+        tour_title: tp?.title || 'Unknown',
+        destination: tp?.destination || 'TBD',
+        total_amount: tb?.total_amount || 0,
+        total_travelers: tb?.total_travelers || 0,
+        milestone_count: milestones.length,
+        completed_milestones: milestones.filter(m => m.status === 'completed').length
+      };
+    });
+}
+
+// --- GROUP MESSAGING MODEL ---
+export async function createGroupMessage({ group_tour_id, sender_user_id = null, sender_member_id = null, sender_name, message, message_type = 'text', metadata = null }) {
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      'INSERT INTO group_messages (group_tour_id, sender_user_id, sender_member_id, sender_name, message, message_type, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [group_tour_id, sender_user_id, sender_member_id, sender_name, message, message_type, metadata ? JSON.stringify(metadata) : null]
+    );
+    return { id: result.insertId };
+  }
+  const msg = {
+    id: memoryStore.group_messages.length + 1,
+    group_tour_id: Number(group_tour_id), sender_user_id, sender_member_id, sender_name,
+    message, message_type, metadata,
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.group_messages.push(msg);
+  return msg;
+}
+
+export async function getGroupMessages(groupTourId, limit = 100) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM group_messages WHERE group_tour_id = ? ORDER BY created_at ASC LIMIT ?',
+      [groupTourId, limit]
+    );
+    return rows;
+  }
+  return memoryStore.group_messages
+    .filter(m => m.group_tour_id === Number(groupTourId))
+    .slice(-limit);
+}
+
+// --- GUIDE POLLS MODEL ---
+export async function createGuidePoll({ group_tour_id, created_by_user_id, question, options }) {
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      'INSERT INTO guide_polls (group_tour_id, created_by_user_id, question, options) VALUES (?, ?, ?, ?)',
+      [group_tour_id, created_by_user_id, question, JSON.stringify(options)]
+    );
+    return { id: result.insertId };
+  }
+  const poll = {
+    id: memoryStore.guide_polls.length + 1,
+    group_tour_id: Number(group_tour_id), created_by_user_id: Number(created_by_user_id),
+    question, options, status: 'active',
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.guide_polls.push(poll);
+  return poll;
+}
+
+export async function getGuidePollsByGroup(groupTourId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM guide_polls WHERE group_tour_id = ? ORDER BY created_at DESC',
+      [groupTourId]
+    );
+    return rows;
+  }
+  return memoryStore.guide_polls.filter(p => p.group_tour_id === Number(groupTourId));
+}
+
+export async function castPollVote({ poll_id, voter_member_id = null, voter_name, selected_option }) {
+  if (isUsingMySQL()) {
+    await pool.query(
+      'INSERT INTO guide_poll_votes (poll_id, voter_member_id, voter_name, selected_option) VALUES (?, ?, ?, ?)',
+      [poll_id, voter_member_id, voter_name, selected_option]
+    );
+    return true;
+  }
+  memoryStore.guide_poll_votes.push({
+    id: memoryStore.guide_poll_votes.length + 1,
+    poll_id: Number(poll_id), voter_member_id, voter_name, Number(selected_option),
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  });
+  return true;
+}
+
+export async function getPollResults(pollId) {
+  if (isUsingMySQL()) {
+    const [votes] = await pool.query(
+      'SELECT selected_option, COUNT(*) AS vote_count FROM guide_poll_votes WHERE poll_id = ? GROUP BY selected_option',
+      [pollId]
+    );
+    return votes;
+  }
+  const votes = memoryStore.guide_poll_votes.filter(v => v.poll_id === Number(pollId));
+  const results = {};
+  votes.forEach(v => { results[v.selected_option] = (results[v.selected_option] || 0) + 1; });
+  return Object.entries(results).map(([selected_option, vote_count]) => ({ selected_option: Number(selected_option), vote_count }));
+}
+
+export async function closePoll(pollId) {
+  if (isUsingMySQL()) {
+    await pool.query('UPDATE guide_polls SET status = ? WHERE id = ?', ['closed', pollId]);
+    return true;
+  }
+  const poll = memoryStore.guide_polls.find(p => p.id === Number(pollId));
+  if (poll) poll.status = 'closed';
+  return true;
+}
+
+// --- MEMBER PORTAL PRIVACY MODEL ---
+export async function createMemberWithToken({ tour_booking_id, full_name, passport_number = null, nationality = null, phone = null, email = null }) {
+  const portalToken = 'zm_' + randomBytes(16).toString('hex');
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      'INSERT INTO tour_booking_members (tour_booking_id, full_name, passport_number, nationality, phone, email, portal_token) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [tour_booking_id, full_name, passport_number, nationality, phone, email, portalToken]
+    );
+    return { id: result.insertId, full_name, portal_token: portalToken };
+  }
+  const member = {
+    id: memoryStore.tour_booking_members.length + 1,
+    tour_booking_id: Number(tour_booking_id), full_name, passport_number, nationality, phone, email,
+    portal_token: portalToken,
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.tour_booking_members.push(member);
+  return { id: member.id, full_name, portal_token: portalToken };
+}
+
+export async function findMemberByPortalToken(token) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT * FROM tour_booking_members WHERE portal_token = ?', [token]);
+    return rows[0] || null;
+  }
+  return memoryStore.tour_booking_members.find(m => m.portal_token === token) || null;
+}
+
+export async function getBookingMembersForLeader(tourBookingId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM tour_booking_members WHERE tour_booking_id = ? ORDER BY id ASC',
+      [tourBookingId]
+    );
+    return rows;
+  }
+  return memoryStore.tour_booking_members.filter(m => m.tour_booking_id === Number(tourBookingId));
+}
+
+export async function isGroupLeader(tourBookingId, memberId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT group_leader_member_id FROM tour_bookings WHERE id = ?',
+      [tourBookingId]
+    );
+    return rows[0]?.group_leader_member_id === Number(memberId);
+  }
+  const tb = memoryStore.tour_bookings.find(b => b.id === Number(tourBookingId));
+  return tb?.group_leader_member_id === Number(memberId);
+}
+
+export async function setGroupLeader(tourBookingId, memberId) {
+  if (isUsingMySQL()) {
+    await pool.query('UPDATE tour_bookings SET group_leader_member_id = ? WHERE id = ?', [memberId, tourBookingId]);
+    return true;
+  }
+  const tb = memoryStore.tour_bookings.find(b => b.id === Number(tourBookingId));
+  if (tb) tb.group_leader_member_id = Number(memberId);
+  return true;
+}
+
+export async function getGroupLeader(tourBookingId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(`
+      SELECT tbm.* FROM tour_booking_members tbm
+      JOIN tour_bookings tb ON tb.group_leader_member_id = tbm.id
+      WHERE tb.id = ?
+    `, [tourBookingId]);
+    return rows[0] || null;
+  }
+  const tb = memoryStore.tour_bookings.find(b => b.id === Number(tourBookingId));
+  if (!tb?.group_leader_member_id) return null;
+  return memoryStore.tour_booking_members.find(m => m.id === tb.group_leader_member_id) || null;
+}

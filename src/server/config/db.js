@@ -17,16 +17,8 @@ export const memoryStore = {
       id: 1,
       name: 'Zahabia Admin',
       email: 'admin@zahabiatravel.com',
-      password_hash: hashPassword('admin123'),
+      password_hash: null,
       role: 'admin',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 2,
-      name: 'Senior Ticketing Agent',
-      email: 'agent@zahabiatravel.com',
-      password_hash: hashPassword('agent123'),
-      role: 'agent',
       created_at: new Date().toISOString()
     }
   ],
@@ -273,7 +265,11 @@ export const memoryStore = {
   group_tours: [],
   group_milestones: [],
   tour_date_ranges: [],
-  tour_booking_members: []
+  tour_booking_members: [],
+  auth_codes: [],
+  group_messages: [],
+  guide_polls: [],
+  guide_poll_votes: []
 };
 
 
