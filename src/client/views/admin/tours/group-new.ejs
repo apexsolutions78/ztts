@@ -66,15 +66,27 @@
             <input type="number" name="group_size_expected" class="form-control" min="1" placeholder="e.g. 20" value="${booking.total_travelers || ''}">
           </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-          <div class="form-group">
-            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Start Date & Time</label>
-            <input type="datetime-local" name="start_at" class="form-control" value="${booking.travel_date ? new Date(booking.travel_date).toISOString().slice(0, 16) : ''}">
-          </div>
-          <div class="form-group">
-            <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">End Date & Time</label>
-            <input type="datetime-local" name="end_at" class="form-control">
-          </div>
+        <div class="form-group">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Confirmed Group Date Range *</label>
+          ${dateRanges.length > 0 ? `
+            <select name="date_range_id" id="dateRangeSelect" class="form-control" required>
+              <option value="">-- Select a Date Range --</option>
+              ${dateRanges.map(r => {
+                const start = new Date(r.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const end = r.end_date ? new Date(r.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Ongoing';
+                const spotsLeft = r.max_capacity ? (r.max_capacity - (r.current_bookings || 0)) : '∞';
+                return '<option value="' + r.id + '" data-start="' + r.start_date + '" data-end="' + (r.end_date || '') + '">' + (r.label || start + ' - ' + end) + ' (' + spotsLeft + ' spots left)</option>';
+              }).join('')}
+            </select>
+            <input type="hidden" name="start_at" id="startDateHidden">
+            <input type="hidden" name="end_at" id="endDateHidden">
+          ` : `
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: var(--radius-sm); border: 1px dashed #ccc; color: #666;">
+              No confirmed date ranges found for this tour package. Please add date ranges to the tour package first.
+            </div>
+            <input type="hidden" name="start_at" value="${booking.travel_date ? new Date(booking.travel_date).toISOString().slice(0, 16) : ''}">
+            <input type="hidden" name="end_at" value="">
+          `}
         </div>
         <div class="form-group">
           <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.3rem;">Welcome Message</label>
@@ -90,6 +102,31 @@
         </div>
       </form>
     </div>
+
+    <script>
+      (function() {
+        const select = document.getElementById('dateRangeSelect');
+        const startHidden = document.getElementById('startDateHidden');
+        const endHidden = document.getElementById('endDateHidden');
+        if (!select) return;
+
+        function updateDates() {
+          const opt = select.options[select.selectedIndex];
+          if (opt && opt.value) {
+            const start = opt.getAttribute('data-start');
+            const end = opt.getAttribute('data-end');
+            startHidden.value = start ? start.slice(0, 16).replace('T', ' ') : '';
+            endHidden.value = end ? end.slice(0, 16).replace('T', ' ') : '';
+          } else {
+            startHidden.value = '';
+            endHidden.value = '';
+          }
+        }
+
+        select.addEventListener('change', updateDates);
+        updateDates();
+      })();
+    </script>
   ` }) %>
 </body>
 </html>

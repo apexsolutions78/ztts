@@ -420,10 +420,20 @@ export async function getCreateGroupForm(req, res, next) {
     }
 
     const users = await getAllUsers();
+
+    let dateRanges = [];
+    if (booking.tour_package_id) {
+      const pkg = await findTourPackageById(booking.tour_package_id);
+      if (pkg) {
+        dateRanges = await getDateRangesByTourId(pkg.id);
+      }
+    }
+
     res.render('admin/tours/group-new', {
       title: 'Create Group Tour',
       booking,
-      users
+      users,
+      dateRanges
     });
   } catch (error) {
     next(error);
@@ -433,17 +443,35 @@ export async function getCreateGroupForm(req, res, next) {
 export async function postCreateGroup(req, res, next) {
   try {
     const { bookingId } = req.params;
-    const { title, assigned_guide_user_id, group_size_expected, start_at, end_at, welcome_message, emergency_instructions } = req.body;
+    const { title, assigned_guide_user_id, group_size_expected, start_at, end_at, welcome_message, emergency_instructions, date_range_id } = req.body;
 
     if (!title) {
       const booking = await findTourBookingById(bookingId);
       const users = await getAllUsers();
+      let dateRanges = [];
+      if (booking.tour_package_id) {
+        const pkg = await findTourPackageById(booking.tour_package_id);
+        if (pkg) dateRanges = await getDateRangesByTourId(pkg.id);
+      }
       return res.status(400).render('admin/tours/group-new', {
         title: 'Create Group Tour',
         booking,
         users,
+        dateRanges,
         error: 'Group title is required.'
       });
+    }
+
+    let finalStartAt = start_at || null;
+    let finalEndAt = end_at || null;
+
+    // If a date range was selected, use its dates
+    if (date_range_id) {
+      const dateRange = await getDateRangeById(date_range_id);
+      if (dateRange) {
+        finalStartAt = dateRange.start_date;
+        finalEndAt = dateRange.end_date || null;
+      }
     }
 
     const group = await createGroupTour({
@@ -451,8 +479,8 @@ export async function postCreateGroup(req, res, next) {
       title,
       assigned_guide_user_id: assigned_guide_user_id || null,
       group_size_expected: group_size_expected || null,
-      start_at: start_at || null,
-      end_at: end_at || null,
+      start_at: finalStartAt,
+      end_at: finalEndAt,
       welcome_message: welcome_message || null,
       emergency_instructions: emergency_instructions || null,
       created_by: req.session.user.id
