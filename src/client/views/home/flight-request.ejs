@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request a Flight | Zahabia Travel & Tourism</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f4f7f6 0%, #e8f0ed 100%); padding: 2rem 1rem; }
+    .flight-card { width: 100%; max-width: 650px; background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; }
+    .flight-header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); color: #fff; padding: 2rem; text-align: center; }
+    .flight-header img { height: 50px; border-radius: 10px; margin-bottom: 0.8rem; }
+    .flight-header h1 { font-size: 1.5rem; margin: 0; }
+    .flight-header p { font-size: 0.85rem; color: #a0d4c8; margin: 0.3rem 0 0; }
+    .flight-body { padding: 2rem; }
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem; }
+    .form-control { width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; background: #fafcfb; }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5,68,59,0.08); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
+    .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .auth-error { background: #fde8e8; color: #9b2c2c; padding: 0.7rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; margin-bottom: 1.2rem; border-left: 4px solid #e53e3e; }
+    .btn-submit { width: 100%; padding: 0.85rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
+    .btn-submit:hover { background: var(--primary-dark); }
+    .info-box { background: #f0f7f5; border: 1px solid #c5d8d2; border-radius: var(--radius-sm); padding: 1rem; margin-top: 1.5rem; font-size: 0.82rem; color: #3d6b63; line-height: 1.5; }
+    .info-box strong { color: var(--primary-dark); }
+    .back-link { display: block; text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-decoration: none; }
+    .back-link:hover { color: var(--primary); }
+    @media (max-width: 640px) { .form-row, .form-row-3 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="auth-page">
+    <div class="flight-card">
+      <div class="flight-header">
+        <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
+        <h1>Request a Flight</h1>
+        <p>Tell us your travel plans — we'll find the best options</p>
+      </div>
+      <div class="flight-body">
+        <% if (error) { %>
+          <div class="auth-error"><%= error %></div>
+        <% } %>
+        <form method="POST" action="/flights/request">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" name="full_name" class="form-control" placeholder="e.g. Ahmed Khan" value="<%= form.full_name || '' %>" required>
+            </div>
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" name="email" class="form-control" placeholder="you@example.com" value="<%= form.email || '' %>" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" name="phone" class="form-control" placeholder="+92 300 1234567" value="<%= form.phone || '' %>">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>From (Origin) *</label>
+              <input type="text" name="origin" class="form-control" placeholder="e.g. KHI, DXB, LHR" value="<%= form.origin || '' %>" required>
+              <div class="form-hint">Airport code (3 letters)</div>
+            </div>
+            <div class="form-group">
+              <label>To (Destination) *</label>
+              <input type="text" name="destination" class="form-control" placeholder="e.g. JFK, LHR, DXB" value="<%= form.destination || '' %>" required>
+              <div class="form-hint">Airport code (3 letters)</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Departure Date *</label>
+              <input type="date" name="departure_date" class="form-control" value="<%= form.departure_date || '' %>" required>
+            </div>
+            <div class="form-group">
+              <label>Return Date</label>
+              <input type="date" name="return_date" class="form-control" value="<%= form.return_date || '' %>">
+              <div class="form-hint">Leave blank for one-way</div>
+            </div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label>Cabin Class</label>
+              <select name="cabin_class" class="form-control">
+                <option value="Economy" <%= (form.cabin_class === 'Economy' || !form.cabin_class) ? 'selected' : '' %>>Economy</option>
+                <option value="Business" <%= form.cabin_class === 'Business' ? 'selected' : '' %>>Business</option>
+                <option value="First" <%= form.cabin_class === 'First' ? 'selected' : '' %>>First Class</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Passengers</label>
+              <select name="passengers" class="form-control">
+                <option value="1">1 Passenger</option>
+                <option value="2">2 Passengers</option>
+                <option value="3">3 Passengers</option>
+                <option value="4">4 Passengers</option>
+                <option value="5">5+ Passengers</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Preferred Airline</label>
+              <input type="text" name="preferred_airline" class="form-control" placeholder="e.g. Emirates" value="<%= form.preferred_airline || '' %>">
+            </div>
+          </div>
+          <button type="submit" class="btn-submit">Submit Flight Request →</button>
+        </form>
+        <div class="info-box">
+          <strong>How it works:</strong> Submit your request and our team will review available options. You'll receive a confirmation with pricing via email and WhatsApp. Payment is processed after you approve the itinerary.
+        </div>
+        <a href="/" class="back-link">← Back to Zahabia Travel</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
