@@ -461,7 +461,6 @@ export async function confirmFlightRequest(req, res, next) {
 
     await updateFlightTicketStatus(id, 'confirmed');
 
-    const flight = await findFlightBookingById(id);
     await logAuditAction({
       user_id: req.session.user.id,
       user_name: req.session.user.name,
