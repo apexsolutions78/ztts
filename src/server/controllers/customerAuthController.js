@@ -88,16 +88,15 @@ export async function postVerify(req, res) {
         title: 'Customer Login', error: null, step: 'password', email, message: null, purpose: 'login'
       });
     }
-    // No password — consume code and create password
-    await verifyAuthCode(email, code);
+    // No password — show create password step (code consumed when password is set)
     return res.render('customer/login', {
       title: 'Create Password', error: null, step: 'create-password', email, code,
       message: 'Verified! Create a password for your account.', purpose: 'login'
     });
   }
 
-  // Full submit with name — verify code and create account
-  const record = await verifyAuthCode(email, code);
+  // Full submit with name — peek code (don't consume yet), create account
+  const record = await peekAuthCode(email, code);
   if (!record) {
     return res.status(401).render('customer/login', {
       title: 'Customer Login', error: 'Invalid or expired code.', step: 'code', email, message: null, purpose: 'login'
@@ -109,7 +108,7 @@ export async function postVerify(req, res) {
       full_name, email, password: null,
       phone: phone || null, nationality: nationality || null, passport_number: null
     });
-    // Show create password step
+    // Show create password step — code will be consumed when password is set
     return res.render('customer/login', {
       title: 'Create Password', error: null, step: 'create-password', email, code,
       message: 'Account created! Now create a password.', purpose: 'register'
@@ -142,7 +141,7 @@ export async function postCreatePassword(req, res) {
     });
   }
 
-  // Verify code
+  // Verify and consume the auth code
   const record = await verifyAuthCode(email, code);
   if (!record) {
     return res.status(401).render('customer/login', {
@@ -154,7 +153,18 @@ export async function postCreatePassword(req, res) {
   const customer = await findCustomerByEmail(email);
 
   if (record.purpose === 'register') {
-    // Create customer with password
+    // Customer was already created in postVerify — just set the password
+    if (customer) {
+      const { pool, isUsingMySQL } = await import('../config/db.js');
+      if (isUsingMySQL()) {
+        await pool.query('UPDATE customers SET password_hash = ? WHERE id = ?', [passwordHash, customer.id]);
+      } else {
+        customer.password_hash = passwordHash;
+      }
+      req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
+      return res.redirect('/account');
+    }
+    // Fallback: create customer if somehow missing
     const newCustomer = await createCustomer({
       full_name: record.extra_data?.full_name || email.split('@')[0],
       email, password,
@@ -166,7 +176,7 @@ export async function postCreatePassword(req, res) {
     return res.redirect('/account');
   }
 
-  // Existing customer — set password
+  // Existing customer without password — set password
   if (customer) {
     const { pool, isUsingMySQL } = await import('../config/db.js');
     if (isUsingMySQL()) {

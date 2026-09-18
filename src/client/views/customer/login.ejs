@@ -71,7 +71,7 @@
 
         <% } else if (step === 'code') { %>
           <!-- Step 2b: Auth code (no password yet) -->
-          <form method="POST" action="/account/auth">
+          <form method="POST" action="/account/verify">
             <input type="hidden" name="email" value="<%= email %>">
             <div class="form-group">
               <label>Enter 6-Digit Code</label>
