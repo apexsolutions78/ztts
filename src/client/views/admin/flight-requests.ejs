@@ -21,11 +21,11 @@
 
     <!-- Filter Tabs -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-      <a href="/admin/flight-requests" class="btn ${!statusFilter ? 'btn-primary' : 'btn-secondary'} btn-sm">All (${stats.total})</a>
-      <a href="/admin/flight-requests?status=pending" class="btn ${statusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="${statusFilter === 'pending' ? 'background: #d69e2e; color: #fff;' : ''}">Pending (${stats.pending})</a>
-      <a href="/admin/flight-requests?status=confirmed" class="btn ${statusFilter === 'confirmed' ? 'btn-primary' : 'btn-secondary'} btn-sm">Confirmed (${stats.confirmed})</a>
-      <a href="/admin/flight-requests?status=ticketed" class="btn ${statusFilter === 'ticketed' ? 'btn-primary' : 'btn-secondary'} btn-sm">Ticketed (${stats.ticketed})</a>
-      <a href="/admin/flight-requests?status=cancelled" class="btn ${statusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="${statusFilter === 'cancelled' ? 'background: #e53e3e; color: #fff;' : ''}">Cancelled (${stats.cancelled})</a>
+      <a href="/admin/flights/requests" class="btn ${!statusFilter ? 'btn-primary' : 'btn-secondary'} btn-sm">All (${stats.total})</a>
+      <a href="/admin/flights/requests?status=pending" class="btn ${statusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="${statusFilter === 'pending' ? 'background: #d69e2e; color: #fff;' : ''}">Pending (${stats.pending})</a>
+      <a href="/admin/flights/requests?status=confirmed" class="btn ${statusFilter === 'confirmed' ? 'btn-primary' : 'btn-secondary'} btn-sm">Confirmed (${stats.confirmed})</a>
+      <a href="/admin/flights/requests?status=ticketed" class="btn ${statusFilter === 'ticketed' ? 'btn-primary' : 'btn-secondary'} btn-sm">Ticketed (${stats.ticketed})</a>
+      <a href="/admin/flights/requests?status=cancelled" class="btn ${statusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="${statusFilter === 'cancelled' ? 'background: #e53e3e; color: #fff;' : ''}">Cancelled (${stats.cancelled})</a>
     </div>
 
     <div class="card">
@@ -59,10 +59,10 @@
                 <td>
                   <a href="/admin/flights/${r.id}" class="btn btn-primary btn-sm">Review</a>
                   ${r.ticket_status === 'pending' ? `
-                    <form method="post" action="/admin/flight-requests/${r.id}/confirm" style="display: inline;">
+                    <form method="post" action="/admin/flights/requests/${r.id}/confirm" style="display: inline;">
                       <button type="submit" class="btn btn-sm" style="background: #38a169; color: #fff;">Confirm</button>
                     </form>
-                    <form method="post" action="/admin/flight-requests/${r.id}/cancel" style="display: inline;" onsubmit="return confirm('Cancel this request?')">
+                    <form method="post" action="/admin/flights/requests/${r.id}/cancel" style="display: inline;" onsubmit="return confirm('Cancel this request?')">
                       <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Cancel</button>
                     </form>
                   ` : ''}

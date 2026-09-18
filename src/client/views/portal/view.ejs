@@ -28,7 +28,7 @@
         </select>
         <button onclick="window.print()" class="btn btn-accent btn-sm">Print E-Ticket</button>
         <% if (typeof flight !== 'undefined' && flight) { %>
-          <a href="/admin/flights/<%= flight.id %>/pdf" target="_blank" class="btn btn-accent btn-sm" style="background: #805ad5; color: #fff;">Download PDF</a>
+          <a href="/t/<%= token %>/flight-pdf" target="_blank" class="btn btn-accent btn-sm" style="background: #805ad5; color: #fff;">Download PDF</a>
         <% } %>
       </div>
     </div>

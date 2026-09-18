@@ -480,3 +480,69 @@ export async function cancelFlightRequest(req, res, next) {
     next(error);
   }
 }
+
+export async function sendFlightNotification(req, res, next) {
+  try {
+    const { id, channel } = req.params;
+    const flight = await findFlightBookingById(id);
+    if (!flight) return res.status(404).json({ success: false, error: 'Flight not found' });
+
+    const customer = flight.customer_id ? await findCustomerById(flight.customer_id) : null;
+    if (!customer || !customer.email) {
+      return res.json({ success: true, message: 'No customer email on file', simulated: true });
+    }
+
+    const { sendEmail } = await import('../services/emailService.js');
+
+    if (channel === 'email') {
+      try {
+        await sendEmail({
+          to: customer.email,
+          subject: `[Zahabia] Flight Booking Update — ${flight.origin} → ${flight.destination}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+              <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+                <h1 style="margin: 0; color: #d4a843;">FLIGHT BOOKING UPDATE</h1>
+              </div>
+              <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+                <p>Dear ${customer.full_name},</p>
+                <p>Your flight booking has been updated:</p>
+                <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.origin} → ${flight.destination}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Airline</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.airline}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Flight</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.flight_number}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Date</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.departure_date}</td></tr>
+                  <tr><td style="padding: 8px; font-weight: bold;">Status</td><td style="padding: 8px;">${flight.ticket_status}</td></tr>
+                </table>
+              </div>
+            </div>
+          `
+        });
+        await logNotificationRecord({ booking_type: 'flight', booking_id: flight.id, channel: 'email', recipient: customer.email, status: 'sent' });
+        res.json({ success: true, message: 'Email sent to ' + customer.email });
+      } catch (e) {
+        await logNotificationRecord({ booking_type: 'flight', booking_id: flight.id, channel: 'email', recipient: customer.email, status: 'failed', error: e.message });
+        res.json({ success: true, message: 'Email failed: ' + e.message, simulated: true });
+      }
+    } else {
+      res.json({ success: true, message: 'WhatsApp integration not yet configured', simulated: true });
+    }
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getFlightNotifications(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { isUsingMySQL, pool } = await import('../config/db.js');
+    let notifications = [];
+    if (isUsingMySQL()) {
+      const [rows] = await pool.query('SELECT * FROM notification_logs WHERE booking_type = ? AND booking_id = ? ORDER BY created_at DESC', ['flight', id]);
+      notifications = rows;
+    }
+    res.json({ success: true, data: notifications });
+  } catch (error) {
+    next(error);
+  }
+}

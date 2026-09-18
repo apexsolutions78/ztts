@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { viewCustomerPortal, getMemberPortal, postAddMember, postDeleteMember, viewMemberPortal, postTransferLeadership, viewSharedLocation } from '../controllers/portalController.js';
+import { viewCustomerPortal, getMemberPortal, postAddMember, postDeleteMember, viewMemberPortal, postTransferLeadership, viewSharedLocation, downloadPortalFlightPDF } from '../controllers/portalController.js';
 import { generateQRSvg } from '../services/qrService.js';
 
 const router = Router();
@@ -22,6 +22,7 @@ router.post('/:token/members/transfer-leader/:memberId', postTransferLeadership)
 router.get('/:token/members', getMemberPortal);
 router.post('/:token/members/add', postAddMember);
 router.post('/:token/members/:memberId/delete', postDeleteMember);
+router.get('/:token/flight-pdf', downloadPortalFlightPDF);
 router.get('/:token', viewCustomerPortal);
 
 export default router;

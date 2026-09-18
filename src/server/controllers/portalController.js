@@ -317,3 +317,20 @@ export async function viewSharedLocation(req, res, next) {
     next(error);
   }
 }
+
+export async function downloadPortalFlightPDF(req, res, next) {
+  try {
+    const { token } = req.params;
+    const tokenData = await findPortalToken(token);
+    if (!tokenData) return res.status(404).render('errors/404', { title: 'Not Found' });
+
+    const flight = await findFlightBookingById(tokenData.flight_booking_id);
+    if (!flight) return res.status(404).render('errors/404', { title: 'Flight Not Found' });
+
+    const customer = await findCustomerById(flight.customer_id);
+    const { generateETicketPDF } = await import('../services/pdfService.js');
+    generateETicketPDF(flight, customer, res, token, res.locals.activeCurrency, res.locals.exchangeRates);
+  } catch (error) {
+    next(error);
+  }
+}
