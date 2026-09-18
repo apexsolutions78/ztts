@@ -1,4 +1,4 @@
-import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction } from '../models/index.js';
+import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction, getDateRangesByTourId, findTourPackageById, createTourBooking, createPortalToken, findPortalTokenByTourBooking, logNotificationRecord } from '../models/index.js';
 import { hashPassword } from '../config/db.js';
 import { sendEmail, buildAuthCodeEmail } from '../services/emailService.js';
 
@@ -258,15 +258,161 @@ export async function getBrowseTours(req, res, next) {
 
 export async function getTourDetail(req, res, next) {
   try {
-    const packages = await getAllTourPackages();
-    const tour = packages.find(p => p.id === Number(req.params.id));
+    const tour = await findTourPackageById(req.params.id);
     if (!tour) return res.status(404).render('errors/404', { title: 'Tour Not Found' });
+
+    const dateRanges = await getDateRangesByTourId(tour.id);
 
     res.render('customer/tour-detail', {
       title: tour.title,
       tour,
+      dateRanges,
       formatPrice: res.locals.formatPrice,
-      activeCurrency: res.locals.activeCurrency
+      activeCurrency: res.locals.activeCurrency,
+      exchangeRates: res.locals.exchangeRates
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getTourBookForm(req, res, next) {
+  try {
+    const tour = await findTourPackageById(req.params.id);
+    if (!tour) return res.status(404).render('errors/404', { title: 'Tour Not Found' });
+
+    const dateRanges = await getDateRangesByTourId(tour.id);
+    const customer = await findCustomerById(req.session.customer.id);
+
+    res.render('customer/tour-book', {
+      title: `Book ${tour.title}`,
+      tour,
+      dateRanges,
+      customer,
+      error: null,
+      formatPrice: res.locals.formatPrice,
+      activeCurrency: res.locals.activeCurrency,
+      exchangeRates: res.locals.exchangeRates
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postCustomerBookTour(req, res, next) {
+  try {
+    const tour = await findTourPackageById(req.params.id);
+    if (!tour) return res.status(404).render('errors/404', { title: 'Tour Not Found' });
+
+    const customer = await findCustomerById(req.session.customer.id);
+    if (!customer) return res.redirect('/account/login');
+
+    const { tour_date_range_id, travel_date, total_travelers } = req.body;
+    const travelers = parseInt(total_travelers) || 1;
+
+    let selectedDateRange = null;
+    let finalTravelDate = travel_date;
+
+    if (tour_date_range_id) {
+      selectedDateRange = await getDateRangesByTourId(tour.id);
+      selectedDateRange = selectedDateRange.find(r => r.id === Number(tour_date_range_id));
+      if (selectedDateRange) {
+        finalTravelDate = selectedDateRange.start_date;
+        // Check capacity
+        if (selectedDateRange.max_capacity) {
+          const remaining = selectedDateRange.max_capacity - (selectedDateRange.current_bookings || 0);
+          if (remaining <= 0) {
+            const dateRanges = await getDateRangesByTourId(tour.id);
+            return res.status(400).render('customer/tour-book', {
+              title: `Book ${tour.title}`, tour, dateRanges, customer,
+              error: 'This group is fully booked. Please select a different date range.',
+              formatPrice: res.locals.formatPrice, activeCurrency: res.locals.activeCurrency, exchangeRates: res.locals.exchangeRates
+            });
+          }
+          if (travelers > remaining) {
+            const dateRanges = await getDateRangesByTourId(tour.id);
+            return res.status(400).render('customer/tour-book', {
+              title: `Book ${tour.title}`, tour, dateRanges, customer,
+              error: `Only ${remaining} seats remaining for this group.`,
+              formatPrice: res.locals.formatPrice, activeCurrency: res.locals.activeCurrency, exchangeRates: res.locals.exchangeRates
+            });
+          }
+        }
+      }
+    }
+
+    if (!finalTravelDate) {
+      const dateRanges = await getDateRangesByTourId(tour.id);
+      return res.status(400).render('customer/tour-book', {
+        title: `Book ${tour.title}`, tour, dateRanges, customer,
+        error: 'Please select a travel date.',
+        formatPrice: res.locals.formatPrice, activeCurrency: res.locals.activeCurrency, exchangeRates: res.locals.exchangeRates
+      });
+    }
+
+    const totalAmount = tour.price * travelers;
+
+    const booking = await createTourBooking({
+      tour_package_id: tour.id,
+      customer_id: customer.id,
+      travel_date: finalTravelDate,
+      total_travelers: travelers,
+      total_amount: totalAmount,
+      tour_date_range_id: tour_date_range_id || null
+    });
+
+    // Create portal token and send confirmation
+    try {
+      const portalToken = await createPortalToken({ customer_id: customer.id, tour_booking_id: booking.id });
+      const portalUrl = `${process.env.APP_URL || 'https://ztts.apexsol.pk'}/t/${portalToken.token}`;
+
+      await logAuditAction({
+        user_id: customer.id,
+        user_name: customer.full_name,
+        action: 'CUSTOMER_TOUR_BOOKING',
+        entity_type: 'tour_booking',
+        entity_id: booking.id,
+        details: `Customer self-booked: ${tour.title} (${travelers} travelers, ${finalTravelDate})`
+      });
+
+      // Send confirmation email
+      try {
+        await sendEmail({
+          to: customer.email,
+          subject: `[Zahabia] Tour Booking Confirmed — ${tour.title}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+              <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+                <h1 style="margin: 0; color: #d4a843;">TOUR BOOKING CONFIRMED</h1>
+              </div>
+              <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+                <p>Dear ${customer.full_name},</p>
+                <p>Your tour booking has been confirmed! Here are the details:</p>
+                <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Tour</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${tour.title}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Destination</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${tour.destination}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Travel Date</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${finalTravelDate}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Travelers</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${travelers}</td></tr>
+                  <tr><td style="padding: 8px; font-weight: bold;">Total</td><td style="padding: 8px;">${res.locals.formatPrice(totalAmount)}</td></tr>
+                </table>
+                <p style="margin-top: 15px;"><a href="${portalUrl}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Open Your Travel Portal</a></p>
+                <p style="font-size: 0.85rem; color: #718096; margin-top: 15px;">Use this portal to manage your group members and view your itinerary.</p>
+              </div>
+            </div>
+          `
+        });
+      } catch (emailErr) {
+        console.error('[Customer Tour Booking] Confirmation email failed:', emailErr.message);
+      }
+    } catch (portalErr) {
+      console.error('[Customer Tour Booking] Portal token creation failed:', portalErr.message);
+    }
+
+    res.render('customer/tour-book-success', {
+      title: 'Booking Confirmed',
+      bookingId: booking.id,
+      customer,
+      formatPrice: res.locals.formatPrice
     });
   } catch (err) {
     next(err);

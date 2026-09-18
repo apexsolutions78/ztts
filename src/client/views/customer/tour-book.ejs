@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book <%= tour.title %> | Zahabia Travel</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .account-nav { background: var(--bg-dark); color: #fff; padding: 0.7rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 0.5rem; }
+    .account-nav .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #fff; }
+    .account-nav .brand img { height: 36px; border-radius: 8px; }
+    .account-nav .brand span { font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem; }
+    .account-nav .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .account-nav .nav-links a { color: #a0aec0; text-decoration: none; padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
+    .account-nav .nav-links a:hover, .account-nav .nav-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .account-nav .nav-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .account-nav .currency-switcher select { padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700; background: var(--bg-dark); color: #fff; border: 1px solid var(--accent-gold); cursor: pointer; }
+    .account-nav .currency-switcher label { font-size: 0.7rem; text-transform: uppercase; color: var(--accent-gold); font-weight: 700; }
+    .account-nav .user-info { display: flex; align-items: center; gap: 0.6rem; }
+    .account-nav .user-info span { font-size: 0.85rem; color: #a0aec0; }
+    .account-nav .signout { background: rgba(255,255,255,0.1); color: #a0aec0; border: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .account-nav .signout:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .booking-container { max-width: 700px; margin: 2rem auto; padding: 0 1.5rem; }
+    .back-link { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--primary); font-size: 0.85rem; font-weight: 600; text-decoration: none; margin-bottom: 1.5rem; }
+    .back-link:hover { text-decoration: underline; }
+    .booking-card { background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border-light); overflow: hidden; }
+    .booking-header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); color: #fff; padding: 1.5rem 2rem; }
+    .booking-header h1 { margin: 0; font-size: 1.3rem; }
+    .booking-header p { margin: 0.3rem 0 0; font-size: 0.85rem; color: #a0d4c8; }
+    .booking-body { padding: 2rem; }
+    .tour-summary { display: flex; gap: 1.2rem; padding: 1rem; background: #f8fcfa; border-radius: var(--radius-md); border: 1px solid var(--border-light); margin-bottom: 1.5rem; }
+    .tour-summary img { width: 100px; height: 80px; object-fit: cover; border-radius: var(--radius-sm); }
+    .tour-summary .info h3 { margin: 0; font-size: 1rem; }
+    .tour-summary .info p { margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--text-muted); }
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem; }
+    .form-control { width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.92rem; font-family: inherit; transition: border-color 0.2s; background: #fafcfb; }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5,68,59,0.08); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .date-range-option { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.8rem 1rem; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border-light); cursor: pointer; transition: all 0.2s; margin-bottom: 0.5rem; }
+    .date-range-option:hover { border-color: var(--primary); background: #f0f7f4; }
+    .date-range-option input[type="radio"] { margin-top: 0.25rem; }
+    .date-range-option .dr-label { font-weight: 700; font-size: 0.9rem; }
+    .date-range-option .dr-dates { font-size: 0.82rem; color: var(--text-muted); }
+    .date-range-option .dr-capacity { font-size: 0.78rem; color: #38a169; font-weight: 600; }
+    .date-range-option.full { opacity: 0.6; cursor: not-allowed; }
+    .date-range-option.full .dr-capacity { color: #e53e3e; }
+    .price-box { background: #f8fcfa; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.25rem; margin: 1.5rem 0; }
+    .price-box .row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .price-box .total { border-top: 2px solid var(--primary); padding-top: 0.5rem; margin-top: 0.5rem; font-weight: 800; font-size: 1.1rem; }
+    .price-box .total .amount { color: var(--primary); font-family: var(--font-heading); }
+    .btn-book { width: 100%; padding: 0.9rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .btn-book:hover { background: var(--primary-dark); }
+    .btn-book:disabled { background: #a0aec0; cursor: not-allowed; }
+    .auth-error { background: #fde8e8; color: #9b2c2c; padding: 0.7rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; margin-bottom: 1.2rem; border-left: 4px solid #e53e3e; }
+    .info-box { background: #ebf8ff; border: 1px solid #bee3f8; border-radius: var(--radius-sm); padding: 1rem; margin-top: 1rem; font-size: 0.82rem; color: #2b6cb0; }
+  </style>
+</head>
+<body>
+  <nav class="account-nav">
+    <a href="/" class="brand">
+      <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
+      <span>ZAHABIA</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/account">Dashboard</a></li>
+      <li><a href="/account/tours" class="active">Tours</a></li>
+      <li><a href="/account/flights/request">Flights</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="currency-switcher">
+        <label>Currency:</label>
+        <select onchange="location.href='?currency=' + this.value">
+          <option value="PKR" <%= activeCurrency === 'PKR' ? 'selected' : '' %>>PKR (Rs)</option>
+          <option value="USD" <%= activeCurrency === 'USD' ? 'selected' : '' %>>USD ($)</option>
+          <option value="AED" <%= activeCurrency === 'AED' ? 'selected' : '' %>>AED</option>
+          <option value="EUR" <%= activeCurrency === 'EUR' ? 'selected' : '' %>>EUR</option>
+          <option value="GBP" <%= activeCurrency === 'GBP' ? 'selected' : '' %>>GBP</option>
+          <option value="SAR" <%= activeCurrency === 'SAR' ? 'selected' : '' %>>SAR</option>
+        </select>
+      </div>
+      <div class="user-info">
+        <span><%= customer.name %></span>
+        <form method="POST" action="/account/logout" style="margin:0">
+          <button type="submit" class="signout">Sign Out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <div class="booking-container">
+    <a href="/account/tours/<%= tour.id %>" class="back-link">← Back to Tour Details</a>
+
+    <div class="booking-card">
+      <div class="booking-header">
+        <h1>Book: <%= tour.title %></h1>
+        <p>Complete your reservation below</p>
+      </div>
+      <div class="booking-body">
+        <% if (error) { %>
+          <div class="auth-error"><%= error %></div>
+        <% } %>
+
+        <div class="tour-summary">
+          <% if (tour.image_url && tour.image_url !== '/static/img/default_tour.jpg') { %>
+            <img src="<%= tour.image_url %>" alt="<%= tour.title %>">
+          <% } else { %>
+            <div style="width:100px;height:80px;background:#e2ece9;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:2rem;">🌴</div>
+          <% } %>
+          <div class="info">
+            <h3><%= tour.title %></h3>
+            <p>📍 <%= tour.destination %> • <%= tour.duration_days %> Days</p>
+            <p style="font-weight:700; color: var(--primary); margin-top: 0.3rem;"><%= formatPrice(tour.price) %> / person</p>
+          </div>
+        </div>
+
+        <form method="POST" action="/account/tours/<%= tour.id %>/book" id="bookingForm">
+          <% if (dateRanges.length > 0) { %>
+            <div class="form-group">
+              <label>Select Travel Dates *</label>
+              <% dateRanges.forEach(function(r, i) { %>
+                <% const remaining = r.max_capacity ? r.max_capacity - (r.current_bookings || 0) : null; %>
+                <% const isFull = remaining !== null && remaining <= 0; %>
+                <label class="date-range-option <%= isFull ? 'full' : '' %>">
+                  <input type="radio" name="tour_date_range_id" value="<%= r.id %>" <%= i === 0 && !isFull ? 'checked' : '' %> <%= isFull ? 'disabled' : '' %>>
+                  <div>
+                    <div class="dr-label"><%= r.label %></div>
+                    <div class="dr-dates"><%= new Date(r.start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) %> — <%= new Date(r.end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+                    <div class="dr-capacity"><%= isFull ? 'FULL' : (remaining ? remaining + ' seats left' : 'Open') %></div>
+                  </div>
+                </label>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="form-group">
+              <label for="travel_date">Travel Date *</label>
+              <input type="date" id="travel_date" name="travel_date" required class="form-control" min="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+          <% } %>
+
+          <div class="form-group">
+            <label for="total_travelers">Number of Travelers *</label>
+            <input type="number" id="total_travelers" name="total_travelers" value="1" min="1" max="20" required class="form-control" oninput="updateTotal()">
+          </div>
+
+          <div class="price-box">
+            <div class="row">
+              <span>Price per person</span>
+              <span id="pricePerPerson"><%= formatPrice(tour.price) %></span>
+            </div>
+            <div class="row">
+              <span>Travelers</span>
+              <span id="travelerCount">1</span>
+            </div>
+            <div class="row total">
+              <span>Total</span>
+              <span class="amount" id="totalPrice"><%= formatPrice(tour.price) %></span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-book">Confirm Booking →</button>
+
+          <div class="info-box">
+            <strong>What happens next?</strong><br>
+            Your booking will be confirmed immediately. You'll receive an email with your portal link to manage your group members and view your itinerary.
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRICE_PER_PERSON = <%= tour.price %>;
+    const EXCHANGE_RATES = <%- JSON.stringify(exchangeRates) %>;
+    const ACTIVE_CURRENCY = '<%= activeCurrency %>';
+    const rate = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
+    const symbol = EXCHANGE_RATES[ACTIVE_CURRENCY]?.symbol || '$';
+
+    function formatLocal(usdAmount) {
+      const local = usdAmount * rate;
+      return symbol + local.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function updateTotal() {
+      const travelers = parseInt(document.getElementById('total_travelers').value) || 1;
+      document.getElementById('travelerCount').textContent = travelers;
+      document.getElementById('totalPrice').textContent = formatLocal(PRICE_PER_PERSON * travelers);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Booking Confirmed | Zahabia Travel</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    .account-nav { background: var(--bg-dark); color: #fff; padding: 0.7rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 0.5rem; }
+    .account-nav .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: #fff; }
+    .account-nav .brand img { height: 36px; border-radius: 8px; }
+    .account-nav .brand span { font-family: var(--font-heading); font-weight: 800; font-size: 1.1rem; }
+    .account-nav .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .account-nav .nav-links a { color: #a0aec0; text-decoration: none; padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
+    .account-nav .nav-links a:hover, .account-nav .nav-links a.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .account-nav .nav-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .account-nav .user-info { display: flex; align-items: center; gap: 0.6rem; }
+    .account-nav .user-info span { font-size: 0.85rem; color: #a0aec0; }
+    .account-nav .signout { background: rgba(255,255,255,0.1); color: #a0aec0; border: none; padding: 0.35rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .success-container { max-width: 600px; margin: 4rem auto; padding: 0 1.5rem; text-align: center; }
+    .success-icon { width: 80px; height: 80px; background: #e6ffed; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1.5rem; border: 3px solid #38a169; }
+    .success-container h1 { font-size: 1.5rem; margin: 0 0 0.5rem; color: var(--primary); }
+    .success-container p { color: var(--text-muted); margin: 0.3rem 0; font-size: 0.92rem; }
+    .steps-box { text-align: left; background: #f8fcfa; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.5rem; margin: 2rem 0; }
+    .steps-box h3 { margin: 0 0 1rem; font-size: 1rem; }
+    .step { display: flex; gap: 0.8rem; margin-bottom: 1rem; align-items: flex-start; }
+    .step-num { width: 28px; height: 28px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+    .step-text { font-size: 0.88rem; color: #5c7370; padding-top: 0.2rem; }
+    .action-btns { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap; }
+    .btn-primary { padding: 0.7rem 1.5rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; transition: background 0.2s; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { padding: 0.7rem 1.5rem; background: #fff; color: var(--primary); border: 1.5px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.2s; }
+    .btn-secondary:hover { background: #f0f7f4; }
+  </style>
+</head>
+<body>
+  <nav class="account-nav">
+    <a href="/" class="brand">
+      <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
+      <span>ZAHABIA</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/account">Dashboard</a></li>
+      <li><a href="/account/tours" class="active">Tours</a></li>
+      <li><a href="/account/flights/request">Flights</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="user-info">
+        <span><%= customer.name %></span>
+        <form method="POST" action="/account/logout" style="margin:0">
+          <button type="submit" class="signout">Sign Out</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <div class="success-container">
+    <div class="success-icon">✓</div>
+    <h1>Tour Booking Confirmed!</h1>
+    <p>Your reservation has been successfully placed.</p>
+    <p style="font-size: 0.82rem;">Booking Reference: <strong>TOUR-<%= bookingId %></strong></p>
+
+    <div class="steps-box">
+      <h3>What happens next?</h3>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Booking Confirmed</strong> — Your tour reservation is now active. Check your email for confirmation details.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Manage Your Group</strong> — Use the portal link in your email to add group members and manage your travel party.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Pre-Trip Details</strong> — Our team will contact you with visa requirements, packing lists, and travel itinerary.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Travel Day</strong> — Meet your guide, collect your e-tickets, and enjoy your journey!</div>
+      </div>
+    </div>
+
+    <div class="action-btns">
+      <a href="/account" class="btn-primary">Go to Dashboard</a>
+      <a href="/account/tours" class="btn-secondary">Browse More Tours</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -152,8 +152,27 @@
             <div class="price"><%= formatPrice(tour.price) %></div>
             <div class="per">per person</div>
           </div>
-          <a href="/account" class="book-btn">Contact to Book →</a>
+          <a href="/account/tours/<%= tour.id %>/book" class="book-btn">Book Now →</a>
         </div>
+
+        <% if (dateRanges && dateRanges.length > 0) { %>
+        <div style="margin-top: 1.5rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Available Departure Dates</h3>
+          <% dateRanges.forEach(function(r) { %>
+            <% const remaining = r.max_capacity ? r.max_capacity - (r.current_bookings || 0) : null; %>
+            <% const isFull = remaining !== null && remaining <= 0; %>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; background: <%= isFull ? '#fef3cd' : '#f8fafc' %>; border-radius: var(--radius-sm); border-left: 4px solid <%= isFull ? '#d69e2e' : '#38a169' %>; margin-bottom: 0.5rem;">
+              <div>
+                <div style="font-weight: 700; font-size: 0.88rem;"><%= r.label %></div>
+                <div style="font-size: 0.82rem; color: var(--text-muted);"><%= new Date(r.start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) %> — <%= new Date(r.end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+              </div>
+              <div style="font-size: 0.82rem; font-weight: 600; color: <%= isFull ? '#e53e3e' : '#38a169' %>;">
+                <%= isFull ? 'FULL' : (remaining ? remaining + ' seats left' : 'Open') %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+        <% } %>
       </div>
     </div>
   </div>
