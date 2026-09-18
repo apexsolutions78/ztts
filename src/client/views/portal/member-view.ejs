@@ -115,6 +115,19 @@
       </div>
     <% } %>
 
+    <!-- Location Link -->
+    <div class="member-card" style="margin-bottom: 1.5rem;">
+      <a href="/t/member/<%= token %>/location" style="display: flex; align-items: center; gap: 0.8rem; padding: 1rem 1.5rem; text-decoration: none; color: inherit; transition: background 0.15s;"
+         onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background=''">
+        <span style="font-size: 1.5rem;">📍</span>
+        <div style="flex: 1;">
+          <strong style="font-size: 0.95rem;">View Guide's Live Location</strong>
+          <p style="margin: 0.1rem 0 0; font-size: 0.8rem; color: var(--text-muted);">See your guide's current position on the map</p>
+        </div>
+        <span style="color: var(--text-muted);">&rarr;</span>
+      </a>
+    </div>
+
     <!-- Group Members (leader only) -->
     <% if (isLeader && members.length > 0) { %>
       <div class="member-card">

@@ -1,4 +1,4 @@
-import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, findTourBookingById, getFlightLiveStatus, getMembersByBookingId, createBookingMember, deleteBookingMember, isBookingComplete, createMemberWithToken, findMemberByPortalToken, getBookingMembersForLeader, isGroupLeader, setGroupLeader, getGroupLeader, logAuditAction, logNotificationRecord } from '../models/index.js';
+import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, findTourBookingById, getFlightLiveStatus, getMembersByBookingId, createBookingMember, deleteBookingMember, isBookingComplete, createMemberWithToken, findMemberByPortalToken, getBookingMembersForLeader, isGroupLeader, setGroupLeader, getGroupLeader, getActiveGroupLocation, getGroupTourById, logAuditAction, logNotificationRecord } from '../models/index.js';
 import { sendEmail, buildMemberPortalEmail, buildGroupCompleteEmail, buildMemberPortalInviteEmail } from '../services/emailService.js';
 
 export async function viewCustomerPortal(req, res, next) {
@@ -271,6 +271,47 @@ export async function postTransferLeadership(req, res, next) {
       booking, tourPackage, members, dateRange: null, token,
       error: null,
       success: 'Group leadership transferred.'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function viewSharedLocation(req, res, next) {
+  try {
+    const { token } = req.params;
+    const member = await findMemberByPortalToken(token);
+    if (!member) {
+      return res.status(404).render('errors/404', { title: 'Invalid Link', message: 'This member portal link is invalid.' });
+    }
+
+    const booking = await findTourBookingById(member.tour_booking_id);
+    if (!booking) return res.status(404).render('errors/404', { title: 'Booking Not Found' });
+
+    const tourPackage = await findTourPackageById(booking.tour_package_id);
+
+    // Find the group tour linked to this booking
+    const { memoryStore, isUsingMySQL, pool } = await import('../config/db.js');
+    let groupTour = null;
+    if (isUsingMySQL()) {
+      const [rows] = await pool.query('SELECT * FROM group_tours WHERE booking_id = ?', [booking.id]);
+      groupTour = rows[0] || null;
+    } else {
+      groupTour = memoryStore.group_tours.find(gt => gt.booking_id === booking.id) || null;
+    }
+
+    let activeLocation = null;
+    if (groupTour) {
+      activeLocation = await getActiveGroupLocation(groupTour.id);
+    }
+
+    res.render('portal/member-location', {
+      title: 'Shared Location',
+      member,
+      booking,
+      tourPackage,
+      activeLocation,
+      token
     });
   } catch (error) {
     next(error);

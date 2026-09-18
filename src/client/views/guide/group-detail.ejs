@@ -144,6 +144,63 @@
         </form>
       </div>
 
+      <!-- Share Location -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">Share Location</h2>
+        ${activeLocation ? `
+          <div style="background: #e6ffed; border: 1px solid #c6f6d5; border-radius: var(--radius-sm); padding: 0.8rem; margin-bottom: 0.8rem; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>📍 Location is being shared</span>
+              <span class="badge badge-success" style="font-size: 0.65rem;">LIVE</span>
+            </div>
+            ${activeLocation.label ? '<p style="margin: 0.3rem 0 0; color: var(--text-muted);">' + activeLocation.label + '</p>' : ''}
+          </div>
+          <form method="POST" action="/guide/group/${group.id}/location/end" style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-sm btn-outline" style="flex: 1;">Stop Sharing</button>
+            <a href="/t/member/DUMMY/location" target="_blank" style="display: none;"></a>
+          </form>
+        ` : `
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">Share your live GPS location with group members.</p>
+          <form id="locationForm" method="POST" action="/guide/group/${group.id}/location/share">
+            <input type="hidden" name="latitude" id="locLat">
+            <input type="hidden" name="longitude" id="locLng">
+            <input type="hidden" name="accuracy" id="locAccuracy">
+            <div class="form-group">
+              <input type="text" name="label" class="form-control" placeholder="Label (e.g. Meeting Point, Hotel)" style="font-size: 0.9rem;">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" style="width: 100%;" onclick="shareLocation()">
+              📍 Share My Location
+            </button>
+          </form>
+          <p id="locStatus" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center;"></p>
+          <script>
+            function shareLocation() {
+              const status = document.getElementById('locStatus');
+              if (!navigator.geolocation) {
+                status.textContent = 'Geolocation is not supported by your browser.';
+                status.style.color = '#e53e3e';
+                return;
+              }
+              status.textContent = 'Getting your location...';
+              status.style.color = 'var(--text-muted)';
+              navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                  document.getElementById('locLat').value = pos.coords.latitude;
+                  document.getElementById('locLng').value = pos.coords.longitude;
+                  document.getElementById('locAccuracy').value = pos.coords.accuracy;
+                  document.getElementById('locationForm').submit();
+                },
+                function(err) {
+                  status.textContent = 'Location access denied. Please enable GPS.';
+                  status.style.color = '#e53e3e';
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+              );
+            }
+          </script>
+        `}
+      </div>
+
       <!-- Message Admin -->
       <div class="card">
         <h2 style="font-size: 1.1rem; margin: 0 0 0.8rem;">Message Admin</h2>

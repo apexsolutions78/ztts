@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { viewCustomerPortal, getMemberPortal, postAddMember, postDeleteMember, viewMemberPortal, postTransferLeadership } from '../controllers/portalController.js';
+import { viewCustomerPortal, getMemberPortal, postAddMember, postDeleteMember, viewMemberPortal, postTransferLeadership, viewSharedLocation } from '../controllers/portalController.js';
 import { generateQRSvg } from '../services/qrService.js';
 
 const router = Router();
@@ -17,6 +17,7 @@ router.get('/:token/qr', async (req, res) => {
 });
 
 router.get('/member/:token', viewMemberPortal);
+router.get('/member/:token/location', viewSharedLocation);
 router.post('/:token/members/transfer-leader/:memberId', postTransferLeadership);
 router.get('/:token/members', getMemberPortal);
 router.post('/:token/members/add', postAddMember);

@@ -269,7 +269,8 @@ export const memoryStore = {
   auth_codes: [],
   group_messages: [],
   guide_polls: [],
-  guide_poll_votes: []
+  guide_poll_votes: [],
+  group_locations: []
 };
 
 

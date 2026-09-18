@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | Zahabia Travel</title>
+  <link rel="icon" type="image/png" href="/brand/LOGO123.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f7f6; }
+    .header { background: linear-gradient(135deg, #1a3a2a 0%, #0b2e23 100%); color: #fff; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
+    .header img { height: 36px; border-radius: 8px; }
+    .header h1 { font-size: 1.1rem; color: #d4a843; margin: 0; }
+    .header p { font-size: 0.8rem; color: #a0aec0; margin: 0.2rem 0 0; }
+    .container { max-width: 800px; margin: 1rem auto; padding: 0 1rem; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 1rem; }
+    .card-header { padding: 1rem 1.2rem; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+    .card-header h2 { font-size: 1rem; margin: 0; }
+    .card-body { padding: 1.2rem; }
+    #map { height: 400px; width: 100%; background: #e8f0ed; }
+    .info-row { display: flex; padding: 0.4rem 0; font-size: 0.85rem; border-bottom: 1px solid #f5f5f5; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-weight: 600; color: #4a5568; min-width: 120px; }
+    .info-value { color: #2d3748; flex: 1; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+    .badge-active { background: #e6ffed; color: #22543d; }
+    .badge-none { background: #f7fafc; color: #a0aec0; }
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; text-align: center; }
+    .alert-info { background: #e6ffed; color: #22543d; border: 1px solid #c6f6d5; }
+    .alert-warning { background: #fefcbf; color: #744210; border: 1px solid #f6e05e; }
+    .back-link { display: inline-block; margin-top: 0.5rem; color: #1a3a2a; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+    .back-link:hover { text-decoration: underline; }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .leaflet-popup-content { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="/brand/LOGO123.png" alt="Zahabia">
+    <div>
+      <h1><%= tourPackage ? tourPackage.title : 'Tour' %></h1>
+      <p>Live Location &bull; <%= member.full_name %></p>
+    </div>
+  </div>
+
+  <div class="container">
+    <% if (activeLocation) { %>
+      <div class="alert alert-info">
+        <strong><%= activeLocation.sender_name %></strong> is sharing their location
+        <% if (activeLocation.label) { %> — <%= activeLocation.label %><% } %>
+        <span class="pulse" style="display: inline-block; width: 8px; height: 8px; background: #38a169; border-radius: 50%; margin-left: 0.5rem;"></span>
+      </div>
+
+      <div class="card">
+        <div id="map"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Location Details</h2>
+          <span class="badge badge-active">LIVE</span>
+        </div>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="info-label">Shared By</span>
+            <span class="info-value"><%= activeLocation.sender_name %></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Latitude</span>
+            <span class="info-value"><%= activeLocation.latitude %></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Longitude</span>
+            <span class="info-value"><%= activeLocation.longitude %></span>
+          </div>
+          <% if (activeLocation.accuracy_meters) { %>
+            <div class="info-row">
+              <span class="info-label">Accuracy</span>
+              <span class="info-value">~<%= Math.round(activeLocation.accuracy_meters) %>m</span>
+            </div>
+          <% } %>
+          <div class="info-row">
+            <span class="info-label">Shared At</span>
+            <span class="info-value"><%= new Date(activeLocation.started_at).toLocaleString() %></span>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        const lat = <%= activeLocation.latitude %>;
+        const lng = <%= activeLocation.longitude %>;
+        const label = '<%= activeLocation.sender_name %><%= activeLocation.label ? " — " + activeLocation.label : "" %>';
+        const accuracy = <%= activeLocation.accuracy_meters || 0 %>;
+
+        const map = L.map('map').setView([lat, lng], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const marker = L.marker([lat, lng]).addTo(map).bindPopup('<strong>' + label + '</strong>').openPopup();
+
+        if (accuracy > 0) {
+          L.circle([lat, lng], { radius: accuracy, color: '#38a169', fillColor: '#38a169', fillOpacity: 0.15, weight: 1 }).addTo(map);
+        }
+
+        map.setView([lat, lng], 16);
+      </script>
+
+    <% } else { %>
+      <div class="card">
+        <div class="card-body" style="text-align: center; padding: 3rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📍</div>
+          <h2 style="font-size: 1.2rem; margin-bottom: 0.5rem; color: #4a5568;">No Active Location</h2>
+          <p style="color: #a0aec0; font-size: 0.9rem;">Your guide has not shared their location yet.<br>Check back later.</p>
+        </div>
+      </div>
+    <% } %>
+
+    <a href="/t/member/<%= token %>" class="back-link">&larr; Back to My Tour Details</a>
+  </div>
+
+  <% if (activeLocation) { %>
+    <script>
+      // Auto-refresh every 15 seconds to get updated location
+      setTimeout(function() { location.reload(); }, 15000);
+    </script>
+  <% } %>
+</body>
+</html>

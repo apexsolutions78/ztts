@@ -1654,3 +1654,67 @@ export async function getGroupLeader(tourBookingId) {
   if (!tb?.group_leader_member_id) return null;
   return memoryStore.tour_booking_members.find(m => m.id === tb.group_leader_member_id) || null;
 }
+
+// --- GROUP LOCATION SHARING MODEL ---
+export async function createGroupLocation({ group_tour_id, shared_by_user_id = null, shared_by_member_id = null, sender_name, latitude, longitude, accuracy_meters = null, label = null }) {
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      'INSERT INTO group_locations (group_tour_id, shared_by_user_id, shared_by_member_id, sender_name, latitude, longitude, accuracy_meters, label) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [group_tour_id, shared_by_user_id, shared_by_member_id, sender_name, latitude, longitude, accuracy_meters, label]
+    );
+    return { id: result.insertId };
+  }
+  const loc = {
+    id: memoryStore.group_locations.length + 1,
+    group_tour_id: Number(group_tour_id), shared_by_user_id, shared_by_member_id, sender_name,
+    latitude: Number(latitude), longitude: Number(longitude), accuracy_meters, label,
+    status: 'active',
+    started_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    ended_at: null
+  };
+  memoryStore.group_locations.push(loc);
+  return loc;
+}
+
+export async function getActiveGroupLocation(groupTourId) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM group_locations WHERE group_tour_id = ? AND status = ? ORDER BY started_at DESC LIMIT 1',
+      [groupTourId, 'active']
+    );
+    return rows[0] || null;
+  }
+  return memoryStore.group_locations
+    .filter(l => l.group_tour_id === Number(groupTourId) && l.status === 'active')
+    .sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0] || null;
+}
+
+export async function getGroupLocationHistory(groupTourId, limit = 20) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query(
+      'SELECT * FROM group_locations WHERE group_tour_id = ? ORDER BY started_at DESC LIMIT ?',
+      [groupTourId, limit]
+    );
+    return rows;
+  }
+  return memoryStore.group_locations
+    .filter(l => l.group_tour_id === Number(groupTourId))
+    .sort((a, b) => new Date(b.started_at) - new Date(a.started_at))
+    .slice(0, limit);
+}
+
+export async function endGroupLocation(locationId) {
+  if (isUsingMySQL()) {
+    await pool.query(
+      "UPDATE group_locations SET status = 'ended', ended_at = NOW() WHERE id = ?",
+      [locationId]
+    );
+    return true;
+  }
+  const loc = memoryStore.group_locations.find(l => l.id === Number(locationId));
+  if (loc) {
+    loc.status = 'ended';
+    loc.ended_at = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  }
+  return true;
+}

@@ -2,6 +2,7 @@ import {
   getGroupsByGuideUserId, getGroupTourById, getMilestonesByGroupId,
   updateMilestone, getGroupMessages, createGroupMessage,
   getGuidePollsByGroup, createGuidePoll, castPollVote, getPollResults, closePoll,
+  createGroupLocation, getActiveGroupLocation, endGroupLocation,
   findUserById, getAllUsers, logAuditAction
 } from '../models/index.js';
 
@@ -41,6 +42,9 @@ export async function viewGroupDetail(req, res, next) {
     const { getBookingMembersForLeader } = await import('../models/index.js');
     const members = await getBookingMembersForLeader(group.booking_id);
 
+    // Get active location
+    const activeLocation = await getActiveGroupLocation(group.id);
+
     res.render('guide/group-detail', {
       title: group.title,
       group,
@@ -48,6 +52,7 @@ export async function viewGroupDetail(req, res, next) {
       messages,
       polls: pollsWithResults,
       members,
+      activeLocation,
       formatPrice: res.locals.formatPrice
     });
   } catch (err) {
@@ -233,6 +238,75 @@ export async function postShareDetails(req, res, next) {
         message: content.trim(),
         message_type: 'share',
         metadata: { share_type, label: typeLabels[share_type] || 'Shared Content' }
+      });
+    }
+
+    res.redirect(`/guide/group/${id}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postShareLocation(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { latitude, longitude, accuracy, label } = req.body;
+    const group = await getGroupTourById(id);
+    if (!group || group.assigned_guide_user_id !== req.session.user.id) {
+      return res.status(404).render('errors/404', { title: 'Group Not Found' });
+    }
+
+    if (!latitude || !longitude) {
+      return res.redirect(`/guide/group/${id}`);
+    }
+
+    const existing = await getActiveGroupLocation(group.id);
+    if (existing) {
+      await endGroupLocation(existing.id);
+    }
+
+    await createGroupLocation({
+      group_tour_id: group.id,
+      shared_by_user_id: req.session.user.id,
+      sender_name: req.session.user.name,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      accuracy_meters: accuracy ? parseFloat(accuracy) : null,
+      label: label || null
+    });
+
+    await createGroupMessage({
+      group_tour_id: group.id,
+      sender_user_id: req.session.user.id,
+      sender_name: req.session.user.name,
+      message: `📍 Location shared${label ? ': ' + label : ''}`,
+      message_type: 'share',
+      metadata: { share_type: 'location', label: label || 'Location Shared' }
+    });
+
+    res.redirect(`/guide/group/${id}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postEndLocation(req, res, next) {
+  try {
+    const { id } = req.params;
+    const group = await getGroupTourById(id);
+    if (!group || group.assigned_guide_user_id !== req.session.user.id) {
+      return res.status(404).render('errors/404', { title: 'Group Not Found' });
+    }
+
+    const active = await getActiveGroupLocation(group.id);
+    if (active) {
+      await endGroupLocation(active.id);
+      await createGroupMessage({
+        group_tour_id: group.id,
+        sender_user_id: req.session.user.id,
+        sender_name: req.session.user.name,
+        message: '📍 Location sharing stopped',
+        message_type: 'text'
       });
     }
 
