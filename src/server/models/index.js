@@ -956,12 +956,16 @@ export async function getDashboardStats() {
   const activeFlights = flights.filter(f => f.ticket_status !== 'cancelled');
   const activeTourBookings = tourBookings.filter(t => t.status !== 'cancelled');
 
-  // Calculate revenue from actual payments (subtract refunds)
+  // Build sets of cancelled booking IDs to exclude from revenue
+  const cancelledFlightIds = new Set(flights.filter(f => f.ticket_status === 'cancelled').map(f => f.id));
+  const cancelledTourBookingIds = new Set(tourBookings.filter(t => t.status === 'cancelled').map(t => t.id));
+
+  // Calculate revenue from actual payments (subtract refunds, exclude cancelled bookings)
   const totalFlightRevenue = allPayments
-    .filter(p => p.booking_type === 'flight' && (p.payment_status === 'paid' || p.payment_status === 'partial'))
+    .filter(p => p.booking_type === 'flight' && (p.payment_status === 'paid' || p.payment_status === 'partial') && !cancelledFlightIds.has(p.booking_id))
     .reduce((sum, p) => sum + (Number(p.amount) || 0) - (Number(p.refund_amount) || 0), 0);
   const totalTourRevenue = allPayments
-    .filter(p => p.booking_type === 'tour' && (p.payment_status === 'paid' || p.payment_status === 'partial'))
+    .filter(p => p.booking_type === 'tour' && (p.payment_status === 'paid' || p.payment_status === 'partial') && !cancelledTourBookingIds.has(p.booking_id))
     .reduce((sum, p) => sum + (Number(p.amount) || 0) - (Number(p.refund_amount) || 0), 0);
   const totalRevenue = totalFlightRevenue + totalTourRevenue;
 
