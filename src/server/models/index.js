@@ -224,7 +224,7 @@ export async function findFlightBookingById(id) {
 export async function createFlightBooking({
   customer_id, airline, flight_number, origin, destination,
   departure_date, arrival_date, cabin_class = 'Economy', total_amount = 0, created_by = 1,
-  ticket_status = 'confirmed', passengers = null, notes = null
+  ticket_status = 'pending', passengers = null, notes = null
 }) {
   const booking_ref = 'ZHB-' + Math.floor(1000 + Math.random() * 9000);
   if (isUsingMySQL()) {
@@ -478,7 +478,7 @@ export async function getAllTourBookings() {
 export async function createTourBooking({ tour_package_id, customer_id, travel_date, total_travelers, total_amount, tour_date_range_id = null }) {
   if (isUsingMySQL()) {
     const [result] = await pool.query(
-      'INSERT INTO tour_bookings (tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, members_required, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, "confirmed")',
+      'INSERT INTO tour_bookings (tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, members_required, total_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, "pending")',
       [tour_package_id, tour_date_range_id, customer_id, travel_date, total_travelers, total_travelers, total_amount]
     );
     // Increment current_bookings on the date range
@@ -504,7 +504,7 @@ export async function createTourBooking({ tour_package_id, customer_id, travel_d
     members_added: 0,
     members_required: Number(total_travelers),
     total_amount: Number(total_amount),
-    status: 'confirmed',
+    status: 'pending',
     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
   };
   memoryStore.tour_bookings.push(newBooking);
@@ -514,6 +514,16 @@ export async function createTourBooking({ tour_package_id, customer_id, travel_d
     if (dr) dr.current_bookings = (dr.current_bookings || 0) + Number(total_travelers);
   }
   return newBooking;
+}
+
+export async function updateTourBookingStatus(id, status) {
+  if (isUsingMySQL()) {
+    await pool.query('UPDATE tour_bookings SET status = ? WHERE id = ?', [status, id]);
+    return true;
+  }
+  const tb = memoryStore.tour_bookings.find(t => t.id === Number(id));
+  if (tb) tb.status = status;
+  return true;
 }
 
 export async function cancelTourBooking(id) {
@@ -952,20 +962,20 @@ export async function getDashboardStats() {
     ? (await pool.query('SELECT * FROM payments'))[0]
     : memoryStore.payments;
 
-  // Revenue = actual payments received (exclude cancelled bookings and refunded payments)
+  // Revenue = actual payments on confirmed bookings (exclude cancelled/pending bookings)
   const activeFlights = flights.filter(f => f.ticket_status !== 'cancelled');
   const activeTourBookings = tourBookings.filter(t => t.status !== 'cancelled');
 
-  // Build sets of cancelled booking IDs to exclude from revenue
-  const cancelledFlightIds = new Set(flights.filter(f => f.ticket_status === 'cancelled').map(f => f.id));
-  const cancelledTourBookingIds = new Set(tourBookings.filter(t => t.status === 'cancelled').map(t => t.id));
+  // Build sets of confirmed booking IDs
+  const confirmedFlightIds = new Set(flights.filter(f => f.ticket_status === 'confirmed' || f.ticket_status === 'ticketed').map(f => f.id));
+  const confirmedTourBookingIds = new Set(tourBookings.filter(t => t.status === 'confirmed').map(t => t.id));
 
-  // Calculate revenue from actual payments (subtract refunds, exclude cancelled bookings)
+  // Calculate revenue from actual payments (subtract refunds, only confirmed bookings)
   const totalFlightRevenue = allPayments
-    .filter(p => p.booking_type === 'flight' && (p.payment_status === 'paid' || p.payment_status === 'partial') && !cancelledFlightIds.has(p.booking_id))
+    .filter(p => p.booking_type === 'flight' && (p.payment_status === 'paid' || p.payment_status === 'partial') && confirmedFlightIds.has(p.booking_id))
     .reduce((sum, p) => sum + (Number(p.amount) || 0) - (Number(p.refund_amount) || 0), 0);
   const totalTourRevenue = allPayments
-    .filter(p => p.booking_type === 'tour' && (p.payment_status === 'paid' || p.payment_status === 'partial') && !cancelledTourBookingIds.has(p.booking_id))
+    .filter(p => p.booking_type === 'tour' && (p.payment_status === 'paid' || p.payment_status === 'partial') && confirmedTourBookingIds.has(p.booking_id))
     .reduce((sum, p) => sum + (Number(p.amount) || 0) - (Number(p.refund_amount) || 0), 0);
   const totalRevenue = totalFlightRevenue + totalTourRevenue;
 
@@ -977,8 +987,9 @@ export async function getDashboardStats() {
     totalFlightRevenue,
     totalTourRevenue,
     flightBookingsCount: flights.length,
-    ticketedFlightsCount,
-    activeToursCount,
+    ticketedFlightsCount: flights.filter(f => f.ticket_status === 'ticketed').length,
+    pendingBookingsCount: flights.filter(f => f.ticket_status === 'pending').length + tourBookings.filter(t => t.status === 'pending').length,
+    activeToursCount: tours.filter(t => t.status === 'active').length,
     customersCount: customers.length,
     pendingFlightRequests: flights.filter(f => f.ticket_status === 'pending').length,
     recentFlights: activeFlights.slice(0, 5),

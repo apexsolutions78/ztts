@@ -105,6 +105,7 @@
           <h3>Quick Operator Actions</h3>
           <p class="muted" style="margin-bottom: 1rem; font-size: 0.85rem;">Fast-track frequent tasks:</p>
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            ${stats.pendingBookingsCount > 0 ? `<div style="padding: 0.6rem 0.8rem; background: #fefcbf; color: #975a16; border: 1px solid #d69e2e; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;">⚠ ${stats.pendingBookingsCount} Booking${stats.pendingBookingsCount > 1 ? 's' : ''} awaiting payment</div>` : ''}
             ${stats.pendingFlightRequests > 0 ? `<a href="/admin/flights/requests?status=pending" class="btn btn-sm" style="justify-content: flex-start; background: #fefcbf; color: #975a16; border: 1px solid #d69e2e;">⚠ ${stats.pendingFlightRequests} Pending Flight Request${stats.pendingFlightRequests > 1 ? 's' : ''}</a>` : ''}
             <a href="/admin/flights/requests" class="btn btn-secondary" style="justify-content: flex-start;">📋 View Flight Requests</a>
             <a href="/admin/flights/new" class="btn btn-secondary" style="justify-content: flex-start;">✈ Issue Airline Ticket</a>

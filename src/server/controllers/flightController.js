@@ -226,8 +226,14 @@ export async function viewFlightDetail(req, res, next) {
 export async function issueTicket(req, res, next) {
   try {
     const { id } = req.params;
-    await updateFlightTicketStatus(id, 'ticketed');
     const flight = await findFlightBookingById(id);
+
+    // Only allow ticketing if booking is confirmed (fully paid)
+    if (flight && flight.ticket_status !== 'confirmed') {
+      return res.status(400).json({ success: false, error: 'Booking must be fully paid before issuing a ticket.' });
+    }
+
+    await updateFlightTicketStatus(id, 'ticketed');
 
     // Log Audit Action
     await logAuditAction({
@@ -442,6 +448,17 @@ export async function listFlightRequests(req, res, next) {
 export async function confirmFlightRequest(req, res, next) {
   try {
     const { id } = req.params;
+    const flight = await findFlightBookingById(id);
+
+    // Only allow confirmation if fully paid
+    if (flight) {
+      const { getBookingPaymentSummary } = await import('../models/index.js');
+      const summary = await getBookingPaymentSummary('flight', id);
+      if (!summary.isFullyPaid) {
+        return res.redirect('/admin/flights/requests?error=not_paid');
+      }
+    }
+
     await updateFlightTicketStatus(id, 'confirmed');
 
     const flight = await findFlightBookingById(id);

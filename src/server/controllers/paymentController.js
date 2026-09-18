@@ -6,6 +6,8 @@ import {
   refundPayment,
   findFlightBookingById,
   findTourBookingById,
+  updateFlightTicketStatus,
+  updateTourBookingStatus,
   getFinancialLedger,
   logAuditAction
 } from '../models/index.js';
@@ -66,11 +68,21 @@ export async function postAddPayment(req, res, next) {
     });
 
     const updatedSummary = await getBookingPaymentSummary(type, id);
+
+    // Auto-confirm booking when fully paid
+    if (updatedSummary.isFullyPaid) {
+      if (type === 'flight') {
+        await updateFlightTicketStatus(id, 'confirmed');
+      } else {
+        await updateTourBookingStatus(id, 'confirmed');
+      }
+    }
+
     res.json({
       success: true,
       payment,
       summary: updatedSummary,
-      message: `Payment of ${paymentAmount} recorded successfully`
+      message: `Payment of ${paymentAmount} recorded successfully${updatedSummary.isFullyPaid ? ' — Booking CONFIRMED (fully paid)' : ''}`
     });
   } catch (error) {
     next(error);
@@ -129,6 +141,16 @@ export async function postDeletePayment(req, res, next) {
     });
 
     const summary = await getBookingPaymentSummary(removed.booking_type, removed.booking_id);
+
+    // Revert to pending if deletion makes it no longer fully paid
+    if (!summary.isFullyPaid) {
+      if (removed.booking_type === 'flight') {
+        await updateFlightTicketStatus(removed.booking_id, 'pending');
+      } else {
+        await updateTourBookingStatus(removed.booking_id, 'pending');
+      }
+    }
+
     res.json({ success: true, summary, message: 'Payment deleted successfully' });
   } catch (error) {
     next(error);
@@ -156,6 +178,16 @@ export async function postRefundPayment(req, res, next) {
     });
 
     const summary = await getBookingPaymentSummary(refunded.booking_type, refunded.booking_id);
+
+    // Revert to pending if refund makes it no longer fully paid
+    if (!summary.isFullyPaid) {
+      if (refunded.booking_type === 'flight') {
+        await updateFlightTicketStatus(refunded.booking_id, 'pending');
+      } else {
+        await updateTourBookingStatus(refunded.booking_id, 'pending');
+      }
+    }
+
     res.json({ success: true, payment: refunded, summary, message: 'Payment refunded successfully' });
   } catch (error) {
     next(error);
@@ -220,11 +252,21 @@ export async function postRecordBatchPayments(req, res, next) {
     });
 
     const updatedSummary = await getBookingPaymentSummary(type, id);
+
+    // Auto-confirm booking when fully paid
+    if (updatedSummary.isFullyPaid) {
+      if (type === 'flight') {
+        await updateFlightTicketStatus(id, 'confirmed');
+      } else {
+        await updateTourBookingStatus(id, 'confirmed');
+      }
+    }
+
     res.json({
       success: true,
       payments: recordedPayments,
       summary: updatedSummary,
-      message: `${recordedPayments.length} payment(s) recorded successfully`
+      message: `${recordedPayments.length} payment(s) recorded successfully${updatedSummary.isFullyPaid ? ' — Booking CONFIRMED (fully paid)' : ''}`
     });
   } catch (error) {
     next(error);
