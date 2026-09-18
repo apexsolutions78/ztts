@@ -141,11 +141,38 @@ export async function updateCustomer(id, { full_name, passport_number, nationali
 
 export async function deleteCustomer(id) {
   if (isUsingMySQL()) {
+    // Delete associated records first (payments -> bookings -> customer)
+    const [flightBookings] = await pool.query('SELECT id FROM flight_bookings WHERE customer_id = ?', [id]);
+    for (const fb of flightBookings) {
+      await pool.query('DELETE FROM payments WHERE booking_type = ? AND booking_id = ?', ['flight', fb.id]);
+    }
+    await pool.query('DELETE FROM flight_bookings WHERE customer_id = ?', [id]);
+
+    const [tourBookings] = await pool.query('SELECT id FROM tour_bookings WHERE customer_id = ?', [id]);
+    for (const tb of tourBookings) {
+      await pool.query('DELETE FROM payments WHERE booking_type = ? AND booking_id = ?', ['tour', tb.id]);
+    }
+    await pool.query('DELETE FROM tour_bookings WHERE customer_id = ?', [id]);
+
     await pool.query('DELETE FROM customers WHERE id = ?', [id]);
     return true;
   }
   const idx = memoryStore.customers.findIndex(c => c.id === Number(id));
   if (idx === -1) return false;
+  const cid = Number(id);
+  memoryStore.payments = memoryStore.payments.filter(p => {
+    if (p.booking_type === 'flight') {
+      const fb = memoryStore.flight_bookings.find(f => f.id === p.booking_id && f.customer_id === cid);
+      return !fb;
+    }
+    if (p.booking_type === 'tour') {
+      const tb = memoryStore.tour_bookings.find(b => b.id === p.booking_id && b.customer_id === cid);
+      return !tb;
+    }
+    return true;
+  });
+  memoryStore.flight_bookings = memoryStore.flight_bookings.filter(f => f.customer_id !== cid);
+  memoryStore.tour_bookings = memoryStore.tour_bookings.filter(b => b.customer_id !== cid);
   memoryStore.customers.splice(idx, 1);
   return true;
 }
