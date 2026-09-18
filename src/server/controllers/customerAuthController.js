@@ -1,4 +1,4 @@
-import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction, getDateRangesByTourId, findTourPackageById, createTourBooking, createPortalToken, findPortalTokenByTourBooking, logNotificationRecord } from '../models/index.js';
+import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction, getDateRangesByTourId, findTourPackageById, createTourBooking, createPortalToken, findPortalTokenByTourBooking, logNotificationRecord, linkOrphanedFlightsToCustomer } from '../models/index.js';
 import { hashPassword } from '../config/db.js';
 import { sendEmail, buildAuthCodeEmail } from '../services/emailService.js';
 
@@ -25,6 +25,7 @@ export async function postAuth(req, res) {
     const inputHash = hashPassword(password);
     if (existing.password_hash === inputHash) {
       req.session.customer = { id: existing.id, name: existing.full_name, email: existing.email };
+      await linkOrphanedFlightsToCustomer(existing.id, existing.email);
       return res.redirect('/account');
     }
     return res.status(401).render('customer/login', {
@@ -162,6 +163,7 @@ export async function postCreatePassword(req, res) {
         customer.password_hash = passwordHash;
       }
       req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
+      await linkOrphanedFlightsToCustomer(customer.id, customer.email);
       return res.redirect('/account');
     }
     // Fallback: create customer if somehow missing
@@ -173,6 +175,7 @@ export async function postCreatePassword(req, res) {
       passport_number: null
     });
     req.session.customer = { id: newCustomer.id, name: newCustomer.full_name, email: newCustomer.email };
+    await linkOrphanedFlightsToCustomer(newCustomer.id, newCustomer.email);
     return res.redirect('/account');
   }
 
@@ -185,6 +188,7 @@ export async function postCreatePassword(req, res) {
       customer.password_hash = passwordHash;
     }
     req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
+    await linkOrphanedFlightsToCustomer(customer.id, customer.email);
     return res.redirect('/account');
   }
 
@@ -206,13 +210,26 @@ export async function getDashboard(req, res, next) {
     const allFlights = await getAllFlightBookings();
     const flightBookings = allFlights.filter(f => f.customer_id === customer.id);
 
+    // Fetch portal tokens for each booking
+    const { findPortalTokenByTourBooking, findPortalTokenByFlightBooking } = await import('../models/index.js');
+    const tourBookingsWithTokens = await Promise.all(tourBookings.map(async (b) => {
+      const token = await findPortalTokenByTourBooking(b.id);
+      return { ...b, portalToken: token?.token || null };
+    }));
+    const flightBookingsWithTokens = await Promise.all(flightBookings.map(async (f) => {
+      const token = await findPortalTokenByFlightBooking(f.id);
+      return { ...f, portalToken: token?.token || null };
+    }));
+
     res.render('customer/dashboard', {
       title: 'My Account',
       customer,
-      tourBookings,
-      flightBookings,
+      tourBookings: tourBookingsWithTokens,
+      flightBookings: flightBookingsWithTokens,
       formatPrice: res.locals.formatPrice,
-      activeCurrency: res.locals.activeCurrency
+      activeCurrency: res.locals.activeCurrency,
+      updated: req.query.updated === 'true',
+      cancelled: req.query.cancelled === 'true'
     });
   } catch (err) {
     next(err);
@@ -234,7 +251,7 @@ export async function postUpdateProfile(req, res, next) {
     });
 
     req.session.customer.name = full_name || customer.full_name;
-    res.redirect('/account');
+    res.redirect('/account?updated=true');
   } catch (err) {
     next(err);
   }
@@ -440,6 +457,36 @@ export async function getFlightRequestSuccess(req, res, next) {
       formatPrice: res.locals.formatPrice,
       activeCurrency: res.locals.activeCurrency
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postCancelTourBooking(req, res, next) {
+  try {
+    const { id } = req.params;
+    const customer = await findCustomerById(req.session.customer.id);
+    if (!customer) return res.redirect('/account/login');
+
+    // Verify booking belongs to this customer
+    const { findTourBookingById, cancelTourBooking } = await import('../models/index.js');
+    const booking = await findTourBookingById(id);
+    if (!booking || booking.customer_id !== customer.id) {
+      return res.redirect('/account');
+    }
+
+    await cancelTourBooking(id);
+
+    await logAuditAction({
+      user_id: customer.id,
+      user_name: customer.full_name,
+      action: 'CANCEL_TOUR_BOOKING',
+      entity_type: 'tour_booking',
+      entity_id: id,
+      details: `Customer cancelled tour booking: ${booking.tour_title || 'Tour'}`
+    });
+
+    res.redirect('/account?cancelled=true');
   } catch (err) {
     next(err);
   }

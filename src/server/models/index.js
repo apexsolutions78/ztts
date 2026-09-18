@@ -308,6 +308,24 @@ export async function deleteFlightBooking(id) {
   return true;
 }
 
+export async function linkOrphanedFlightsToCustomer(customerId, email) {
+  if (isUsingMySQL()) {
+    const [result] = await pool.query(
+      "UPDATE flight_bookings SET customer_id = ? WHERE customer_id IS NULL AND notes LIKE ?",
+      [customerId, `%${email}%`]
+    );
+    return result.affectedRows;
+  }
+  let linked = 0;
+  memoryStore.flight_bookings.forEach(f => {
+    if (f.customer_id === null && f.notes && f.notes.includes(email)) {
+      f.customer_id = Number(customerId);
+      linked++;
+    }
+  });
+  return linked;
+}
+
 // --- TOUR PACKAGE MODEL ---
 export async function getAllTourPackages() {
   if (isUsingMySQL()) {

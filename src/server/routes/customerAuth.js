@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   getLogin, postAuth, postVerify, postCreatePassword, postLogout,
   getDashboard, postUpdateProfile,
-  getBrowseTours, getTourDetail, getTourBookForm, postCustomerBookTour,
+  getBrowseTours, getTourDetail, getTourBookForm, postCustomerBookTour, postCancelTourBooking,
   getFlightRequest, postFlightRequest, getFlightRequestSuccess
 } from '../controllers/customerAuthController.js';
 import { requireCustomerAuth } from '../middleware/customerAuth.js';
@@ -24,5 +24,7 @@ router.get('/tours/:id', requireCustomerAuth, getTourDetail);
 router.get('/flights/request', requireCustomerAuth, getFlightRequest);
 router.post('/flights/request', requireCustomerAuth, postFlightRequest);
 router.get('/flights/request/success', requireCustomerAuth, getFlightRequestSuccess);
+
+router.post('/tours/:id/cancel', requireCustomerAuth, postCancelTourBooking);
 
 export default router;

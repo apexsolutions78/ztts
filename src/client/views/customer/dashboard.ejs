@@ -166,6 +166,12 @@
   </nav>
 
   <div class="account-container">
+    <% if (typeof updated !== 'undefined' && updated) { %>
+      <div style="background: #e6ffed; color: #22543d; padding: 0.8rem 1.2rem; border-radius: var(--radius-sm); border-left: 4px solid #38a169; margin-bottom: 1rem; font-size: 0.88rem; font-weight: 600;">Profile updated successfully.</div>
+    <% } %>
+    <% if (typeof cancelled !== 'undefined' && cancelled) { %>
+      <div style="background: #fef3cd; color: #975a16; padding: 0.8rem 1.2rem; border-radius: var(--radius-sm); border-left: 4px solid #d69e2e; margin-bottom: 1rem; font-size: 0.88rem; font-weight: 600;">Booking cancelled successfully.</div>
+    <% } %>
     <div class="account-grid">
       <div>
         <div class="sidebar-card">
@@ -216,6 +222,12 @@
                     <div class="booking-info">
                       <h4><%= b.tour_title %></h4>
                       <p>Travel: <%= new Date(b.travel_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %> &middot; <%= b.total_travelers %> traveler<%= b.total_travelers > 1 ? 's' : '' %></p>
+                      <% if (b.portalToken) { %>
+                        <p style="margin-top: 0.3rem;"><a href="/t/<%= b.portalToken %>" target="_blank" style="color: var(--primary); font-weight: 600; font-size: 0.78rem;">🔗 Open Travel Portal →</a></p>
+                      <% } %>
+                      <% if (b.status === 'confirmed') { %>
+                        <p style="margin-top: 0.3rem;"><form method="POST" action="/account/tours/<%= b.id %>/cancel" style="display:inline;" onsubmit="return confirm('Cancel this booking? This cannot be undone.')"><button type="submit" style="background:none;border:none;color:#e53e3e;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;">Cancel Booking</button></form></p>
+                      <% } %>
                     </div>
                     <div class="booking-meta">
                       <div class="price"><%= formatPrice(b.total_amount) %></div>
@@ -240,6 +252,9 @@
                     <div class="booking-info">
                       <h4><%= f.origin %> → <%= f.destination %></h4>
                       <p><%= f.airline %> &middot; <%= f.flight_number %> &middot; <%= f.cabin_class %> &middot; <%= new Date(f.departure_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+                      <% if (f.portalToken) { %>
+                        <p style="margin-top: 0.3rem;"><a href="/t/<%= f.portalToken %>" target="_blank" style="color: var(--primary); font-weight: 600; font-size: 0.78rem;">🔗 View E-Ticket →</a></p>
+                      <% } %>
                     </div>
                     <div class="booking-meta">
                       <div class="price"><%= f.total_amount > 0 ? formatPrice(f.total_amount) : 'Pending' %></div>
