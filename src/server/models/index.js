@@ -1453,8 +1453,8 @@ export async function getGroupsByGuideUserId(userId) {
              (SELECT COUNT(*) FROM group_milestones gm WHERE gm.group_tour_id = gt.id) AS milestone_count,
              (SELECT COUNT(*) FROM group_milestones gm WHERE gm.group_tour_id = gt.id AND gm.status = 'completed') AS completed_milestones
       FROM group_tours gt
-      JOIN tour_packages tp ON gt.booking_id IN (SELECT id FROM tour_bookings WHERE tour_package_id = tp.id)
-      JOIN tour_bookings tb ON gt.booking_id = tb.id
+      LEFT JOIN tour_bookings tb ON gt.booking_id = tb.id
+      LEFT JOIN tour_packages tp ON tb.tour_package_id = tp.id
       WHERE gt.assigned_guide_user_id = ?
       ORDER BY gt.created_at DESC
     `, [userId]);

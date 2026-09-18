@@ -15,6 +15,7 @@ export async function getGuideDashboard(req, res, next) {
       formatPrice: res.locals.formatPrice
     });
   } catch (err) {
+    console.error('[Guide Dashboard Error]', err.message, err.stack);
     next(err);
   }
 }
