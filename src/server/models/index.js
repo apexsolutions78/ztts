@@ -1038,12 +1038,12 @@ export async function getFinancialLedger() {
 }
 
 export async function createInvoiceForBooking({ booking_type, booking_id, amount, base_fare, tax_amount, agency_fee, payment_method = 'credit_card', transaction_id }) {
-  const invoice_no = 'INV-2026-' + Math.floor(1000 + Math.random() * 9000);
+  const invoice_no = await generateUniqueInvoiceNo();
   if (isUsingMySQL()) {
     const [result] = await pool.query(
       `INSERT INTO payments (invoice_no, booking_type, booking_id, amount, base_fare, tax_amount, agency_fee, payment_method, payment_status, transaction_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'paid', ?)`,
-      [invoice_no, booking_type, booking_id, amount, base_fare, tax_amount, agency_fee, payment_method, transaction_id || ('TXN-' + Math.floor(1000000 + Math.random() * 9000000))]
+      [invoice_no, booking_type, booking_id, amount, base_fare, tax_amount, agency_fee, payment_method, transaction_id || ('TXN-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000))]
     );
     return { id: result.insertId, invoice_no };
   }
@@ -1141,8 +1141,7 @@ export async function getCustomerLedger(customerId) {
       LEFT JOIN flight_bookings fb ON p.booking_type = 'flight' AND p.booking_id = fb.id
       LEFT JOIN tour_bookings tb ON p.booking_type = 'tour' AND p.booking_id = tb.id
       LEFT JOIN tour_packages tp ON tb.tour_package_id = tp.id
-      WHERE (p.booking_type = 'flight' AND p.booking_id IN (SELECT id FROM flight_bookings WHERE customer_id = ?))
-         OR (p.booking_type = 'tour' AND p.booking_id IN (SELECT id FROM tour_bookings WHERE customer_id = ?))
+      WHERE fb.customer_id = ? OR tb.customer_id = ?
       ORDER BY p.created_at DESC
     `, [customerId, customerId]);
 
@@ -1159,9 +1158,30 @@ export async function getCustomerLedger(customerId) {
   return null;
 }
 
+async function generateUniqueInvoiceNo() {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query("SELECT invoice_no FROM payments WHERE invoice_no LIKE 'INV-%' ORDER BY id DESC LIMIT 1");
+    let nextNum = 1;
+    if (rows.length > 0) {
+      const last = rows[0].invoice_no;
+      const parts = last.split('-');
+      nextNum = parseInt(parts[parts.length - 1], 10) + 1;
+    }
+    return 'INV-' + String(nextNum).padStart(6, '0');
+  }
+  const maxExisting = memoryStore.payments.reduce((max, p) => {
+    if (p.invoice_no && p.invoice_no.startsWith('INV-')) {
+      const n = parseInt(p.invoice_no.split('-')[1], 10);
+      return n > max ? n : max;
+    }
+    return max;
+  }, 0);
+  return 'INV-' + String(maxExisting + 1).padStart(6, '0');
+}
+
 export async function addPayment({ booking_type, booking_id, amount, payment_method, payment_reference, notes, base_fare, tax_amount, agency_fee, recorded_by }) {
-  const invoice_no = 'INV-2026-' + Math.floor(1000 + Math.random() * 9000);
-  const transaction_id = 'TXN-' + Math.floor(1000000 + Math.random() * 9000000);
+  const invoice_no = await generateUniqueInvoiceNo();
+  const transaction_id = 'TXN-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000);
   const amt = Number(amount);
   const finalBaseFare = base_fare != null ? Number(base_fare) : null;
   const finalTaxAmount = tax_amount != null ? Number(tax_amount) : null;
@@ -1233,18 +1253,26 @@ export async function deletePayment(id) {
   return removed;
 }
 
-export async function refundPayment(id, refundAmount) {
+export async function refundPayment(id, refundAmount, reason) {
   if (isUsingMySQL()) {
     const [rows] = await pool.query('SELECT * FROM payments WHERE id = ?', [id]);
     if (!rows[0]) return null;
     const payment = rows[0];
-    const newStatus = refundAmount && refundAmount < payment.amount ? 'partial' : 'refunded';
-    await pool.query('UPDATE payments SET payment_status = ? WHERE id = ?', [newStatus, id]);
-    return { ...payment, payment_status: newStatus };
+    const amt = refundAmount != null ? Number(refundAmount) : Number(payment.amount);
+    const newStatus = amt < Number(payment.amount) ? 'partial' : 'refunded';
+    await pool.query(
+      'UPDATE payments SET payment_status = ?, refund_amount = ?, refund_reason = ?, refunded_at = NOW() WHERE id = ?',
+      [newStatus, amt, reason || null, id]
+    );
+    return { ...payment, payment_status: newStatus, refund_amount: amt, refund_reason: reason || null };
   }
   const payment = memoryStore.payments.find(p => p.id === Number(id));
   if (!payment) return null;
-  payment.payment_status = refundAmount && refundAmount < payment.amount ? 'partial' : 'refunded';
+  const amt = refundAmount != null ? Number(refundAmount) : Number(payment.amount);
+  payment.payment_status = amt < Number(payment.amount) ? 'partial' : 'refunded';
+  payment.refund_amount = amt;
+  payment.refund_reason = reason || null;
+  payment.refunded_at = new Date().toISOString();
   return { ...payment };
 }
 

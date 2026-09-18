@@ -140,7 +140,7 @@ export async function postRefundPayment(req, res, next) {
     const { paymentId } = req.params;
     const { refund_amount, reason } = req.body;
 
-    const refunded = await refundPayment(paymentId, refund_amount ? Number(refund_amount) : null);
+    const refunded = await refundPayment(paymentId, refund_amount ? Number(refund_amount) : null, reason);
 
     if (!refunded) {
       return res.status(404).json({ success: false, error: 'Payment not found' });
