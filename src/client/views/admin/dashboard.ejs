@@ -215,11 +215,11 @@
           <tbody>
             ${recentGroups.map(g => `
               <tr>
-                <td><strong>${g.group_name}</strong></td>
+                <td><strong>${g.title}</strong></td>
                 <td>${g.tour_title || 'N/A'}</td>
-                <td>${g.travel_date ? new Date(g.travel_date).toLocaleDateString() : 'TBD'}</td>
-                <td><strong>${g.member_count}</strong> / ${g.total_travelers || '?'}</td>
-                <td>${g.guide_name || '<span class="muted">Unassigned</span>'}</td>
+                <td>${g.start_at ? new Date(g.start_at).toLocaleDateString() : 'TBD'}</td>
+                <td>${g.group_size_expected || '?'} expected</td>
+                <td>${g.assigned_guide_user_id ? 'Guide #' + g.assigned_guide_user_id : '<span class="muted">Unassigned</span>'}</td>
                 <td><span class="badge badge-${g.status}">${g.status}</span></td>
                 <td><a href="/admin/tours/group/${g.id}" class="btn btn-primary btn-sm">Manage</a></td>
               </tr>

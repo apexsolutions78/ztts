@@ -902,12 +902,22 @@ export async function getDashboardStats() {
   const tours = await getAllTourPackages();
   const tourBookings = await getAllTourBookings();
   const customers = await getAllCustomers();
+  const groups = await getAllGroupTours();
+  const allPayments = isUsingMySQL()
+    ? (await pool.query('SELECT * FROM payments'))[0]
+    : memoryStore.payments;
 
-  // Revenue = actual payments received (exclude cancelled bookings)
-  const activeFlights = flights.filter(f => f.status !== 'cancelled');
+  // Revenue = actual payments received (exclude cancelled bookings and refunded payments)
+  const activeFlights = flights.filter(f => f.ticket_status !== 'cancelled');
   const activeTourBookings = tourBookings.filter(t => t.status !== 'cancelled');
-  const totalFlightRevenue = activeFlights.reduce((sum, f) => sum + (Number(f.total_amount) || 0), 0);
-  const totalTourRevenue = activeTourBookings.reduce((sum, t) => sum + (Number(t.total_amount) || 0), 0);
+
+  // Calculate revenue from actual payments
+  const totalFlightRevenue = allPayments
+    .filter(p => p.booking_type === 'flight' && (p.payment_status === 'paid' || p.payment_status === 'partial'))
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const totalTourRevenue = allPayments
+    .filter(p => p.booking_type === 'tour' && (p.payment_status === 'paid' || p.payment_status === 'partial'))
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const totalRevenue = totalFlightRevenue + totalTourRevenue;
 
   const ticketedFlightsCount = flights.filter(f => f.ticket_status === 'ticketed').length;
@@ -923,7 +933,9 @@ export async function getDashboardStats() {
     customersCount: customers.length,
     pendingFlightRequests: flights.filter(f => f.ticket_status === 'pending').length,
     recentFlights: activeFlights.slice(0, 5),
-    recentTourBookings: activeTourBookings.slice(0, 5)
+    recentTourBookings: activeTourBookings.slice(0, 5),
+    recentGroups: groups.slice(0, 5),
+    groupToursCount: groups.length
   };
 }
 
