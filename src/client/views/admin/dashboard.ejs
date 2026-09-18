@@ -173,6 +173,7 @@
                 <th>Date</th>
                 <th>Amount</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -183,8 +184,9 @@
                   <td>${tb.travel_date}</td>
                   <td><strong>${formatPrice(tb.total_amount)}</strong></td>
                   <td><span class="badge badge-${tb.status}">${tb.status}</span></td>
+                  <td><a href="/admin/tours/bookings/${tb.id}" class="btn btn-secondary btn-sm">Details</a></td>
                 </tr>
-              `).join('') : '<tr><td colspan="5" class="muted" style="text-align: center;">No tour bookings yet.</td></tr>'}
+              `).join('') : '<tr><td colspan="6" class="muted" style="text-align: center;">No tour bookings yet.</td></tr>'}
             </tbody>
           </table>
         </div>

@@ -107,6 +107,18 @@
             <val>${flight.passport_number || 'N/A'}</val>
           </div>
           <div class="ticket-field">
+            <label>Nationality</label>
+            <val>${flight.nationality || 'N/A'}</val>
+          </div>
+          <div class="ticket-field">
+            <label>Email</label>
+            <val>${flight.customer_email || 'N/A'}</val>
+          </div>
+          <div class="ticket-field">
+            <label>Phone</label>
+            <val>${flight.customer_phone || 'N/A'}</val>
+          </div>
+          <div class="ticket-field">
             <label>Departure Time</label>
             <val>${new Date(flight.departure_date).toLocaleString()}</val>
           </div>
