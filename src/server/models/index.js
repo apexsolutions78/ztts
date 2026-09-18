@@ -956,13 +956,13 @@ export async function getDashboardStats() {
   const activeFlights = flights.filter(f => f.ticket_status !== 'cancelled');
   const activeTourBookings = tourBookings.filter(t => t.status !== 'cancelled');
 
-  // Calculate revenue from actual payments
+  // Calculate revenue from actual payments (subtract refunds)
   const totalFlightRevenue = allPayments
     .filter(p => p.booking_type === 'flight' && (p.payment_status === 'paid' || p.payment_status === 'partial'))
-    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.amount) || 0) - (Number(p.refund_amount) || 0), 0);
   const totalTourRevenue = allPayments
     .filter(p => p.booking_type === 'tour' && (p.payment_status === 'paid' || p.payment_status === 'partial'))
-    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    .reduce((sum, p) => sum + (Number(p.amount) || 0) - (Number(p.refund_amount) || 0), 0);
   const totalRevenue = totalFlightRevenue + totalTourRevenue;
 
   const ticketedFlightsCount = flights.filter(f => f.ticket_status === 'ticketed').length;
@@ -1114,7 +1114,7 @@ export async function getBookingPaymentSummary(booking_type, booking_id) {
   const totalAmount = await getBookingTotalAmount(booking_type, booking_id);
   const totalPaid = payments
     .filter(p => p.payment_status === 'paid' || p.payment_status === 'partial')
-    .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    .reduce((sum, p) => sum + Number(p.amount || 0) - Number(p.refund_amount || 0), 0);
   const pendingAmount = payments
     .filter(p => p.payment_status === 'pending')
     .reduce((sum, p) => sum + Number(p.amount || 0), 0);
