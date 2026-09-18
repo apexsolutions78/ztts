@@ -42,25 +42,58 @@
         <% } %>
 
         <% if (step === 'email') { %>
+          <!-- Step 1: Enter email -->
           <form method="post" action="/auth/login">
             <input type="hidden" name="next" value="<%= next %>">
             <div class="form-group">
-              <label for="email">Operator Email Address</label>
+              <label for="email">Email Address</label>
               <input type="email" id="email" name="email" class="form-control" placeholder="admin@zahabiatravel.com" required autocomplete="email" value="<%= email %>">
             </div>
-            <button type="submit" class="btn btn-primary">Send Verification Code</button>
+            <button type="submit" class="btn btn-primary">Continue</button>
           </form>
-        <% } else { %>
-          <form method="post" action="/auth/verify">
+
+        <% } else if (step === 'password') { %>
+          <!-- Step 2a: Password login (user has password) -->
+          <form method="post" action="/auth/login">
+            <input type="hidden" name="next" value="<%= next %>">
+            <input type="hidden" name="email" value="<%= email %>">
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+          </form>
+          <a class="back-link" onclick="history.back()">&#8592; Use a different email</a>
+
+        <% } else if (step === 'code') { %>
+          <!-- Step 2b: Auth code (user has no password) -->
+          <form method="post" action="/auth/login">
             <input type="hidden" name="next" value="<%= next %>">
             <input type="hidden" name="email" value="<%= email %>">
             <div class="form-group">
               <label for="code">Enter 6-Digit Code</label>
               <input type="text" id="code" name="code" class="form-control code-input" placeholder="000000" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
             </div>
-            <button type="submit" class="btn btn-primary">Verify & Sign In</button>
+            <button type="submit" class="btn btn-primary">Verify Code</button>
           </form>
           <a class="back-link" onclick="history.back()">&#8592; Use a different email</a>
+
+        <% } else if (step === 'create-password') { %>
+          <!-- Step 3: Create password after first code verification -->
+          <form method="post" action="/auth/create-password">
+            <input type="hidden" name="next" value="<%= next %>">
+            <input type="hidden" name="email" value="<%= email %>">
+            <input type="hidden" name="code" value="<%= code %>">
+            <div class="form-group">
+              <label for="password">Create Password</label>
+              <input type="password" id="password" name="password" class="form-control" placeholder="Min 6 characters" required minlength="6">
+            </div>
+            <div class="form-group">
+              <label for="confirm_password">Confirm Password</label>
+              <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Re-enter password" required minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary">Create Password & Sign In</button>
+          </form>
         <% } %>
       </div>
     </div>

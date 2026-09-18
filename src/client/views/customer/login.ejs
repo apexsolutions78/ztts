@@ -33,8 +33,8 @@
     <div class="auth-card">
       <div class="auth-header">
         <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
-        <h1><%= step === 'register' ? 'Create Account' : 'Welcome Back' %></h1>
-        <p><%= step === 'register' ? 'Join Zahabia Travel & Tourism' : 'Sign in to manage your bookings' %></p>
+        <h1><%= step === 'register' ? 'Create Account' : step === 'create-password' ? 'Create Password' : 'Welcome Back' %></h1>
+        <p><%= step === 'register' ? 'Join Zahabia Travel & Tourism' : step === 'create-password' ? 'Set up your account security' : 'Sign in to manage your bookings' %></p>
       </div>
       <div class="auth-body">
         <% if (error) { %>
@@ -45,27 +45,44 @@
         <% } %>
 
         <% if (step === 'email') { %>
+          <!-- Step 1: Enter email -->
           <form method="POST" action="/account/auth">
             <div class="form-group">
               <label>Email Address</label>
               <input type="email" name="email" class="form-control" placeholder="you@example.com" required value="<%= email %>">
             </div>
-            <button type="submit" class="btn btn-primary">Send Verification Code</button>
+            <button type="submit" class="btn btn-primary">Continue</button>
           </form>
           <div class="auth-footer">
             New to Zahabia? Enter your email above — an account will be created automatically.
           </div>
+
+        <% } else if (step === 'password') { %>
+          <!-- Step 2a: Password login (customer has password) -->
+          <form method="POST" action="/account/auth">
+            <input type="hidden" name="email" value="<%= email %>">
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+          </form>
+          <a class="back-link" onclick="history.back()">&#8592; Use a different email</a>
+
         <% } else if (step === 'code') { %>
-          <form method="POST" action="/account/verify">
+          <!-- Step 2b: Auth code (no password yet) -->
+          <form method="POST" action="/account/auth">
             <input type="hidden" name="email" value="<%= email %>">
             <div class="form-group">
               <label>Enter 6-Digit Code</label>
               <input type="text" name="code" class="form-control code-input" placeholder="000000" required maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
             </div>
-            <button type="submit" class="btn btn-primary">Verify & Sign In</button>
+            <button type="submit" class="btn btn-primary">Verify Code</button>
           </form>
           <a class="back-link" onclick="history.back()">&#8592; Use a different email</a>
+
         <% } else if (step === 'register') { %>
+          <!-- Step 3a: Registration (new customer) -->
           <form method="POST" action="/account/verify">
             <input type="hidden" name="email" value="<%= email %>">
             <input type="hidden" name="code" value="<%= code %>">
@@ -83,7 +100,23 @@
                 <input type="text" name="nationality" class="form-control" placeholder="e.g. Pakistan">
               </div>
             </div>
-            <button type="submit" class="btn btn-primary">Create Account & Sign In</button>
+            <button type="submit" class="btn btn-primary">Create Account</button>
+          </form>
+
+        <% } else if (step === 'create-password') { %>
+          <!-- Step 4: Create password -->
+          <form method="POST" action="/account/create-password">
+            <input type="hidden" name="email" value="<%= email %>">
+            <input type="hidden" name="code" value="<%= code %>">
+            <div class="form-group">
+              <label>Create Password</label>
+              <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required minlength="6">
+            </div>
+            <div class="form-group">
+              <label>Confirm Password</label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="Re-enter password" required minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary">Create Password & Sign In</button>
           </form>
         <% } %>
       </div>

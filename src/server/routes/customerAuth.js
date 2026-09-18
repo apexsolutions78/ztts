@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  getLogin, postAuth, postVerify, postLogout,
+  getLogin, postAuth, postVerify, postCreatePassword, postLogout,
   getDashboard, postUpdateProfile,
   getBrowseTours, getTourDetail,
   getFlightRequest, postFlightRequest, getFlightRequestSuccess
@@ -12,6 +12,7 @@ const router = Router();
 router.get('/login', getLogin);
 router.post('/auth', postAuth);
 router.post('/verify', postVerify);
+router.post('/create-password', postCreatePassword);
 router.post('/logout', postLogout);
 
 router.get('/', requireCustomerAuth, getDashboard);
