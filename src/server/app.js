@@ -23,7 +23,7 @@ import customerAuthRoutes from './routes/customerAuth.js';
 import guideRoutes from './routes/guide.js';
 import chatRoutes from './routes/chat.js';
 import paymentRoutes from './routes/payments.js';
-import { requireAuth, requireAdmin } from './middleware/auth.js';
+import { requireAuth, requireAdmin, csrfToken } from './middleware/auth.js';
 import { currencyMiddleware } from './middleware/currency.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -54,6 +54,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: env.appUrl.startsWith('https://'), httpOnly: true, maxAge: 86400000 }
 }));
+app.use(csrfToken);
 app.use(currencyMiddleware);
 
 app.use((req, res, next) => {

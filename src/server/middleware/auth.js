@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export function requireAuth(req, res, next) {
   if (req.session?.user) return next();
   return res.redirect(`/auth/login?next=${encodeURIComponent(req.originalUrl)}`);
@@ -30,4 +32,23 @@ export function requireAdminOrGuide(req, res, next) {
   return res.status(403).render('errors/403', {
     title: 'Access Denied'
   });
+}
+
+export function csrfToken(req, res, next) {
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  }
+  res.locals.csrfToken = req.session.csrfToken;
+  next();
+}
+
+export function validateCsrf(req, res, next) {
+  const token = req.body?._csrf || req.headers['x-csrf-token'];
+  if (!token || token !== req.session?.csrfToken) {
+    return res.status(403).render('errors/403', {
+      title: 'Session Expired',
+      message: 'Invalid or missing CSRF token. Please go back and try again.'
+    });
+  }
+  next();
 }
