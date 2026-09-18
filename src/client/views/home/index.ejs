@@ -302,10 +302,18 @@
     <img src="/brand/Golden_airplane_circling_globe_20260914222838.gif" alt="Zahabia Travel" class="hero-img" onerror="this.src='/brand/LOGO123.png';">
     <h1><span class="gold">ZAHABIA</span> TRAVEL & TOURISM</h1>
     <p>Premium air ticketing, luxury tour packages, Umrah pilgrimages, and unforgettable vacation experiences — powered by Apex Solutions.</p>
-    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; align-items: center;">
       <a href="/account/login" class="btn btn-accent" style="padding: 0.85rem 2rem; font-size: 1rem;">Register Now →</a>
       <a href="/account/login" class="btn btn-secondary" style="padding: 0.85rem 2rem; font-size: 1rem; background: rgba(0,0,0,0.05); color: #102a27;">Customer Login</a>
       <a href="/auth/login" class="btn btn-secondary" style="padding: 0.85rem 2rem; font-size: 1rem; background: rgba(0,0,0,0.05); color: #102a27;">Operator Login</a>
+      <select onchange="location.href='/?currency=' + this.value" style="padding: 0.7rem 1rem; border: 1.5px solid #c5d8d2; border-radius: 8px; font-size: 0.9rem; background: #fff; color: #102a27; cursor: pointer;">
+        <option value="PKR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'PKR') ? 'selected' : '' %>>PKR (Rs)</option>
+        <option value="USD" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'USD') ? 'selected' : '' %>>USD ($)</option>
+        <option value="AED" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'AED') ? 'selected' : '' %>>AED</option>
+        <option value="EUR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'EUR') ? 'selected' : '' %>>EUR</option>
+        <option value="GBP" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'GBP') ? 'selected' : '' %>>GBP</option>
+        <option value="SAR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'SAR') ? 'selected' : '' %>>SAR</option>
+      </select>
     </div>
   </div>
 
