@@ -212,7 +212,17 @@ export async function postBookTour(req, res, next) {
 
     // Record initial payment if provided
     if (pay_now && pay_now !== 'no' && pay_amount && Number(pay_amount) > 0) {
-      const finalPayAmount = pay_amount_usd ? Number(pay_amount_usd) : Number(pay_amount);
+      let finalPayAmount;
+      if (pay_amount_usd && Number(pay_amount_usd) > 0) {
+        finalPayAmount = Number(pay_amount_usd);
+      } else {
+        // Server-side conversion fallback: always store in USD
+        const { getExchangeRates } = await import('../models/index.js');
+        const rates = await getExchangeRates();
+        const activeCurrency = req.session?.currency || 'PKR';
+        const rate = rates[activeCurrency]?.rate || 1;
+        finalPayAmount = Number(pay_amount) / rate;
+      }
       await addPayment({
         booking_type: 'tour',
         booking_id: booking.id,
