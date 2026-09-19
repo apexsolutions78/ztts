@@ -465,7 +465,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
           <button onclick="addPaymentRow()" class="btn btn-secondary btn-sm">+ Add Another Payment</button>
           <div style="text-align: right;">
-            <div style="font-size: 0.8rem; color: var(--text-muted);">Allocated: <strong id="allocatedAmount" style="color: var(--primary);">$0.00</strong> / Balance: <strong id="balanceDisplay">--</strong></div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Allocated: <strong id="allocatedAmount" style="color: var(--primary);">${exchangeRates[activeCurrency]?.symbol || '$'}0.00</strong> / Balance: <strong id="balanceDisplay">--</strong></div>
           </div>
         </div>
         <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
@@ -503,10 +503,6 @@
       const ACTIVE_CURRENCY = '${activeCurrency}';
       const CURRENCY_RATE = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
       const PORTAL_TOKEN = ${portalToken ? "'" + portalToken + "'" : 'null'};
-
-      function formatPrice(amount) {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
-      }
 
       function toUSD(localAmount) {
         return (Number(localAmount) / CURRENCY_RATE).toFixed(6);
