@@ -16,7 +16,8 @@ import {
   addPayment,
   findPortalTokenByFlightBooking,
   getFlightRequests,
-  getFlightRequestStats
+  getFlightRequestStats,
+  getBookingPaymentSummary
 } from '../models/index.js';
 import { sendEmail, buildETicketEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildETicketWhatsAppMessage } from '../services/whatsAppService.js';
@@ -230,9 +231,19 @@ export async function issueTicket(req, res, next) {
     const { id } = req.params;
     const flight = await findFlightBookingById(id);
 
+    if (!flight) {
+      return res.status(404).render('errors/404', { title: 'Flight Booking Not Found' });
+    }
+
     // Only allow ticketing if booking is confirmed (fully paid)
-    if (flight && flight.ticket_status !== 'confirmed') {
+    if (flight.ticket_status !== 'confirmed') {
       return res.status(400).json({ success: false, error: 'Booking must be fully paid before issuing a ticket.' });
+    }
+
+    // Verify payment is actually recorded — do not ticket zero-amount bookings without real payment
+    const summary = await getBookingPaymentSummary('flight', flight.id);
+    if (!summary.isFullyPaid) {
+      return res.status(400).json({ success: false, error: 'Payment not verified. Cannot issue ticket.' });
     }
 
     await updateFlightTicketStatus(id, 'ticketed');
@@ -452,13 +463,19 @@ export async function confirmFlightRequest(req, res, next) {
     const { id } = req.params;
     const flight = await findFlightBookingById(id);
 
+    if (!flight) {
+      return res.status(404).render('errors/404', { title: 'Flight Booking Not Found' });
+    }
+
+    // Block zero-amount bookings from confirmation — fare must be set first
+    if (!flight.total_amount || Number(flight.total_amount) <= 0) {
+      return res.redirect('/admin/flights/requests?error=no_fare');
+    }
+
     // Only allow confirmation if fully paid
-    if (flight) {
-      const { getBookingPaymentSummary } = await import('../models/index.js');
-      const summary = await getBookingPaymentSummary('flight', id);
-      if (!summary.isFullyPaid) {
-        return res.redirect('/admin/flights/requests?error=not_paid');
-      }
+    const summary = await getBookingPaymentSummary('flight', id);
+    if (!summary.isFullyPaid) {
+      return res.redirect('/admin/flights/requests?error=not_paid');
     }
 
     await updateFlightTicketStatus(id, 'confirmed');

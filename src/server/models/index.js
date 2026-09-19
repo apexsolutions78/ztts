@@ -310,11 +310,16 @@ export async function deleteFlightBooking(id) {
 
 export async function linkOrphanedFlightsToCustomer(customerId, email) {
   if (isUsingMySQL()) {
-    const [result] = await pool.query(
-      "UPDATE flight_bookings SET customer_id = ? WHERE customer_id IS NULL AND notes LIKE ?",
-      [customerId, `%${email}%`]
-    );
-    return result.affectedRows;
+    try {
+      const [result] = await pool.query(
+        "UPDATE flight_bookings SET customer_id = ? WHERE customer_id IS NULL AND notes LIKE ?",
+        [customerId, `%${email}%`]
+      );
+      return result.affectedRows;
+    } catch (err) {
+      console.warn('[FlightLink] Orphan linking skipped — notes column may not exist:', err.message);
+      return 0;
+    }
   }
   let linked = 0;
   memoryStore.flight_bookings.forEach(f => {
@@ -1311,9 +1316,11 @@ export async function refundPayment(id, refundAmount, reason) {
 
 // --- LIVE FLIGHT STATUS ENGINE ---
 export function getFlightLiveStatus(flight) {
-  if (!flight) return { status: 'UNKNOWN', statusClass: 'muted', gate: 'TBA', terminal: '1' };
+  if (!flight) return null;
   
-  // Real-time status simulation engine based on ticket status and departure
+  // Only show live status for ticketed bookings — do not simulate data for inquiries/requests
+  if (flight.ticket_status !== 'ticketed') return null;
+
   const now = new Date();
   const dep = new Date(flight.departure_date);
   const diffHours = (dep - now) / (1000 * 60 * 60);
@@ -1322,18 +1329,18 @@ export function getFlightLiveStatus(flight) {
     return { status: 'CANCELLED', statusClass: 'cancelled', gate: 'N/A', terminal: 'N/A', baggage: 'N/A' };
   }
   if (diffHours < 0 && diffHours > -12) {
-    return { status: 'IN-AIR / EN ROUTE', statusClass: 'active', gate: 'G14', terminal: '3', baggage: 'B04' };
+    return { status: 'IN-AIR / EN ROUTE', statusClass: 'active', gate: 'TBA', terminal: 'TBA', baggage: 'TBA' };
   }
   if (diffHours <= -12) {
-    return { status: 'LANDED / COMPLETED', statusClass: 'ticketed', gate: 'A08', terminal: '3', baggage: 'B08' };
+    return { status: 'LANDED / COMPLETED', statusClass: 'ticketed', gate: 'TBA', terminal: 'TBA', baggage: 'TBA' };
   }
   if (diffHours <= 2) {
-    return { status: 'FINAL BOARDING', statusClass: 'active', gate: 'B12', terminal: '3', baggage: 'TBA' };
+    return { status: 'FINAL BOARDING', statusClass: 'active', gate: 'TBA', terminal: 'TBA', baggage: 'TBA' };
   }
   if (diffHours <= 5) {
-    return { status: 'CHECK-IN OPEN', statusClass: 'active', gate: 'C05', terminal: '2', baggage: 'TBA' };
+    return { status: 'CHECK-IN OPEN', statusClass: 'active', gate: 'TBA', terminal: 'TBA', baggage: 'TBA' };
   }
-  return { status: 'ON TIME / SCHEDULED', statusClass: 'ticketed', gate: 'TBA', terminal: '3', baggage: 'TBA' };
+  return { status: 'ON TIME / SCHEDULED', statusClass: 'ticketed', gate: 'TBA', terminal: 'TBA', baggage: 'TBA' };
 }
 
 export async function getFlightRequests({ status } = {}) {

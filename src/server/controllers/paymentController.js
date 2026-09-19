@@ -145,7 +145,10 @@ export async function postDeletePayment(req, res, next) {
     // Revert to pending if deletion makes it no longer fully paid
     if (!summary.isFullyPaid) {
       if (removed.booking_type === 'flight') {
-        await updateFlightTicketStatus(removed.booking_id, 'pending');
+        // Preserve ticketed/confirmed state — only revert to confirmed, not all the way to pending
+        const currentBooking = await findFlightBookingById(removed.booking_id);
+        const revertTo = currentBooking && currentBooking.ticket_status === 'ticketed' ? 'confirmed' : 'pending';
+        await updateFlightTicketStatus(removed.booking_id, revertTo);
       } else {
         await updateTourBookingStatus(removed.booking_id, 'pending');
       }
