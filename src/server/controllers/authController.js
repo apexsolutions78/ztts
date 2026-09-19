@@ -1,6 +1,5 @@
-import { findUserByEmail, createAuthCode, verifyAuthCode, cleanupExpiredCodes, logAuditAction } from '../models/index.js';
+import { findUserByEmail, logAuditAction } from '../models/index.js';
 import { hashPassword } from '../config/db.js';
-import { sendEmail, buildAuthCodeEmail } from '../services/emailService.js';
 
 function getAdminLoginView(next) {
   return (next || '').startsWith('/admin') ? 'auth/admin-login' : 'auth/login';
@@ -46,8 +45,16 @@ export async function postLogin(req, res) {
     });
   }
 
-  // If user has a password and password was submitted — password login
-  if (user.password_hash && password) {
+  // User has no password set — cannot log in, must contact admin
+  if (!user.password_hash) {
+    return res.status(401).render(view, {
+      title, next: targetRedirect,
+      error: 'No password set on this account. Please contact admin to set your password.', step: 'email', email, message: null
+    });
+  }
+
+  // Password submitted — verify it
+  if (password) {
     const inputHash = hashPassword(password);
     if (user.password_hash === inputHash) {
       req.session.user = { id: user.id, name: user.name, email: user.email, role: user.role };
@@ -61,28 +68,10 @@ export async function postLogin(req, res) {
     });
   }
 
-  // If user has a password but no password submitted — show password step
-  if (user.password_hash && !password) {
-    return res.render(view, {
-      title, next: targetRedirect,
-      error: null, step: 'password', email, message: null
-    });
-  }
-
-  // User has NO password — send auth code
-  await cleanupExpiredCodes();
-  const { code } = await createAuthCode({ email, purpose: 'login' });
-
-  try {
-    await sendEmail({ to: email, ...buildAuthCodeEmail({ email, code, purpose: 'login' }) });
-  } catch (e) {
-    console.error('[Auth] Email send failed:', e.message);
-  }
-
-  res.render(view, {
+  // User has password but hasn't submitted it yet — show password step
+  return res.render(view, {
     title, next: targetRedirect,
-    error: null, step: 'code', email,
-    message: `Code sent to ${email}`
+    error: null, step: 'password', email, message: null
   });
 }
 
@@ -99,6 +88,7 @@ export async function postVerify(req, res) {
     });
   }
 
+  const { verifyAuthCode } = await import('../models/index.js');
   const record = await verifyAuthCode(email, code);
   if (!record) {
     return res.status(401).render(view, {
@@ -151,7 +141,7 @@ export async function postCreatePassword(req, res) {
     });
   }
 
-  // Verify the code is still valid
+  const { verifyAuthCode } = await import('../models/index.js');
   const record = await verifyAuthCode(email, code);
   if (!record) {
     return res.status(401).render(view, {
