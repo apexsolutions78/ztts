@@ -80,8 +80,16 @@ export async function getNewFlightForm(req, res, next) {
 
 export async function postCreateFlight(req, res, next) {
   try {
-    const { customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount, total_amount_usd, pay_now, pay_amount, pay_amount_usd, pay_reference, pay_notes } = req.body;
-    if (!customer_id || !airline || !flight_number || !origin || !destination) {
+    const {
+      customer_id, airline, flight_number, origin, destination,
+      departure_date, arrival_date, cabin_class, total_amount, total_amount_usd,
+      pay_now, pay_amount, pay_amount_usd, pay_reference, pay_notes,
+      trip_type, adults, children, infants, return_date,
+      preferred_airline, flexible_dates, budget, budget_usd,
+      baggage_priority, direct_transit, customer_notes
+    } = req.body;
+
+    if (!origin || !destination) {
       const customers = await getAllCustomers();
       const { activeCurrency, exchangeRates } = res.locals;
       return res.status(400).render('admin/flights/new', {
@@ -89,14 +97,15 @@ export async function postCreateFlight(req, res, next) {
         customers,
         activeCurrency,
         exchangeRates,
-        error: 'Please fill in all mandatory flight fields.'
+        error: 'Origin and destination are required.'
       });
     }
 
-    let finalAmount;
+    // Convert fare amount from local currency to USD
+    let finalAmount = 0;
     if (total_amount_usd && Number(total_amount_usd) > 0) {
       finalAmount = Number(total_amount_usd);
-    } else {
+    } else if (total_amount && Number(total_amount) > 0) {
       const { getExchangeRates } = await import('../models/index.js');
       const rates = await getExchangeRates();
       const activeCurrency = req.session?.currency || 'PKR';
@@ -104,17 +113,47 @@ export async function postCreateFlight(req, res, next) {
       finalAmount = Number(total_amount) / rate;
     }
 
+    // Convert budget from local currency to USD
+    let budgetUSD = null;
+    if (budget_usd && Number(budget_usd) > 0) {
+      budgetUSD = Number(budget_usd);
+    } else if (budget && Number(budget) > 0) {
+      const { getExchangeRates } = await import('../models/index.js');
+      const rates = await getExchangeRates();
+      const activeCurrency = req.session?.currency || 'PKR';
+      const rate = rates[activeCurrency]?.rate || 1;
+      budgetUSD = Number(budget) / rate;
+    }
+
+    // Auto-determine workflow stage based on what was provided
+    let workflow_stage = 'inquiry';
+    if (airline && flight_number) workflow_stage = 'search_details_complete';
+    if (finalAmount > 0) workflow_stage = 'quote_prepared';
+    if (customer_id) workflow_stage = 'customer_approved';
+
     const booking = await createFlightBooking({
-      customer_id,
-      airline,
-      flight_number,
+      customer_id: customer_id || null,
+      airline: airline || null,
+      flight_number: flight_number || null,
       origin: origin.toUpperCase(),
       destination: destination.toUpperCase(),
       departure_date,
-      arrival_date,
+      arrival_date: arrival_date || null,
       cabin_class,
       total_amount: finalAmount,
-      created_by: req.session.user.id
+      created_by: req.session.user.id,
+      workflow_stage,
+      trip_type: trip_type || 'one_way',
+      adults: Number(adults) || 1,
+      children: Number(children) || 0,
+      infants: Number(infants) || 0,
+      return_date: return_date || null,
+      preferred_airline: preferred_airline || null,
+      flexible_dates: !!flexible_dates,
+      budget: budgetUSD,
+      baggage_priority: !!baggage_priority,
+      direct_transit: direct_transit || 'any',
+      customer_notes: customer_notes || null
     });
 
     // Record initial payment if provided
@@ -147,7 +186,7 @@ export async function postCreateFlight(req, res, next) {
       action: 'CREATE_BOOKING',
       entity_type: 'flight',
       entity_id: booking.id,
-      details: `Created flight PNR ${booking.booking_ref} (${airline} ${flight_number} ${origin}-${destination})`
+      details: `Created flight PNR ${booking.booking_ref} (${airline || 'TBD'} ${flight_number || 'TBD'} ${origin.toUpperCase()}-${destination.toUpperCase()})`
     });
 
     // Auto-create portal token and send notifications to customer
@@ -373,22 +412,34 @@ export async function getEditFlightForm(req, res, next) {
 export async function postUpdateFlight(req, res, next) {
   try {
     const { id } = req.params;
-    const { customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount } = req.body;
-    if (!customer_id || !airline || !flight_number || !origin || !destination) {
+    const {
+      customer_id, airline, flight_number, origin, destination,
+      departure_date, arrival_date, cabin_class, total_amount,
+      trip_type, adults, children, infants, return_date,
+      preferred_airline, flexible_dates, budget,
+      baggage_priority, direct_transit, customer_notes, pnr
+    } = req.body;
+
+    if (!origin || !destination) {
       const flight = await findFlightBookingById(id);
       const customers = await getAllCustomers();
       return res.status(400).render('admin/flights/edit', {
         title: `Edit Flight: ${flight?.booking_ref}`,
         flight: { ...flight, ...req.body, id },
         customers,
-        error: 'Please fill in all mandatory fields.'
+        error: 'Origin and destination are required.'
       });
     }
 
     await updateFlightBooking(id, {
-      customer_id, airline, flight_number,
-      origin: origin.toUpperCase(), destination: destination.toUpperCase(),
-      departure_date, arrival_date, cabin_class, total_amount
+      customer_id: customer_id || null, airline: airline || null, flight_number: flight_number || null,
+      origin, destination, departure_date, arrival_date: arrival_date || null,
+      cabin_class, total_amount: Number(total_amount) || 0,
+      trip_type, adults, children, infants, return_date: return_date || null,
+      preferred_airline: preferred_airline || null, flexible_dates: !!flexible_dates,
+      budget: budget ? Number(budget) : null,
+      baggage_priority: !!baggage_priority, direct_transit: direct_transit || 'any',
+      customer_notes: customer_notes || null, pnr: pnr || null
     });
 
     await logAuditAction({
@@ -397,7 +448,7 @@ export async function postUpdateFlight(req, res, next) {
       action: 'UPDATE_BOOKING',
       entity_type: 'flight',
       entity_id: id,
-      details: `Updated flight PNR ${airline} ${flight_number} ${origin}-${destination}`
+      details: `Updated flight PNR ${airline || 'TBD'} ${flight_number || 'TBD'} ${origin.toUpperCase()}-${destination.toUpperCase()}`
     });
 
     res.redirect(`/admin/flights/${id}?success=Updated`);

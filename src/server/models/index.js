@@ -285,11 +285,29 @@ export async function updateFlightTicketStatus(id, ticket_status) {
   return false;
 }
 
-export async function updateFlightBooking(id, { customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount }) {
+export async function updateFlightBooking(id, {
+  customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount,
+  trip_type, adults, children, infants, return_date, preferred_airline, flexible_dates, budget,
+  baggage_priority, direct_transit, customer_notes, pnr
+}) {
   if (isUsingMySQL()) {
     await pool.query(
-      `UPDATE flight_bookings SET customer_id=?, airline=?, flight_number=?, origin=?, destination=?, departure_date=?, arrival_date=?, cabin_class=?, total_amount=? WHERE id=?`,
-      [customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount, id]
+      `UPDATE flight_bookings SET
+        customer_id=?, airline=?, flight_number=?, origin=?, destination=?,
+        departure_date=?, arrival_date=?, cabin_class=?, total_amount=?,
+        trip_type=?, adults=?, children=?, infants=?, return_date=?,
+        preferred_airline=?, flexible_dates=?, budget=?,
+        baggage_priority=?, direct_transit=?, customer_notes=?, pnr=?
+       WHERE id=?`,
+      [
+        customer_id || null, airline || null, flight_number || null,
+        origin ? origin.toUpperCase() : null, destination ? destination.toUpperCase() : null,
+        departure_date, arrival_date || null, cabin_class, total_amount || 0,
+        trip_type || 'one_way', adults || 1, children || 0, infants || 0, return_date || null,
+        preferred_airline || null, flexible_dates ? 1 : 0, budget || null,
+        baggage_priority ? 1 : 0, direct_transit || 'any', customer_notes || null, pnr || null,
+        id
+      ]
     );
     return true;
   }
@@ -297,14 +315,19 @@ export async function updateFlightBooking(id, { customer_id, airline, flight_num
   if (!fb) return false;
   const cust = memoryStore.customers.find(c => c.id === Number(customer_id));
   Object.assign(fb, {
-    customer_id: Number(customer_id),
+    customer_id: customer_id ? Number(customer_id) : null,
     customer_name: cust ? cust.full_name : fb.customer_name,
-    airline, flight_number,
-    origin: origin.toUpperCase(),
-    destination: destination.toUpperCase(),
-    departure_date, arrival_date,
-    cabin_class,
-    total_amount: Number(total_amount)
+    airline: airline || null, flight_number: flight_number || null,
+    origin: origin ? origin.toUpperCase() : fb.origin,
+    destination: destination ? destination.toUpperCase() : fb.destination,
+    departure_date, arrival_date: arrival_date || null,
+    cabin_class, total_amount: Number(total_amount) || 0,
+    trip_type: trip_type || 'one_way', adults: Number(adults) || 1,
+    children: Number(children) || 0, infants: Number(infants) || 0,
+    return_date: return_date || null, preferred_airline: preferred_airline || null,
+    flexible_dates: !!flexible_dates, budget: budget ? Number(budget) : null,
+    baggage_priority: !!baggage_priority, direct_transit: direct_transit || 'any',
+    customer_notes: customer_notes || null, pnr: pnr || null
   });
   return true;
 }
