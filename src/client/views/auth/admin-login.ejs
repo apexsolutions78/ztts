@@ -167,7 +167,7 @@
           <a class="back-link" onclick="history.back()">← Use a different email</a>
 
         <% } else if (step === 'code') { %>
-          <form method="post" action="/auth/login">
+          <form method="post" action="/auth/verify">
             <input type="hidden" name="next" value="<%= next %>">
             <input type="hidden" name="email" value="<%= email %>">
             <div class="form-group">

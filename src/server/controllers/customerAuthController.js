@@ -10,151 +10,184 @@ export async function getLogin(req, res) {
 }
 
 export async function postAuth(req, res) {
-  const { email, password } = req.body;
-
-  if (!email) {
-    return res.status(400).render('customer/login', {
-      title: 'Customer Login', error: 'Email is required.', step: 'email', email: '', message: null, purpose: 'login'
-    });
-  }
-
-  const existing = await findCustomerByEmail(email);
-
-  // If customer has a password and password was submitted — password login
-  if (existing && existing.password_hash && password) {
-    const inputHash = hashPassword(password);
-    if (existing.password_hash === inputHash) {
-      req.session.customer = { id: existing.id, name: existing.full_name, email: existing.email };
-      await linkOrphanedFlightsToCustomer(existing.id, existing.email);
-      return res.redirect('/account');
-    }
-    return res.status(401).render('customer/login', {
-      title: 'Customer Login', error: 'Invalid password.', step: 'password', email, message: null, purpose: 'login'
-    });
-  }
-
-  // If customer has a password but no password submitted — show password step
-  if (existing && existing.password_hash && !password) {
-    return res.render('customer/login', {
-      title: 'Customer Login', error: null, step: 'password', email, message: null, purpose: 'login'
-    });
-  }
-
-  // Customer has no password or doesn't exist — send auth code
-  await cleanupExpiredCodes();
-  const purpose = existing ? 'login' : 'register';
-  const { code } = await createAuthCode({ email, purpose });
-
   try {
-    await sendEmail({ to: email, ...buildAuthCodeEmail({ email, code, purpose }) });
-  } catch (e) {
-    console.error('[Customer Auth] Email send failed:', e.message);
-  }
+    const { email, password } = req.body;
 
-  res.render('customer/login', {
-    title: purpose === 'register' ? 'Create Account' : 'Customer Login',
-    error: null, step: 'code', email,
-    message: `Code sent to ${email}`,
-    purpose
-  });
+    if (!email) {
+      return res.status(400).render('customer/login', {
+        title: 'Customer Login', error: 'Email is required.', step: 'email', email: '', message: null, purpose: 'login'
+      });
+    }
+
+    const existing = await findCustomerByEmail(email);
+
+    // If customer has a password and password was submitted — password login
+    if (existing && existing.password_hash && password) {
+      const inputHash = hashPassword(password);
+      if (existing.password_hash === inputHash) {
+        req.session.customer = { id: existing.id, name: existing.full_name, email: existing.email };
+        try { await linkOrphanedFlightsToCustomer(existing.id, existing.email); } catch (e) { console.error('[CustomerAuth] linkOrphanedFlights failed:', e.message); }
+        return res.redirect('/account');
+      }
+      return res.status(401).render('customer/login', {
+        title: 'Customer Login', error: 'Invalid password.', step: 'password', email, message: null, purpose: 'login'
+      });
+    }
+
+    // If customer has a password but no password submitted — show password step
+    if (existing && existing.password_hash && !password) {
+      return res.render('customer/login', {
+        title: 'Customer Login', error: null, step: 'password', email, message: null, purpose: 'login'
+      });
+    }
+
+    // Customer has no password or doesn't exist — send auth code
+    await cleanupExpiredCodes();
+    const purpose = existing ? 'login' : 'register';
+    const { code } = await createAuthCode({ email, purpose });
+
+    try {
+      await sendEmail({ to: email, ...buildAuthCodeEmail({ email, code, purpose }) });
+    } catch (e) {
+      console.error('[Customer Auth] Email send failed:', e.message);
+    }
+
+    res.render('customer/login', {
+      title: purpose === 'register' ? 'Create Account' : 'Customer Login',
+      error: null, step: 'code', email,
+      message: `Code sent to ${email}`,
+      purpose
+    });
+  } catch (err) {
+    console.error('[CustomerAuth] postAuth error:', err);
+    res.status(500).render('errors/500', { title: 'Server Error' });
+  }
 }
 
 export async function postVerify(req, res) {
-  const { email, code, full_name, phone, nationality } = req.body;
+  try {
+    const { email, code, full_name, phone, nationality } = req.body;
 
-  if (!email || !code) {
-    return res.status(400).render('customer/login', {
-      title: 'Customer Login', error: 'Code is required.', step: 'code', email: email || '', message: null, purpose: 'login'
-    });
-  }
+    if (!email || !code) {
+      return res.status(400).render('customer/login', {
+        title: 'Customer Login', error: 'Code is required.', step: 'code', email: email || '', message: null, purpose: 'login'
+      });
+    }
 
-  // If this is a registration without name yet, just validate code exists (don't consume)
-  if (!full_name) {
+    // If this is a registration without name yet, just validate code exists (don't consume)
+    if (!full_name) {
+      const record = await peekAuthCode(email, code);
+      if (!record) {
+        return res.status(401).render('customer/login', {
+          title: 'Customer Login', error: 'Invalid or expired code.', step: 'code', email, message: null, purpose: 'login'
+        });
+      }
+      if (record.purpose === 'register') {
+        return res.render('customer/login', {
+          title: 'Create Account', error: null, step: 'register', email, code, message: null, purpose: 'register'
+        });
+      }
+      // Login purpose — check if user has password
+      const customer = await findCustomerByEmail(email);
+      if (customer && customer.password_hash) {
+        return res.render('customer/login', {
+          title: 'Customer Login', error: null, step: 'password', email, message: null, purpose: 'login'
+        });
+      }
+      return res.render('customer/login', {
+        title: 'Create Password', error: null, step: 'create-password', email, code,
+        message: 'Verified! Create a password for your account.', purpose: 'login'
+      });
+    }
+
+    // Full submit with name — peek code (don't consume yet), create account
     const record = await peekAuthCode(email, code);
     if (!record) {
       return res.status(401).render('customer/login', {
         title: 'Customer Login', error: 'Invalid or expired code.', step: 'code', email, message: null, purpose: 'login'
       });
     }
+
     if (record.purpose === 'register') {
+      const customer = await createCustomer({
+        full_name, email, password: null,
+        phone: phone || null, nationality: nationality || null, passport_number: null
+      });
       return res.render('customer/login', {
-        title: 'Create Account', error: null, step: 'register', email, code, message: null, purpose: 'register'
+        title: 'Create Password', error: null, step: 'create-password', email, code,
+        message: 'Account created! Now create a password.', purpose: 'register'
       });
     }
-    // Login purpose — check if user has password
+
+    // Login
     const customer = await findCustomerByEmail(email);
-    if (customer && customer.password_hash) {
-      // Has password — show password step instead
-      return res.render('customer/login', {
-        title: 'Customer Login', error: null, step: 'password', email, message: null, purpose: 'login'
+    if (!customer) {
+      return res.status(401).render('customer/login', {
+        title: 'Customer Login', error: 'Account not found.', step: 'email', email, message: null, purpose: 'login'
       });
     }
-    // No password — show create password step (code consumed when password is set)
-    return res.render('customer/login', {
-      title: 'Create Password', error: null, step: 'create-password', email, code,
-      message: 'Verified! Create a password for your account.', purpose: 'login'
-    });
+    req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
+    return res.redirect('/account');
+  } catch (err) {
+    console.error('[CustomerAuth] postVerify error:', err);
+    res.status(500).render('errors/500', { title: 'Server Error' });
   }
-
-  // Full submit with name — peek code (don't consume yet), create account
-  const record = await peekAuthCode(email, code);
-  if (!record) {
-    return res.status(401).render('customer/login', {
-      title: 'Customer Login', error: 'Invalid or expired code.', step: 'code', email, message: null, purpose: 'login'
-    });
-  }
-
-  if (record.purpose === 'register') {
-    const customer = await createCustomer({
-      full_name, email, password: null,
-      phone: phone || null, nationality: nationality || null, passport_number: null
-    });
-    // Show create password step — code will be consumed when password is set
-    return res.render('customer/login', {
-      title: 'Create Password', error: null, step: 'create-password', email, code,
-      message: 'Account created! Now create a password.', purpose: 'register'
-    });
-  }
-
-  // Login
-  const customer = await findCustomerByEmail(email);
-  if (!customer) {
-    return res.status(401).render('customer/login', {
-      title: 'Customer Login', error: 'Account not found.', step: 'email', email, message: null, purpose: 'login'
-    });
-  }
-  req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
-  return res.redirect('/account');
 }
 
 export async function postCreatePassword(req, res) {
-  const { email, code, password, confirm_password } = req.body;
+  try {
+    const { email, code, password, confirm_password } = req.body;
 
-  if (!password || password.length < 6) {
-    return res.status(400).render('customer/login', {
-      title: 'Create Password', error: 'Password must be at least 6 characters.', step: 'create-password', email, code, message: null
-    });
-  }
+    if (!password || password.length < 6) {
+      return res.status(400).render('customer/login', {
+        title: 'Create Password', error: 'Password must be at least 6 characters.', step: 'create-password', email, code, message: null
+      });
+    }
 
-  if (password !== confirm_password) {
-    return res.status(400).render('customer/login', {
-      title: 'Create Password', error: 'Passwords do not match.', step: 'create-password', email, code, message: null
-    });
-  }
+    if (password !== confirm_password) {
+      return res.status(400).render('customer/login', {
+        title: 'Create Password', error: 'Passwords do not match.', step: 'create-password', email, code, message: null
+      });
+    }
 
-  // Verify and consume the auth code
-  const record = await verifyAuthCode(email, code);
-  if (!record) {
-    return res.status(401).render('customer/login', {
-      title: 'Customer Login', error: 'Code expired. Please request a new one.', step: 'email', email, message: null, purpose: 'login'
-    });
-  }
+    // Verify and consume the auth code
+    const record = await verifyAuthCode(email, code);
+    if (!record) {
+      return res.status(401).render('customer/login', {
+        title: 'Customer Login', error: 'Code expired. Please request a new one.', step: 'email', email, message: null, purpose: 'login'
+      });
+    }
 
-  const passwordHash = hashPassword(password);
-  const customer = await findCustomerByEmail(email);
+    const passwordHash = hashPassword(password);
+    const customer = await findCustomerByEmail(email);
 
-  if (record.purpose === 'register') {
-    // Customer was already created in postVerify — just set the password
+    if (record.purpose === 'register') {
+      // Customer was already created in postVerify — just set the password
+      if (customer) {
+        const { pool, isUsingMySQL } = await import('../config/db.js');
+        if (isUsingMySQL()) {
+          await pool.query('UPDATE customers SET password_hash = ? WHERE id = ?', [passwordHash, customer.id]);
+        } else {
+          customer.password_hash = passwordHash;
+        }
+        req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
+        try { await linkOrphanedFlightsToCustomer(customer.id, customer.email); } catch (e) { console.error('[CustomerAuth] linkOrphanedFlights failed:', e.message); }
+        return res.redirect('/account');
+      }
+      // Fallback: create customer if somehow missing
+      const newCustomer = await createCustomer({
+        full_name: record.extra_data?.full_name || email.split('@')[0],
+        email, password,
+        phone: record.extra_data?.phone || null,
+        nationality: record.extra_data?.nationality || null,
+        passport_number: null
+      });
+      req.session.customer = { id: newCustomer.id, name: newCustomer.full_name, email: newCustomer.email };
+      try { await linkOrphanedFlightsToCustomer(newCustomer.id, newCustomer.email); } catch (e) { console.error('[CustomerAuth] linkOrphanedFlights failed:', e.message); }
+      return res.redirect('/account');
+    }
+
+    // Existing customer without password — set password
     if (customer) {
       const { pool, isUsingMySQL } = await import('../config/db.js');
       if (isUsingMySQL()) {
@@ -163,36 +196,15 @@ export async function postCreatePassword(req, res) {
         customer.password_hash = passwordHash;
       }
       req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
-      await linkOrphanedFlightsToCustomer(customer.id, customer.email);
+      try { await linkOrphanedFlightsToCustomer(customer.id, customer.email); } catch (e) { console.error('[CustomerAuth] linkOrphanedFlights failed:', e.message); }
       return res.redirect('/account');
     }
-    // Fallback: create customer if somehow missing
-    const newCustomer = await createCustomer({
-      full_name: record.extra_data?.full_name || email.split('@')[0],
-      email, password,
-      phone: record.extra_data?.phone || null,
-      nationality: record.extra_data?.nationality || null,
-      passport_number: null
-    });
-    req.session.customer = { id: newCustomer.id, name: newCustomer.full_name, email: newCustomer.email };
-    await linkOrphanedFlightsToCustomer(newCustomer.id, newCustomer.email);
-    return res.redirect('/account');
-  }
 
-  // Existing customer without password — set password
-  if (customer) {
-    const { pool, isUsingMySQL } = await import('../config/db.js');
-    if (isUsingMySQL()) {
-      await pool.query('UPDATE customers SET password_hash = ? WHERE id = ?', [passwordHash, customer.id]);
-    } else {
-      customer.password_hash = passwordHash;
-    }
-    req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
-    await linkOrphanedFlightsToCustomer(customer.id, customer.email);
-    return res.redirect('/account');
+    return res.redirect('/account/login');
+  } catch (err) {
+    console.error('[CustomerAuth] postCreatePassword error:', err);
+    res.status(500).render('errors/500', { title: 'Server Error' });
   }
-
-  return res.redirect('/account/login');
 }
 
 export async function postLogout(req, res) {
@@ -204,7 +216,7 @@ export async function postLogout(req, res) {
 export async function getDashboard(req, res, next) {
   try {
     const customer = await findCustomerById(req.session.customer.id);
-    if (!customer) return res.redirect('/account/logout');
+    if (!customer) return res.redirect('/account/login');
 
     const tourBookings = await getTourBookingsByCustomerId(customer.id);
     const allFlights = await getAllFlightBookings();
@@ -213,12 +225,16 @@ export async function getDashboard(req, res, next) {
     // Fetch portal tokens for each booking
     const { findPortalTokenByTourBooking, findPortalTokenByFlightBooking } = await import('../models/index.js');
     const tourBookingsWithTokens = await Promise.all(tourBookings.map(async (b) => {
-      const token = await findPortalTokenByTourBooking(b.id);
-      return { ...b, portalToken: token?.token || null };
+      try {
+        const token = await findPortalTokenByTourBooking(b.id);
+        return { ...b, portalToken: token?.token || null };
+      } catch { return { ...b, portalToken: null }; }
     }));
     const flightBookingsWithTokens = await Promise.all(flightBookings.map(async (f) => {
-      const token = await findPortalTokenByFlightBooking(f.id);
-      return { ...f, portalToken: token?.token || null };
+      try {
+        const token = await findPortalTokenByFlightBooking(f.id);
+        return { ...f, portalToken: token?.token || null };
+      } catch { return { ...f, portalToken: null }; }
     }));
 
     res.render('customer/dashboard', {
@@ -240,7 +256,7 @@ export async function postUpdateProfile(req, res, next) {
   try {
     const { full_name, phone, nationality, passport_number } = req.body;
     const customer = await findCustomerById(req.session.customer.id);
-    if (!customer) return res.redirect('/account/logout');
+    if (!customer) return res.redirect('/account/login');
 
     await updateCustomer(customer.id, {
       full_name: full_name || customer.full_name,

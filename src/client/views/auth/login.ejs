@@ -67,7 +67,7 @@
 
         <% } else if (step === 'code') { %>
           <!-- Step 2b: Auth code (user has no password) -->
-          <form method="post" action="/auth/login">
+          <form method="post" action="/auth/verify">
             <input type="hidden" name="next" value="<%= next %>">
             <input type="hidden" name="email" value="<%= email %>">
             <div class="form-group">
