@@ -1,4 +1,4 @@
-import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction, getDateRangesByTourId, findTourPackageById, createTourBooking, createPortalToken, findPortalTokenByTourBooking, logNotificationRecord, linkOrphanedFlightsToCustomer } from '../models/index.js';
+import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction, getDateRangesByTourId, findTourPackageById, createTourBooking, createPortalToken, findPortalTokenByTourBooking, logNotificationRecord, linkOrphanedFlightsToCustomer, findUserByEmail } from '../models/index.js';
 import { hashPassword } from '../config/db.js';
 import { sendEmail, buildAuthCodeEmail } from '../services/emailService.js';
 
@@ -17,6 +17,12 @@ export async function postAuth(req, res) {
       return res.status(400).render('customer/login', {
         title: 'Customer Login', error: 'Email is required.', step: 'email', email: '', message: null, purpose: 'login'
       });
+    }
+
+    // If email belongs to an operator/admin/guide, redirect to admin login
+    const operatorUser = await findUserByEmail(email);
+    if (operatorUser) {
+      return res.redirect('/admin/login');
     }
 
     const existing = await findCustomerByEmail(email);
