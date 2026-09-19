@@ -211,7 +211,7 @@ export async function viewFlightDetail(req, res, next) {
     const { activeCurrency, exchangeRates } = res.locals;
     const existingToken = await findPortalTokenByFlightBooking(flight.id);
     res.render('admin/flights/show', {
-      title: `Flight PNR: ${flight.booking_ref}`,
+      title: flight.ticket_status === 'pending' ? `Flight Request #${flight.id}` : `Flight ${flight.booking_ref}`,
       flight,
       liveStatus,
       activeCurrency,

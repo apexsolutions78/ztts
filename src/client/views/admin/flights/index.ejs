@@ -62,7 +62,7 @@
           <tbody>
             ${flights.length > 0 ? flights.map(f => `
               <tr>
-                <td><strong style="font-family: var(--font-heading); color: var(--primary);">${f.booking_ref}</strong></td>
+                <td><strong style="font-family: var(--font-heading); color: var(--primary);">${f.ticket_status === 'pending' ? 'REQ-' + f.id : f.booking_ref}</strong></td>
                 <td>${f.customer_name}</td>
                 <td><strong>${f.airline}</strong><br><span class="muted">${f.flight_number}</span></td>
                 <td><strong>${f.origin}</strong> → <strong>${f.destination}</strong></td>

@@ -8,26 +8,41 @@
 </head>
 <body>
   <%- include('../../layout', { body: `
+    <%
+      const isRequest = flight.ticket_status === 'pending';
+      const isConfirmed = flight.ticket_status === 'confirmed';
+      const isTicketed = flight.ticket_status === 'ticketed';
+      const isCancelled = flight.ticket_status === 'cancelled';
+      const pageTitle = isRequest ? 'Flight Request' : isTicketed ? 'Flight Reservation' : 'Flight Booking';
+      const pageSubtitle = isRequest ? 'Customer Request — Awaiting Flight Selection & Payment' : isConfirmed ? 'Confirmed — Awaiting Ticket Issuance' : isTicketed ? 'Confirmed E-Ticket & PNR Details' : isCancelled ? 'Cancelled Request' : 'Flight Booking Details';
+    %>
+
     <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
       <div>
         <a href="/admin/flights" class="btn btn-secondary btn-sm">← Back to Flights</a>
-        <h1 style="margin-top: 0.5rem;">Flight Reservation: ${flight.booking_ref}</h1>
-        <p class="muted">Passenger PNR & E-Ticket Management</p>
+        <h1 style="margin-top: 0.5rem;">${pageTitle}: ${isRequest ? 'REQ-' + flight.id : flight.booking_ref}</h1>
+        <p class="muted">${pageSubtitle}</p>
       </div>
 
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
-        ${flight.ticket_status !== 'ticketed' ? `
+        ${isTicketed ? `
+          <button id="shareBtn" onclick="generateShareLink(${flight.id})" class="btn btn-accent">🔗 Share Portal Link</button>
+          <button onclick="sendNotification(${flight.id}, 'email')" id="sendEmailBtn" class="btn btn-primary" style="background: #2563eb;">✉ Send E-Ticket</button>
+          <button onclick="sendNotification(${flight.id}, 'whatsapp')" id="sendWhatsAppBtn" class="btn btn-primary" style="background: #25d366;">💬 Send WhatsApp</button>
+          <a href="/admin/flights/${flight.id}/pdf" target="_blank" class="btn btn-primary" style="background: #805ad5;">📄 Download PDF</a>
+        ` : isConfirmed ? `
           <form method="post" action="/admin/flights/${flight.id}/issue" style="margin: 0;">
             <button type="submit" class="btn btn-primary">✔ Issue E-Ticket</button>
           </form>
-        ` : `<span class="badge badge-ticketed" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">✔ E-TICKET ISSUED</span>`}
-        
-        <button id="shareBtn" onclick="generateShareLink(${flight.id})" class="btn btn-accent">🔗 Share Portal Link</button>
-        <button onclick="sendNotification(${flight.id}, 'email')" id="sendEmailBtn" class="btn btn-primary" style="background: #2563eb;">✉ Send Email</button>
-        <button onclick="sendNotification(${flight.id}, 'whatsapp')" id="sendWhatsAppBtn" class="btn btn-primary" style="background: #25d366;">💬 Send WhatsApp</button>
-        <a href="/admin/flights/${flight.id}/pdf" target="_blank" class="btn btn-primary" style="background: #805ad5;">📄 Download PDF</a>
+          <button onclick="sendNotification(${flight.id}, 'email')" id="sendEmailBtn" class="btn btn-primary" style="background: #2563eb;">✉ Send Email</button>
+        ` : isRequest ? `
+          <button onclick="sendNotification(${flight.id}, 'email')" id="sendEmailBtn" class="btn btn-primary" style="background: #2563eb;">✉ Send Options to Customer</button>
+          <form method="post" action="/admin/flights/${flight.id}/cancel" style="margin: 0;" onsubmit="return confirm('Cancel this flight request?')">
+            <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">✕ Cancel Request</button>
+          </form>
+        ` : ''}
         <a href="/admin/flights/${flight.id}/edit" class="btn btn-secondary">✏ Edit</a>
-        <form method="post" action="/admin/flights/${flight.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this flight booking?')">
+        <form method="post" action="/admin/flights/${flight.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this flight record?')">
           <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">🗑 Delete</button>
         </form>
       </div>
@@ -51,6 +66,93 @@
       </div>
     </div>
 
+    ${isRequest || isConfirmed ? `
+    <!-- ========== REQUEST / CONFIRMED VIEW ========== -->
+    <div class="card" style="padding: 2rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light);">
+        <div style="width: 50px; height: 50px; border-radius: 12px; background: ${isConfirmed ? '#edf7ed' : '#fefcbf'}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+          ${isConfirmed ? '✅' : '📋'}
+        </div>
+        <div>
+          <h2 style="margin: 0; font-size: 1.3rem;">${isConfirmed ? 'Flight Confirmed — Awaiting Ticket' : 'Customer Flight Request'}</h2>
+          <p class="muted" style="margin: 0.2rem 0 0; font-size: 0.85rem;">Request #${flight.id} — Submitted ${new Date(flight.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+        </div>
+        <div style="margin-left: auto;">
+          <span class="badge badge-${flight.ticket_status}" style="font-size: 0.85rem; padding: 0.4rem 1rem;">${flight.ticket_status.toUpperCase()}</span>
+        </div>
+      </div>
+
+      ${isConfirmed ? `
+      <div style="background: #edf7ed; border: 1px solid #c6f6d5; border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.5rem;">
+        <strong style="color: #22543d;">✅ Payment Confirmed — Ready for Ticket Issuance</strong>
+        <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: #276749;">Click "Issue E-Ticket" above to generate the official PNR and e-ticket for this customer.</p>
+      </div>
+      ` : `
+      <div style="background: #fefcbf; border: 1px solid #d69e2e; border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.5rem;">
+        <strong style="color: #975a16;">⏳ Awaiting Customer Selection & Payment</strong>
+        <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: #975a16;">Share available flight options with the customer. Once they select and payment is received, confirm the booking and issue the e-ticket.</p>
+      </div>
+      `}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div>
+          <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Route</h4>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${flight.origin} → ${flight.destination}</div>
+        </div>
+        <div>
+          <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Travel Date</h4>
+          <div style="font-size: 1.1rem; font-weight: 600;">${new Date(flight.departure_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+        </div>
+        <div>
+          <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Cabin Class</h4>
+          <div style="font-size: 1rem; font-weight: 600;">${flight.cabin_class || 'Economy'}</div>
+        </div>
+        <div>
+          <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Passengers</h4>
+          <div style="font-size: 1rem; font-weight: 600;">${flight.passengers || 1}</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+        <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; letter-spacing: 0.5px;">Customer Details</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Name</div>
+            <div style="font-weight: 600;">${flight.customer_name || 'N/A'}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Email</div>
+            <div style="font-weight: 600;">${flight.customer_email || 'N/A'}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Phone</div>
+            <div style="font-weight: 600;">${flight.customer_phone || 'N/A'}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Nationality</div>
+            <div style="font-weight: 600;">${flight.nationality || 'N/A'}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Passport</div>
+            <div style="font-weight: 600;">${flight.passport_number || 'N/A'}</div>
+          </div>
+        </div>
+      </div>
+
+      ${flight.notes ? `
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+        <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Customer Notes / Preferred Airline</h4>
+        <div style="background: #f8fafb; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;">${flight.notes}</div>
+      </div>
+      ` : ''}
+
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+        <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Total Fare</h4>
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">${flight.total_amount > 0 ? formatPrice(flight.total_amount) : '<span style="color: var(--text-muted); font-size: 1rem;">To be determined</span>'}</div>
+      </div>
+    </div>
+    ` : `
+    <!-- ========== TICKETED / RESERVATION VIEW ========== -->
     <div class="ticket-wrapper">
       <div class="ticket-header">
         <div class="ticket-airline-brand">
@@ -68,7 +170,6 @@
       </div>
 
       <div class="ticket-body">
-        <!-- Live Status Bar -->
         <div style="background: #edf4f2; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">LIVE FLIGHT TRACKER ENGINE</span>
@@ -124,13 +225,12 @@
           </div>
           <div class="ticket-field">
             <label>Arrival Time</label>
-            <val>${new Date(flight.arrival_date).toLocaleString()}</val>
+            <val>${flight.arrival_date ? new Date(flight.arrival_date).toLocaleString() : 'TBA'}</val>
           </div>
           <div class="ticket-field">
             <label>Total Fare</label>
             <val>${formatPrice(flight.total_amount)}</val>
           </div>
-
           <div class="ticket-field">
             <label>Ticket Status</label>
             <val><span class="badge badge-${flight.ticket_status}">${flight.ticket_status}</span></val>
@@ -140,7 +240,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm); border: 1px dashed #cbd5e0;">
           <div>
             <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Customer Portal QR Code</div>
-            <div style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary);">ZHB-ETKT-${flight.id}-2026-X99</div>
+            <div style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary);">${flight.booking_ref}</div>
             <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">Scan to open e-ticket portal</div>
           </div>
           <img id="ticketQR" src="" alt="Portal QR Code" style="width: 110px; height: 110px; border: 2px solid var(--primary); border-radius: 8px; padding: 4px; background: #fff; display: none;">
@@ -148,6 +248,7 @@
         </div>
       </div>
     </div>
+    `}
 
     <!-- Notification History -->
     <div class="card" style="margin-top: 2rem;">
@@ -162,7 +263,6 @@
         <button onclick="togglePaymentForm()" class="btn btn-primary btn-sm" id="addPaymentBtn">+ Record Payment</button>
       </div>
 
-      <!-- Payment Summary -->
       <div id="paymentSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
         <div style="background: #edf4f2; padding: 1rem; border-radius: var(--radius-sm); text-align: center;">
           <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Amount</div>
@@ -182,7 +282,6 @@
         </div>
       </div>
 
-      <!-- Add Payment Form (hidden by default) -->
       <div id="paymentForm" style="display: none; background: #f8fafb; padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border-light);">
         <h4 style="margin-bottom: 1rem;">Record Payment(s)</h4>
         <div id="paymentRows">
@@ -225,7 +324,6 @@
         </div>
       </div>
 
-      <!-- Payment History Table -->
       <h4 style="margin-bottom: 0.75rem;">Payment History</h4>
       <div class="table-responsive">
         <table class="data-table" id="paymentTable">
