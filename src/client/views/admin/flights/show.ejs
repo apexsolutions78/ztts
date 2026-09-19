@@ -14,6 +14,33 @@
     const isCancelled = flight.ticket_status === 'cancelled';
     const pageTitle = isRequest ? 'Flight Request' : isTicketed ? 'Flight Reservation' : 'Flight Booking';
     const pageSubtitle = isRequest ? 'Customer Request — Awaiting Flight Selection & Payment' : isConfirmed ? 'Confirmed — Awaiting Ticket Issuance' : isTicketed ? 'Confirmed E-Ticket & PNR Details' : isCancelled ? 'Cancelled Request' : 'Flight Booking Details';
+    const currentStage = flight.workflow_stage || 'legacy';
+    const allowedStagesMap = {
+      inquiry:                    ['search_details_complete', 'cancelled'],
+      search_details_complete:    ['quote_prepared', 'cancelled'],
+      quote_prepared:             ['quote_sent', 'cancelled'],
+      quote_sent:                 ['customer_approved', 'cancelled'],
+      customer_approved:          ['passenger_details_pending', 'cancelled'],
+      passenger_details_pending:  ['passenger_details_complete', 'cancelled'],
+      passenger_details_complete: ['reservation_pending', 'cancelled'],
+      reservation_pending:        ['reserved', 'cancelled', 'customer_approved'],
+      reserved:                   ['payment_pending', 'cancelled', 'customer_approved'],
+      payment_pending:            ['payment_under_review', 'cancelled'],
+      payment_under_review:       ['ready_for_ticketing', 'cancelled'],
+      ready_for_ticketing:        ['ticketed', 'cancelled'],
+      legacy:                     ['inquiry', 'cancelled']
+    };
+    const stageLabels = {
+      inquiry: 'Inquiry Received', search_details_complete: 'Search Details Complete',
+      quote_prepared: 'Quote Prepared', quote_sent: 'Quote Sent',
+      customer_approved: 'Customer Approved', passenger_details_pending: 'Passenger Details Pending',
+      passenger_details_complete: 'Passenger Details Complete', reservation_pending: 'Reservation Pending',
+      reserved: 'Reserved', payment_pending: 'Payment Pending',
+      payment_under_review: 'Payment Under Review', ready_for_ticketing: 'Ready for Ticketing',
+      ticketed: 'Ticketed', completed: 'Completed', cancelled: 'Cancelled', legacy: 'Legacy'
+    };
+    const nextStages = (allowedStagesMap[currentStage] || []).filter(s => s !== 'cancelled');
+    const canCancel = (allowedStagesMap[currentStage] || []).includes('cancelled');
   %>
   <%- include('../../layout', { body: `
     <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
@@ -64,6 +91,32 @@
         </div>
       </div>
     </div>
+
+    ${!isCancelled && !isTicketed && nextStages.length > 0 ? `
+    <!-- ========== WORKFLOW STAGE PROGRESSION ========== -->
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #f8fafb 0%, #edf4f2 100%);">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 0.2rem;">Workflow Stage</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">${stageLabels[currentStage] || currentStage}</div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          ${nextStages.map(stage => `
+            <form method="post" action="/admin/flights/${flight.id}/transition" style="margin: 0;">
+              <input type="hidden" name="target_stage" value="${stage}">
+              <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">${stageLabels[stage] || stage} →</button>
+            </form>
+          `).join('')}
+          ${canCancel ? `
+            <form method="post" action="/admin/flights/${flight.id}/transition" style="margin: 0;">
+              <input type="hidden" name="target_stage" value="cancelled">
+              <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff; font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="return confirm('Cancel this booking workflow?')">Cancel</button>
+            </form>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+    ` : ''}
 
     ${isRequest || isConfirmed ? `
     <!-- ========== REQUEST / CONFIRMED VIEW ========== -->

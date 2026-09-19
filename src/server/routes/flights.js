@@ -15,7 +15,8 @@ import {
   confirmFlightRequest,
   cancelFlightRequest,
   sendFlightNotification,
-  getFlightNotifications
+  getFlightNotifications,
+  postTransitionWorkflow
 } from '../controllers/flightController.js';
 
 const router = Router();
@@ -34,6 +35,7 @@ router.get('/:id/edit', getEditFlightForm);
 router.post('/:id/edit', postUpdateFlight);
 router.post('/:id/delete', postDeleteFlight);
 router.post('/:id/issue', issueTicket);
+router.post('/:id/transition', postTransitionWorkflow);
 router.post('/:id/share', generateShareToken);
 router.get('/:id/pdf', downloadETicketPDF);
 router.post('/:id/notify/:channel', sendFlightNotification);

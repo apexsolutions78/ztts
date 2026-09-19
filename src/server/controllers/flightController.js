@@ -17,7 +17,9 @@ import {
   findPortalTokenByFlightBooking,
   getFlightRequests,
   getFlightRequestStats,
-  getBookingPaymentSummary
+  getBookingPaymentSummary,
+  transitionWorkflowStage,
+  getAllowedWorkflowTransitions
 } from '../models/index.js';
 import { sendEmail, buildETicketEmail } from '../services/emailService.js';
 import { sendWhatsApp, buildETicketWhatsAppMessage } from '../services/whatsAppService.js';
@@ -562,6 +564,36 @@ export async function cancelFlightRequest(req, res, next) {
     });
 
     res.redirect('/admin/flights/requests?cancelled=true');
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postTransitionWorkflow(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { target_stage, reason } = req.body;
+
+    if (!target_stage) {
+      return res.redirect(`/admin/flights/${id}?error=No+target+stage+specified`);
+    }
+
+    const result = await transitionWorkflowStage(id, target_stage, reason || null);
+
+    if (!result.success) {
+      return res.redirect(`/admin/flights/${id}?error=${encodeURIComponent(result.error)}`);
+    }
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'WORKFLOW_TRANSITION',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Workflow: ${result.from} → ${result.to}${reason ? ' (' + reason + ')' : ''}`
+    });
+
+    res.redirect(`/admin/flights/${id}?success=Workflow+updated+to+${result.to}`);
   } catch (error) {
     next(error);
   }
