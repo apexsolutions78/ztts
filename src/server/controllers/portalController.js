@@ -1,4 +1,4 @@
-import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, findTourBookingById, getFlightLiveStatus, getMembersByBookingId, createBookingMember, deleteBookingMember, isBookingComplete, createMemberWithToken, findMemberByPortalToken, getBookingMembersForLeader, isGroupLeader, setGroupLeader, getGroupLeader, getActiveGroupLocation, getGroupTourById, logAuditAction, logNotificationRecord } from '../models/index.js';
+import { findPortalToken, findFlightBookingById, findCustomerById, findTourPackageById, findTourBookingById, getFlightLiveStatus, getMembersByBookingId, createBookingMember, deleteBookingMember, isBookingComplete, createMemberWithToken, findMemberByPortalToken, getBookingMembersForLeader, isGroupLeader, setGroupLeader, getGroupLeader, getActiveGroupLocation, getGroupTourById, logAuditAction, logNotificationRecord, getBookingPaymentSummary } from '../models/index.js';
 import { sendEmail, buildMemberPortalEmail, buildGroupCompleteEmail, buildMemberPortalInviteEmail } from '../services/emailService.js';
 
 export async function viewCustomerPortal(req, res, next) {
@@ -27,10 +27,12 @@ export async function viewCustomerPortal(req, res, next) {
     let liveStatus = null;
     let members = [];
     let groupLeader = null;
+    let paymentSummary = null;
 
     if (tokenData.flight_booking_id) {
       flight = await findFlightBookingById(tokenData.flight_booking_id);
       liveStatus = getFlightLiveStatus(flight);
+      try { paymentSummary = await getBookingPaymentSummary('flight', flight.id); } catch (e) { /* non-blocking */ }
     }
 
     if (tokenData.tour_booking_id) {
@@ -39,6 +41,7 @@ export async function viewCustomerPortal(req, res, next) {
         tourPackage = await findTourPackageById(tourBooking.tour_package_id);
         members = await getBookingMembersForLeader(tourBooking.id);
         groupLeader = await getGroupLeader(tourBooking.id);
+        try { paymentSummary = await getBookingPaymentSummary('tour', tourBooking.id); } catch (e) { /* non-blocking */ }
       }
     }
 
@@ -51,7 +54,8 @@ export async function viewCustomerPortal(req, res, next) {
       tourPackage,
       token,
       members,
-      groupLeader
+      groupLeader,
+      paymentSummary
     });
   } catch (error) {
     next(error);

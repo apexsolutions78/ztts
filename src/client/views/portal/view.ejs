@@ -172,6 +172,24 @@
             <div style="font-weight: 600;"><%= flight.cabin_class %></div>
           </div>
         </div>
+        <% if (typeof paymentSummary !== 'undefined' && paymentSummary && paymentSummary.totalAmount > 0) { %>
+        <div style="margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm);">
+          <div style="display: flex; justify-content: space-around; text-align: center;">
+            <div>
+              <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Fare</div>
+              <div style="font-size: 1.2rem; font-weight: 800; color: var(--primary);"><%= formatPrice(paymentSummary.totalAmount) %></div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Paid</div>
+              <div style="font-size: 1.2rem; font-weight: 800; color: #38a169;"><%= formatPrice(paymentSummary.totalPaid) %></div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Balance</div>
+              <div style="font-size: 1.2rem; font-weight: 800; color: <%= paymentSummary.balance > 0 ? '#d69e2e' : '#38a169' %>;"><%= formatPrice(paymentSummary.balance) %></div>
+            </div>
+          </div>
+        </div>
+        <% } %>
         <div style="text-align: center; margin-top: 1.5rem; padding: 1rem; background: #edf7ed; border-radius: var(--radius-sm); border: 1px solid #c6f6d5;">
           <strong style="color: #22543d;">Your ticket is being issued.</strong>
           <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: #276749;">Our ticketing team is finalizing your e-ticket. You will receive it shortly.</p>
