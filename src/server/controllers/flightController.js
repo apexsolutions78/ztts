@@ -220,6 +220,7 @@ export async function viewFlightDetail(req, res, next) {
       portalToken: existingToken?.token || null
     });
   } catch (error) {
+    console.error('[Flight Detail] Error rendering flight', req.params.id, ':', error.message);
     next(error);
   }
 }

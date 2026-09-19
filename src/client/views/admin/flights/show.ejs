@@ -7,16 +7,15 @@
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
+  <%
+    const isRequest = flight.ticket_status === 'pending';
+    const isConfirmed = flight.ticket_status === 'confirmed';
+    const isTicketed = flight.ticket_status === 'ticketed';
+    const isCancelled = flight.ticket_status === 'cancelled';
+    const pageTitle = isRequest ? 'Flight Request' : isTicketed ? 'Flight Reservation' : 'Flight Booking';
+    const pageSubtitle = isRequest ? 'Customer Request — Awaiting Flight Selection & Payment' : isConfirmed ? 'Confirmed — Awaiting Ticket Issuance' : isTicketed ? 'Confirmed E-Ticket & PNR Details' : isCancelled ? 'Cancelled Request' : 'Flight Booking Details';
+  %>
   <%- include('../../layout', { body: `
-    <%
-      const isRequest = flight.ticket_status === 'pending';
-      const isConfirmed = flight.ticket_status === 'confirmed';
-      const isTicketed = flight.ticket_status === 'ticketed';
-      const isCancelled = flight.ticket_status === 'cancelled';
-      const pageTitle = isRequest ? 'Flight Request' : isTicketed ? 'Flight Reservation' : 'Flight Booking';
-      const pageSubtitle = isRequest ? 'Customer Request — Awaiting Flight Selection & Payment' : isConfirmed ? 'Confirmed — Awaiting Ticket Issuance' : isTicketed ? 'Confirmed E-Ticket & PNR Details' : isCancelled ? 'Cancelled Request' : 'Flight Booking Details';
-    %>
-
     <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
       <div>
         <a href="/admin/flights" class="btn btn-secondary btn-sm">← Back to Flights</a>
