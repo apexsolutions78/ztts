@@ -216,6 +216,7 @@ export async function viewFlightDetail(req, res, next) {
       liveStatus,
       activeCurrency,
       exchangeRates,
+      formatPrice: res.locals.formatPrice,
       portalToken: existingToken?.token || null
     });
   } catch (error) {
