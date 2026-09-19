@@ -68,14 +68,16 @@
           <% if (typeof liveStatus !== 'undefined' && liveStatus) { %>
             <div style="background: #edf4f2; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;" class="btn-no-print">
               <div>
-                <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">LIVE FLIGHT TRACKER</span>
+                <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">FLIGHT STATUS</span>
                 <div style="font-weight: 800; font-size: 1rem; color: var(--primary);">STATUS: <span class="badge badge-<%= liveStatus.statusClass %>"><%= liveStatus.status %></span></div>
               </div>
+              <% if (liveStatus.terminal !== 'TBA' || liveStatus.gate !== 'TBA') { %>
               <div style="display: flex; gap: 1.25rem; font-size: 0.85rem;">
-                <div><strong>Terminal:</strong> <%= liveStatus.terminal %></div>
-                <div><strong>Gate:</strong> <%= liveStatus.gate %></div>
-                <div><strong>Baggage:</strong> <%= liveStatus.baggage || 'TBA' %></div>
+                <% if (liveStatus.terminal !== 'TBA') { %><div><strong>Terminal:</strong> <%= liveStatus.terminal %></div><% } %>
+                <% if (liveStatus.gate !== 'TBA') { %><div><strong>Gate:</strong> <%= liveStatus.gate %></div><% } %>
+                <% if (liveStatus.baggage && liveStatus.baggage !== 'TBA') { %><div><strong>Baggage:</strong> <%= liveStatus.baggage %></div><% } %>
               </div>
+              <% } %>
             </div>
           <% } %>
 
@@ -125,6 +127,13 @@
               <val><%= formatPrice(flight.total_amount) %></val>
             </div>
           </div>
+
+          <% if (flight.customer_notes) { %>
+          <div style="margin-top: 1rem; padding: 0.85rem 1.25rem; background: #fefcbf; border-radius: var(--radius-sm); border: 1px solid #d69e2e;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #975a16; margin-bottom: 0.3rem;">Your Notes</div>
+            <div style="font-size: 0.9rem; color: #744210;"><%= flight.customer_notes %></div>
+          </div>
+          <% } %>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm); border: 1px dashed #cbd5e0;" class="btn-no-print">
             <div>

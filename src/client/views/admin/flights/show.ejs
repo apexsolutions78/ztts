@@ -305,14 +305,16 @@
       <div class="ticket-body">
         <div style="background: #edf4f2; padding: 0.85rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">LIVE FLIGHT TRACKER ENGINE</span>
+            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">FLIGHT STATUS</span>
             <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">STATUS: <span class="badge badge-${liveStatus.statusClass}">${liveStatus.status}</span></div>
           </div>
+          ${(liveStatus.terminal !== 'TBA' || liveStatus.gate !== 'TBA') ? `
           <div style="display: flex; gap: 1.5rem; font-size: 0.88rem;">
-            <div><strong>Terminal:</strong> ${liveStatus.terminal}</div>
-            <div><strong>Gate:</strong> ${liveStatus.gate}</div>
-            <div><strong>Baggage Claim:</strong> ${liveStatus.baggage || 'TBA'}</div>
+            ${liveStatus.terminal !== 'TBA' ? '<div><strong>Terminal:</strong> ' + liveStatus.terminal + '</div>' : ''}
+            ${liveStatus.gate !== 'TBA' ? '<div><strong>Gate:</strong> ' + liveStatus.gate + '</div>' : ''}
+            ${liveStatus.baggage && liveStatus.baggage !== 'TBA' ? '<div><strong>Baggage:</strong> ' + liveStatus.baggage + '</div>' : ''}
           </div>
+          ` : ''}
         </div>
 
         <div class="flight-route">
@@ -377,6 +379,13 @@
             <val><span class="badge badge-${flight.ticket_status}">${flight.ticket_status}</span></val>
           </div>
         </div>
+
+        ${flight.customer_notes ? `
+        <div style="margin-top: 1rem; padding: 0.85rem 1.25rem; background: #fefcbf; border-radius: var(--radius-sm); border: 1px solid #d69e2e;">
+          <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #975a16; margin-bottom: 0.3rem;">Customer Notes / Requirements</div>
+          <div style="font-size: 0.9rem; color: #744210;">${flight.customer_notes}</div>
+        </div>
+        ` : ''}
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm); border: 1px dashed #cbd5e0;">
           <div>
