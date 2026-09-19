@@ -4,474 +4,487 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Zahabia Travel & Tourism | Premium Air Ticketing & Tour Packages</title>
-  <meta name="description" content="Zahabia Travel & Tourism — Premium air ticketing, luxury tour packages, Umrah trips, and vacation experiences. Book with Apex Solutions.">
+  <meta name="description" content="Zahabia Travel & Tourism — Premium air ticketing, luxury tour packages, Umrah trips, and vacation experiences.">
   <link rel="icon" type="image/png" href="/brand/LOGO123.png">
   <link rel="stylesheet" href="/static/css/app.css">
   <style>
-    .hero {
-      background: linear-gradient(135deg, #ffffff 0%, #f4f7f6 50%, #e8f0ed 100%);
-      color: #102a27;
-      padding: 4rem 2rem;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #050d0a; color: #e8f0ed; overflow-x: hidden; }
+
+    /* ===== NAVBAR ===== */
+    .lp-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 3rem;
+      background: rgba(5,13,10,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(212,175,55,0.1);
+      transition: background 0.3s;
     }
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -25%;
-      width: 150%;
-      height: 200%;
-      background: radial-gradient(ellipse, rgba(212,175,55,0.05) 0%, transparent 70%);
-      pointer-events: none;
+    .lp-nav.scrolled { background: rgba(5,13,10,0.95); }
+    .lp-nav-brand { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; }
+    .lp-nav-brand img { height: 42px; border-radius: 10px; }
+    .lp-nav-brand span { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.2rem; color: #d4af37; letter-spacing: 2px; }
+    .lp-nav-links { display: flex; gap: 0.5rem; align-items: center; }
+    .lp-nav-links a {
+      color: #a0c4b8; text-decoration: none; font-size: 0.88rem; font-weight: 500;
+      padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.25s;
     }
-    .hero h1 { font-size: 3rem; color: #102a27; margin-bottom: 0.5rem; }
-    .hero .gold { color: var(--accent-gold); }
-    .hero p { font-size: 1.15rem; color: #5c7370; max-width: 600px; margin: 0.5rem auto 2rem; }
-    .hero-img { height: 100px; border-radius: 16px; margin-bottom: 1.5rem; }
-    .section { max-width: 1100px; margin: 3rem auto; padding: 0 1.5rem; }
-    .section-title { text-align: center; margin-bottom: 2rem; }
-    .tour-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
-    .tour-card {
-      display: flex;
-      flex-direction: column;
-      border-radius: var(--radius-lg);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      border: 1px solid var(--border-light);
-      background: #fff;
-      position: relative;
-      padding: 0 !important;
+    .lp-nav-links a:hover { color: #d4af37; background: rgba(212,175,55,0.08); }
+    .lp-nav-links .btn-gold {
+      background: linear-gradient(135deg, #d4af37 0%, #b89628 100%);
+      color: #050d0a; font-weight: 700; padding: 0.55rem 1.4rem; border-radius: 10px;
     }
-    .tour-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    .lp-nav-links .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(212,175,55,0.3); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 0.5rem; }
+    .hamburger span { width: 24px; height: 2px; background: #d4af37; transition: 0.3s; border-radius: 2px; }
+
+    /* ===== HERO ===== */
+    .lp-hero {
+      position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 8rem 2rem 4rem; overflow: hidden;
     }
-    .tour-card .tour-img {
-      width: 100%;
-      background: linear-gradient(135deg, #e2ece9 0%, #c5d8d2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 4rem;
-      position: relative;
+    .lp-hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(5,68,59,0.4) 0%, rgba(5,13,10,0) 70%),
+                  radial-gradient(ellipse 60% 40% at 80% 20%, rgba(212,175,55,0.08) 0%, transparent 60%);
     }
-    .tour-card .tour-img img {
-      width: 100%;
-      height: auto;
+    .lp-hero-particles { position: absolute; inset: 0; pointer-events: none; }
+    .particle {
+      position: absolute; border-radius: 50%; opacity: 0;
+      animation: particleFloat 8s ease-in-out infinite;
+    }
+    @keyframes particleFloat {
+      0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
+      20% { opacity: 0.6; }
+      50% { opacity: 0.3; transform: translateY(-80px) scale(1); }
+      80% { opacity: 0.5; }
+    }
+    .particle:nth-child(1) { width: 6px; height: 6px; background: #d4af37; left: 10%; top: 70%; animation-delay: 0s; }
+    .particle:nth-child(2) { width: 4px; height: 4px; background: #086b5e; left: 20%; top: 30%; animation-delay: 1.5s; }
+    .particle:nth-child(3) { width: 8px; height: 8px; background: rgba(212,175,55,0.4); left: 75%; top: 60%; animation-delay: 3s; }
+    .particle:nth-child(4) { width: 5px; height: 5px; background: #086b5e; left: 85%; top: 20%; animation-delay: 4.5s; }
+    .particle:nth-child(5) { width: 7px; height: 7px; background: rgba(212,175,55,0.3); left: 50%; top: 80%; animation-delay: 2s; }
+    .particle:nth-child(6) { width: 3px; height: 3px; background: #d4af37; left: 35%; top: 15%; animation-delay: 5.5s; }
+
+    .lp-hero-content { position: relative; z-index: 2; text-align: center; max-width: 900px; }
+    .lp-hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 1.2rem; border-radius: 9999px;
+      background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.2);
+      color: #d4af37; font-size: 0.78rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+      margin-bottom: 2rem; opacity: 0; animation: fadeUp 0.8s 0.3s forwards;
+    }
+    .lp-hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #d4af37; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .lp-hero h1 {
+      font-family: 'Outfit', sans-serif; font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem;
+      opacity: 0; animation: fadeUp 0.8s 0.5s forwards;
+    }
+    .lp-hero h1 .line1 { display: block; color: #e8f0ed; }
+    .lp-hero h1 .line2 {
       display: block;
-      transition: transform 0.4s ease;
+      background: linear-gradient(135deg, #d4af37 0%, #f0d060 50%, #d4af37 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
     }
-    .tour-card:hover .tour-img img { transform: scale(1.02); }
-    .tour-card .tour-img .duration-badge {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: rgba(16,42,39,0.88);
-      color: #fff;
-      padding: 0.4rem 0.9rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      backdrop-filter: blur(6px);
+    @keyframes shimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+
+    .lp-hero .subtitle {
+      font-size: clamp(1rem, 2vw, 1.2rem); color: #7fa89e; max-width: 600px;
+      margin: 0 auto 2.5rem; line-height: 1.7; opacity: 0; animation: fadeUp 0.8s 0.7s forwards;
     }
-    .tour-card .tour-img .img-overlay {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 50%;
-      background: linear-gradient(to top, rgba(16,42,39,0.7) 0%, transparent 100%);
-      pointer-events: none;
+
+    .lp-hero-actions {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.8s 0.9s forwards;
     }
-    .tour-card .tour-body {
-      padding: 1.4rem 1.5rem;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+    .lp-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.9rem 2rem; border-radius: 12px; font-size: 0.95rem; font-weight: 600;
+      text-decoration: none; transition: all 0.3s; border: none; cursor: pointer;
     }
-    .tour-card .tour-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.4rem;
+    .lp-btn-gold {
+      background: linear-gradient(135deg, #d4af37 0%, #b89628 100%);
+      color: #050d0a; box-shadow: 0 4px 20px rgba(212,175,55,0.25);
     }
-    .tour-card .tour-dest {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.75rem;
-      color: var(--accent-gold);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .lp-btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,175,55,0.4); }
+    .lp-btn-outline {
+      background: transparent; color: #a0c4b8; border: 1.5px solid rgba(160,196,184,0.3);
     }
-    .tour-card .tour-body h3 {
-      font-size: 1.15rem;
-      margin: 0 0 0.5rem;
-      line-height: 1.3;
-      color: var(--primary-dark);
+    .lp-btn-outline:hover { border-color: #d4af37; color: #d4af37; background: rgba(212,175,55,0.05); }
+
+    .lp-hero-scroll {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      color: #5c7370; font-size: 0.75rem; animation: fadeUp 0.8s 1.2s forwards; opacity: 0;
     }
-    .tour-card .tour-desc {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.55;
-      margin-bottom: 0.8rem;
+    .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, #d4af37, transparent); animation: scrollPulse 2s infinite; }
+    @keyframes scrollPulse { 0%, 100% { opacity: 1; height: 40px; } 50% { opacity: 0.4; height: 25px; } }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .tour-card .tour-highlights {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 1rem;
+
+    /* ===== STATS BAR ===== */
+    .lp-stats {
+      position: relative; z-index: 2;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      max-width: 1000px; margin: -4rem auto 0; padding: 0 2rem;
     }
-    .tour-card .tour-highlight-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.25rem 0.6rem;
-      background: #f0f7f5;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      color: var(--primary-dark);
-      font-weight: 500;
+    .lp-stat {
+      background: rgba(8,107,94,0.15); backdrop-filter: blur(10px);
+      padding: 1.8rem 1rem; text-align: center;
+      border: 1px solid rgba(8,107,94,0.15);
     }
-    .tour-card .tour-details-panel {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.4s ease, opacity 0.3s ease;
-      opacity: 0;
+    .lp-stat:first-child { border-radius: 16px 0 0 16px; }
+    .lp-stat:last-child { border-radius: 0 16px 16px 0; }
+    .lp-stat-num {
+      font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; color: #d4af37;
+      display: block;
     }
-    .tour-card.tour-expanded .tour-details-panel {
-      max-height: 800px;
-      opacity: 1;
+    .lp-stat-label { font-size: 0.78rem; color: #7fa89e; margin-top: 0.3rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ===== SECTIONS COMMON ===== */
+    .lp-section { max-width: 1200px; margin: 0 auto; padding: 6rem 2rem; position: relative; }
+    .lp-section-label {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.72rem; font-weight: 700; color: #d4af37; text-transform: uppercase;
+      letter-spacing: 2.5px; margin-bottom: 1rem;
     }
-    .tour-card .tour-details-inner {
-      padding: 1rem 0;
-      border-top: 1px dashed var(--border-light);
+    .lp-section-label .line { width: 30px; height: 1.5px; background: #d4af37; }
+    .lp-section-title {
+      font-family: 'Outfit', sans-serif; font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800; color: #e8f0ed; line-height: 1.2; margin-bottom: 1rem;
     }
-    .tour-card .tour-details-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.7rem 1rem;
-      margin-bottom: 0.8rem;
+    .lp-section-desc { font-size: 1.05rem; color: #7fa89e; max-width: 600px; line-height: 1.7; }
+
+    /* ===== FEATURES ===== */
+    .lp-features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+    .lp-feature {
+      background: rgba(8,107,94,0.06); border: 1px solid rgba(8,107,94,0.12);
+      border-radius: 16px; padding: 2rem 1.5rem; transition: all 0.4s;
+      opacity: 0; transform: translateY(40px);
     }
-    .tour-card .detail-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.4;
+    .lp-feature.visible { opacity: 1; transform: translateY(0); }
+    .lp-feature:hover { border-color: rgba(212,175,55,0.25); transform: translateY(-4px); background: rgba(8,107,94,0.1); }
+    .lp-feature-icon {
+      width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 1.2rem;
+      background: linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 100%);
+      border: 1px solid rgba(212,175,55,0.15);
     }
-    .tour-card .detail-item .detail-icon {
-      flex-shrink: 0;
-      width: 20px;
-      text-align: center;
-      font-size: 0.85rem;
-      margin-top: 1px;
+    .lp-feature h3 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: #e8f0ed; margin-bottom: 0.6rem; }
+    .lp-feature p { font-size: 0.88rem; color: #7fa89e; line-height: 1.65; }
+    .lp-feature a { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.8rem; color: #d4af37; font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: gap 0.3s; }
+    .lp-feature a:hover { gap: 0.6rem; }
+
+    /* ===== TOUR PACKAGES ===== */
+    .lp-tours-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 2rem; margin-top: 3rem; }
+    .lp-tour {
+      background: rgba(8,107,94,0.06); border: 1px solid rgba(8,107,94,0.12);
+      border-radius: 20px; overflow: hidden; transition: all 0.4s;
+      opacity: 0; transform: translateY(40px);
     }
-    .tour-card .detail-item .detail-label {
-      font-weight: 600;
-      color: var(--text-main);
+    .lp-tour.visible { opacity: 1; transform: translateY(0); }
+    .lp-tour:hover { border-color: rgba(212,175,55,0.25); transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+    .lp-tour-img {
+      position: relative; height: 220px; overflow: hidden;
+      background: linear-gradient(135deg, rgba(5,68,59,0.8) 0%, rgba(5,13,10,0.9) 100%);
     }
-    .tour-card .tour-full-desc {
-      margin-top: 0.5rem;
-      padding-top: 0.6rem;
-      border-top: 1px solid var(--border-light);
+    .lp-tour-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .lp-tour:hover .lp-tour-img img { transform: scale(1.05); }
+    .lp-tour-img .badge {
+      position: absolute; top: 1rem; left: 1rem;
+      background: rgba(212,175,55,0.9); color: #050d0a;
+      padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .tour-card .tour-full-desc .desc-heading {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.5rem;
+    .lp-tour-img .duration {
+      position: absolute; top: 1rem; right: 1rem;
+      background: rgba(5,13,10,0.7); backdrop-filter: blur(8px);
+      color: #a0c4b8; padding: 0.3rem 0.8rem; border-radius: 8px;
+      font-size: 0.75rem; font-weight: 600;
     }
-    .tour-card .tour-full-desc .desc-body {
-      font-size: 0.82rem;
-      color: #5c7370;
-      line-height: 1.7;
-      white-space: pre-line;
+    .lp-tour-body { padding: 1.5rem; }
+    .lp-tour-dest { font-size: 0.72rem; color: #d4af37; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem; }
+    .lp-tour-body h3 { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: #e8f0ed; margin-bottom: 0.6rem; }
+    .lp-tour-desc { font-size: 0.85rem; color: #7fa89e; line-height: 1.6; margin-bottom: 1rem; }
+    .lp-tour-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.2rem; }
+    .lp-tour-tag { padding: 0.25rem 0.65rem; background: rgba(8,107,94,0.15); border-radius: 8px; font-size: 0.7rem; color: #a0c4b8; font-weight: 500; }
+    .lp-tour-footer { display: flex; justify-content: space-between; align-items: flex-end; padding-top: 1.2rem; border-top: 1px solid rgba(8,107,94,0.15); }
+    .lp-tour-price-label { font-size: 0.65rem; color: #5c7370; text-transform: uppercase; letter-spacing: 1px; }
+    .lp-tour-price { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: #d4af37; }
+    .lp-tour-price .per { font-size: 0.7rem; color: #5c7370; font-weight: 500; }
+    .lp-tour-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+      background: linear-gradient(135deg, #d4af37, #b89628); color: #050d0a;
+      text-decoration: none; transition: all 0.3s;
     }
-    .tour-card .tour-full-desc .desc-body strong {
-      color: var(--primary-dark);
-      font-weight: 600;
+    .lp-tour-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(212,175,55,0.3); }
+
+    /* ===== CTA ===== */
+    .lp-cta-wrapper { padding: 2rem; }
+    .lp-cta {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, rgba(5,68,59,0.6) 0%, rgba(8,107,94,0.3) 100%);
+      border: 1px solid rgba(212,175,55,0.15); border-radius: 24px;
+      padding: 4rem 2rem; text-align: center;
     }
-    .tour-card .tour-footer {
-      padding-top: 0.9rem;
-      border-top: 1px solid var(--border-light);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      margin-top: auto;
+    .lp-cta::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 30% 30%, rgba(212,175,55,0.06) 0%, transparent 50%);
+      animation: ctaGlow 8s ease-in-out infinite alternate;
     }
-    .tour-card .tour-price-label {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    @keyframes ctaGlow { from { transform: rotate(0deg); } to { transform: rotate(30deg); } }
+    .lp-cta h2 { font-family: 'Outfit', sans-serif; font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 800; color: #e8f0ed; position: relative; margin-bottom: 0.8rem; }
+    .lp-cta p { color: #7fa89e; font-size: 1.05rem; margin-bottom: 2rem; position: relative; }
+    .lp-cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; }
+
+    /* ===== FOOTER ===== */
+    .lp-footer {
+      border-top: 1px solid rgba(8,107,94,0.12); padding: 3rem 2rem;
+      text-align: center; color: #5c7370; font-size: 0.82rem;
     }
-    .tour-card .tour-price {
-      font-family: var(--font-heading);
-      font-size: 1.45rem;
-      font-weight: 800;
-      color: var(--primary);
-      line-height: 1.2;
-    }
-    .tour-card .tour-per {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-    .tour-card .tour-actions {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-    .tour-card .tour-toggle-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      padding: 0.5rem 0.9rem;
-      background: transparent;
-      color: var(--primary);
-      border: 1.5px solid var(--primary);
-      border-radius: var(--radius-sm);
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .tour-card .tour-toggle-btn:hover {
-      background: var(--primary);
-      color: #fff;
-    }
-    .tour-card .tour-toggle-btn .arrow {
-      transition: transform 0.3s;
-      display: inline-block;
-    }
-    .tour-card.tour-expanded .tour-toggle-btn .arrow {
-      transform: rotate(180deg);
-    }
-    .tour-card .tour-book-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      padding: 0.5rem 1rem;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.2s;
-    }
-    .tour-card .tour-book-btn:hover { background: var(--primary-dark); }
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
-    .feature-card { text-align: center; padding: 2rem 1.5rem; }
-    .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-    .cta-section {
-      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--bg-dark) 100%);
-      color: #fff;
-      padding: 3rem 2rem;
-      text-align: center;
-      border-radius: var(--radius-lg);
-      margin: 3rem auto;
-      max-width: 800px;
-    }
-    .cta-section h2 { color: #fff; margin-bottom: 0.5rem; }
-    .cta-section p { color: #a0aec0; margin-bottom: 1.5rem; }
-    .footer-public {
-      background: var(--bg-dark);
-      color: #a0aec0;
-      padding: 2rem;
-      text-align: center;
-      font-size: 0.85rem;
-    }
-    .footer-public a { color: var(--accent-gold); text-decoration: none; }
-    @media (max-width: 860px) {
-      .hero h1 { font-size: 2rem; }
-      .hero p { font-size: 1rem; }
+    .lp-footer a { color: #d4af37; text-decoration: none; }
+    .lp-footer-links { display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; }
+    .lp-footer-links a { color: #7fa89e; font-size: 0.78rem; transition: color 0.2s; }
+    .lp-footer-links a:hover { color: #d4af37; }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 768px) {
+      .lp-nav { padding: 0.8rem 1.5rem; }
+      .lp-nav-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: rgba(5,13,10,0.98); padding: 1rem; gap: 0.5rem; border-bottom: 1px solid rgba(212,175,55,0.1); }
+      .lp-nav-links.open { display: flex; }
+      .hamburger { display: flex; }
+      .lp-stats { grid-template-columns: repeat(2, 1fr); margin-top: -2rem; }
+      .lp-stat:first-child { border-radius: 16px 0 0 0; }
+      .lp-stat:nth-child(2) { border-radius: 0 16px 0 0; }
+      .lp-stat:nth-child(3) { border-radius: 0 0 0 16px; }
+      .lp-stat:last-child { border-radius: 0 0 16px 0; }
+      .lp-tours-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <!-- Hero Section -->
-  <div class="hero">
-    <img src="/brand/Golden_airplane_circling_globe_20260914222838.gif" alt="Zahabia Travel" class="hero-img" onerror="this.src='/brand/LOGO123.png';">
-    <h1><span class="gold">ZAHABIA</span> TRAVEL & TOURISM</h1>
-    <p>Premium air ticketing, luxury tour packages, Umrah pilgrimages, and unforgettable vacation experiences — powered by Apex Solutions.</p>
-    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; align-items: center;">
-      <a href="/account/login" class="btn btn-accent" style="padding: 0.85rem 2rem; font-size: 1rem;">Register Now →</a>
-      <a href="/account/login" class="btn btn-secondary" style="padding: 0.85rem 2rem; font-size: 1rem; background: rgba(0,0,0,0.05); color: #102a27;">Customer Login</a>
-      <a href="/auth/login" class="btn btn-secondary" style="padding: 0.85rem 2rem; font-size: 1rem; background: rgba(0,0,0,0.05); color: #102a27;">Operator Login</a>
-      <select onchange="location.href='/?currency=' + this.value" style="padding: 0.7rem 1rem; border: 1.5px solid #c5d8d2; border-radius: 8px; font-size: 0.9rem; background: #fff; color: #102a27; cursor: pointer;">
-        <option value="PKR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'PKR') ? 'selected' : '' %>>PKR (Rs)</option>
-        <option value="USD" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'USD') ? 'selected' : '' %>>USD ($)</option>
-        <option value="AED" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'AED') ? 'selected' : '' %>>AED</option>
-        <option value="EUR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'EUR') ? 'selected' : '' %>>EUR</option>
-        <option value="GBP" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'GBP') ? 'selected' : '' %>>GBP</option>
-        <option value="SAR" <%= (typeof activeCurrency !== 'undefined' && activeCurrency === 'SAR') ? 'selected' : '' %>>SAR</option>
-      </select>
+
+  <!-- NAVBAR -->
+  <nav class="lp-nav" id="lpNav">
+    <a href="/" class="lp-nav-brand">
+      <img src="/brand/LOGO123.png" alt="Zahabia" onerror="this.style.display='none'">
+      <span>ZAHABIA</span>
+    </a>
+    <div class="lp-nav-links" id="navLinks">
+      <a href="#features">Services</a>
+      <a href="#packages">Tours</a>
+      <a href="/flights/request">Flights</a>
+      <a href="mailto:support@zahabiatravel.com">Contact</a>
+      <a href="/account/login" class="btn-gold">Sign In</a>
+    </div>
+    <div class="hamburger" id="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="lp-hero">
+    <div class="lp-hero-bg"></div>
+    <div class="lp-hero-particles">
+      <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+      <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    </div>
+    <div class="lp-hero-content">
+      <div class="lp-hero-badge"><span class="dot"></span> Premium Travel Experiences</div>
+      <h1>
+        <span class="line1">Explore the World</span>
+        <span class="line2">With Zahabia</span>
+      </h1>
+      <p class="subtitle">Premium air ticketing, luxury tour packages, Umrah pilgrimages, and unforgettable vacation experiences — curated by experts.</p>
+      <div class="lp-hero-actions">
+        <a href="/account/login" class="lp-btn lp-btn-gold">Book Your Journey ✈</a>
+        <a href="/flights/request" class="lp-btn lp-btn-outline">Request a Flight →</a>
+      </div>
+    </div>
+    <div class="lp-hero-scroll">
+      <div class="scroll-line"></div>
+      SCROLL
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="lp-stats">
+    <div class="lp-stat">
+      <span class="lp-stat-num" data-target="1500">0</span>
+      <span class="lp-stat-label">Happy Travelers</span>
+    </div>
+    <div class="lp-stat">
+      <span class="lp-stat-num" data-target="200">0</span>
+      <span class="lp-stat-label">Tour Packages</span>
+    </div>
+    <div class="lp-stat">
+      <span class="lp-stat-num" data-target="50">0</span>
+      <span class="lp-stat-label">Destinations</span>
+    </div>
+    <div class="lp-stat">
+      <span class="lp-stat-num" data-target="98">0</span>
+      <span class="lp-stat-label">% Satisfaction</span>
     </div>
   </div>
 
-  <!-- Features Section -->
-  <div class="section">
-    <div class="section-title">
-      <p class="eyebrow">Why Choose Zahabia</p>
-      <h2>World-Class Travel Services</h2>
-    </div>
-    <div class="features">
-      <div class="card feature-card">
-        <div class="feature-icon">✈</div>
+  <!-- FEATURES -->
+  <section class="lp-section" id="features">
+    <div class="lp-section-label"><span class="line"></span> Why Zahabia</div>
+    <h2 class="lp-section-title">World-Class Travel<br>At Your Fingertips</h2>
+    <p class="lp-section-desc">From booking to boarding, we handle every detail so you can focus on the journey.</p>
+
+    <div class="lp-features-grid">
+      <div class="lp-feature">
+        <div class="lp-feature-icon">✈</div>
         <h3>Air Ticketing</h3>
-        <p class="muted">Economy, Business, and First Class tickets with Emirates, Qatar Airways, Flydubai, and more. Instant e-ticket issuance.</p>
-        <a href="/flights/request" style="display: inline-block; margin-top: 0.8rem; color: var(--primary); font-weight: 600; font-size: 0.85rem; text-decoration: none;">Request a Flight →</a>
+        <p>Economy, Business, and First Class with Emirates, Qatar Airways, Flydubai, and more. Instant e-ticket issuance.</p>
+        <a href="/flights/request">Request a Flight →</a>
       </div>
-      <div class="card feature-card">
-        <div class="feature-icon">🌴</div>
+      <div class="lp-feature">
+        <div class="lp-feature-icon">🌴</div>
         <h3>Luxury Tour Packages</h3>
-        <p class="muted">Desert safaris, Maldives overwater villas, European adventures — curated experiences with 5-star accommodations.</p>
+        <p>Desert safaris, Maldives villas, European adventures — curated experiences with 5-star accommodations.</p>
+        <a href="#packages">Browse Tours →</a>
       </div>
-      <div class="card feature-card">
-        <div class="feature-icon">🕌</div>
+      <div class="lp-feature">
+        <div class="lp-feature-icon">🕌</div>
         <h3>Umrah & Hajj</h3>
-        <p class="muted">Premium Umrah packages with 5-star clock tower hotels in Makkah and front-row Madinah accommodations.</p>
+        <p>Premium Umrah packages with 5-star clock tower hotels in Makkah and front-row Madinah accommodations.</p>
+        <a href="#packages">View Packages →</a>
       </div>
-      <div class="card feature-card">
-        <div class="feature-icon">📱</div>
+      <div class="lp-feature">
+        <div class="lp-feature-icon">📱</div>
         <h3>Digital E-Tickets</h3>
-        <p class="muted">Receive your e-ticket via email and WhatsApp. View, print, or share your itinerary with a secure portal link.</p>
+        <p>Receive your e-ticket via email and WhatsApp. View, print, or share your itinerary with a secure portal link.</p>
+        <a href="/account/login">Get Started →</a>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Tour Packages Section -->
-  <div class="section" id="packages">
-    <div class="section-title">
-      <p class="eyebrow">Featured Packages</p>
-      <h2>Explore Our Tour Collection</h2>
-    </div>
-    <div class="tour-grid">
+  <!-- TOUR PACKAGES -->
+  <section class="lp-section" id="packages">
+    <div class="lp-section-label"><span class="line"></span> Featured Packages</div>
+    <h2 class="lp-section-title">Explore Our Tour Collection</h2>
+    <p class="lp-section-desc">Handpicked destinations and experiences designed to create lasting memories.</p>
+
+    <div class="lp-tours-grid">
       <% if (typeof packages !== 'undefined' && packages.length > 0) { %>
         <% packages.forEach(p => { %>
-          <div class="card tour-card" data-tour-id="<%= p.id %>">
-            <div class="tour-img">
+          <div class="lp-tour">
+            <div class="lp-tour-img">
               <% if (p.image_url && p.image_url !== '/static/img/default_tour.jpg') { %>
                 <img src="<%= p.image_url %>" alt="<%= p.title %>">
               <% } else { %>
-                🌴
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='220'%3E%3Crect fill='%2305443b' width='400' height='220'/%3E%3Ctext x='200' y='120' text-anchor='middle' fill='%23d4af37' font-size='48'%3E🌴%3C/text%3E%3C/svg%3E" alt="Tour">
               <% } %>
-              <div class="img-overlay"></div>
-              <span class="duration-badge"><%= p.duration_days %> Days<% if (p.duration_nights) { %> / <%= p.duration_nights %> Nights<% } %></span>
+              <span class="badge"><%= p.destination %></span>
+              <span class="duration"><%= p.duration_days %>D / <%= p.duration_nights || p.duration_days %>N</span>
             </div>
-            <div class="tour-body">
-              <div class="tour-top-row">
-                <span class="tour-dest">📍 <%= p.destination %></span>
-              </div>
+            <div class="lp-tour-body">
+              <div class="lp-tour-dest">📍 <%= p.destination %></div>
               <h3><%= p.title %></h3>
-              <p class="tour-desc"><%= p.description ? p.description.substring(0, 120) + (p.description.length > 120 ? '...' : '') : 'An amazing travel experience curated by Zahabia Travel & Tourism.' %></p>
+              <p class="lp-tour-desc"><%= p.description ? p.description.substring(0, 100) + (p.description.length > 100 ? '...' : '') : 'An amazing travel experience curated by Zahabia Travel & Tourism.' %></p>
               <% if (p.highlights) { %>
-                <div class="tour-highlights">
+                <div class="lp-tour-tags">
                   <% var tags = p.highlights.split(',').slice(0, 3); %>
                   <% tags.forEach(function(tag) { %>
-                    <span class="tour-highlight-tag">✨ <%= tag.trim() %></span>
+                    <span class="lp-tour-tag"><%= tag.trim() %></span>
                   <% }); %>
                 </div>
               <% } %>
-              <div class="tour-details-panel" id="details-<%= p.id %>">
-                <div class="tour-details-inner">
-                  <div class="tour-details-grid">
-                    <div class="detail-item">
-                      <span class="detail-icon">📍</span>
-                      <span><span class="detail-label">Destination:</span> <%= p.destination %></span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-icon">🕐</span>
-                      <span><span class="detail-label">Duration:</span> <%= p.duration_days %> Days / <%= p.duration_nights || p.duration_days %> Nights</span>
-                    </div>
-                    <% if (p.inclusions) { %>
-                      <div class="detail-item" style="grid-column: 1 / -1;">
-                        <span class="detail-icon">✅</span>
-                        <span><span class="detail-label">Includes:</span> <%= p.inclusions %></span>
-                      </div>
-                    <% } %>
-                    <% if (p.accommodation) { %>
-                      <div class="detail-item" style="grid-column: 1 / -1;">
-                        <span class="detail-icon">🏨</span>
-                        <span><span class="detail-label">Accommodation:</span> <%= p.accommodation %></span>
-                      </div>
-                    <% } %>
-                  </div>
-                  <% if (p.description && p.description.length > 120) { %>
-                    <div class="tour-full-desc">
-                      <div class="desc-heading">Full Itinerary & Details</div>
-                      <div class="desc-body"><%= p.description %></div>
-                    </div>
-                  <% } %>
-                </div>
-              </div>
-              <div class="tour-footer">
+              <div class="lp-tour-footer">
                 <div>
-                  <div class="tour-price-label">Starting from</div>
-                  <div class="tour-price"><%= formatPrice(p.price) %></div>
-                  <div class="tour-per">per person</div>
+                  <div class="lp-tour-price-label">Starting from</div>
+                  <div class="lp-tour-price"><%= formatPrice(p.price) %> <span class="per">/ person</span></div>
                 </div>
-                <div class="tour-actions">
-                  <button class="tour-toggle-btn">
-                    <span class="toggle-label">More Info</span> <span class="arrow">▼</span>
-                  </button>
-                  <a href="/account/tours/<%= p.id %>" class="tour-book-btn">Book Now →</a>
-                </div>
+                <a href="/account/login" class="lp-tour-btn">Book Now →</a>
               </div>
             </div>
           </div>
         <% }); %>
       <% } else { %>
-        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
-          <h3> Tours Coming Soon</h3>
-          <p class="muted">We're curating amazing travel experiences. Check back soon!</p>
+        <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: rgba(8,107,94,0.06); border: 1px solid rgba(8,107,94,0.12); border-radius: 20px;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🌴</div>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; color: #e8f0ed; margin-bottom: 0.5rem;">Tours Coming Soon</h3>
+          <p style="color: #7fa89e;">We're curating amazing travel experiences. Check back soon!</p>
         </div>
       <% } %>
     </div>
-  </div>
+  </section>
 
-  <!-- CTA Section -->
-  <div class="section">
-    <div class="cta-section">
-      <h2>Ready to Book Your Journey?</h2>
-      <p>Contact our team or log in to the operator portal to manage your bookings.</p>
-      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="/flights/request" class="btn btn-accent">Request a Flight</a>
-        <a href="mailto:support@zahabiatravel.com" class="btn btn-secondary" style="background: rgba(255,255,255,0.1); color: #fff;">Contact Support</a>
+  <!-- CTA -->
+  <div class="lp-cta-wrapper">
+    <section class="lp-cta">
+      <h2>Ready to Start Your Journey?</h2>
+      <p>Join thousands of happy travelers. Book your next adventure with Zahabia.</p>
+      <div class="lp-cta-actions">
+        <a href="/account/login" class="lp-btn lp-btn-gold">Get Started →</a>
+        <a href="mailto:support@zahabiatravel.com" class="lp-btn lp-btn-outline">Contact Support</a>
       </div>
-    </div>
+    </section>
   </div>
 
-  <!-- Footer -->
-  <div class="footer-public">
+  <!-- FOOTER -->
+  <footer class="lp-footer">
     <p>&copy; 2026 Zahabia Travel & Tourism. All rights reserved. Powered by <a href="#">Apex Solutions</a>.</p>
-    <p style="margin-top: 0.5rem;">📧 support@zahabiatravel.com | ✈ Premium Air Ticketing & Tour Management</p>
-  </div>
+    <div class="lp-footer-links">
+      <a href="/flights/request">Flights</a>
+      <a href="#packages">Tours</a>
+      <a href="mailto:support@zahabiatravel.com">Support</a>
+      <a href="/account/login">Sign In</a>
+    </div>
+  </footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.tour-toggle-btn').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-          e.preventDefault();
-          var card = this.closest('.tour-card');
-          if (card) {
-            card.classList.toggle('tour-expanded');
-            var label = this.querySelector('.toggle-label');
-            if (label) {
-              label.textContent = card.classList.contains('tour-expanded') ? 'Less Info' : 'More Info';
-            }
-          }
-        });
-      });
+    // Navbar scroll effect
+    window.addEventListener('scroll', function() {
+      document.getElementById('lpNav').classList.toggle('scrolled', window.scrollY > 50);
     });
+
+    // Scroll-reveal animation (Intersection Observer)
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry, i) {
+        if (entry.isIntersecting) {
+          setTimeout(function() { entry.target.classList.add('visible'); }, i * 100);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.lp-feature, .lp-tour').forEach(function(el) {
+      observer.observe(el);
+    });
+
+    // Animated stat counters
+    var statsObserved = false;
+    var statsObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && !statsObserved) {
+          statsObserved = true;
+          document.querySelectorAll('.lp-stat-num').forEach(function(num) {
+            var target = parseInt(num.getAttribute('data-target'));
+            var duration = 2000;
+            var step = target / (duration / 16);
+            var current = 0;
+            var timer = setInterval(function() {
+              current += step;
+              if (current >= target) { current = target; clearInterval(timer); }
+              num.textContent = Math.floor(current).toLocaleString() + (target === 98 ? '%' : '+');
+            }, 16);
+          });
+        }
+      });
+    }, { threshold: 0.5 });
+    statsObserver.observe(document.querySelector('.lp-stats'));
   </script>
 </body>
 </html>

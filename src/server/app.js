@@ -24,6 +24,7 @@ import guideRoutes from './routes/guide.js';
 import chatRoutes from './routes/chat.js';
 import paymentRoutes from './routes/payments.js';
 import { requireAuth, requireAdmin, csrfToken } from './middleware/auth.js';
+import { getLogin as getAdminLogin } from './controllers/authController.js';
 import { currencyMiddleware } from './middleware/currency.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -82,6 +83,10 @@ app.get('/health', async (_req, res, next) => {
 app.use('/auth', authRoutes);
 app.use('/account', customerAuthRoutes);
 app.use('/guide', guideRoutes);
+
+// Admin login (no auth required) — must be before requireAuth admin routes
+app.get('/admin/login', getAdminLogin);
+
 app.use('/admin', requireAuth, adminRoutes);
 app.use('/admin/flights', requireAuth, flightRoutes);
 app.use('/admin/tours', requireAuth, tourRoutes);
@@ -97,7 +102,6 @@ app.use('/admin/chat', requireAuth, chatRoutes);
 app.use('/admin/payments', requireAuth, paymentRoutes);
 
 app.use('/', homeRoutes);
-app.get('/', (_req, res) => res.redirect('/auth/login'));
 app.use((_req, res) => res.status(404).render('errors/404', { title: 'Page Not Found' }));
 app.use(errorHandler);
 

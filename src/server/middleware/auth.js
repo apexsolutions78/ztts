@@ -2,7 +2,8 @@ import crypto from 'crypto';
 
 export function requireAuth(req, res, next) {
   if (req.session?.user) return next();
-  return res.redirect(`/auth/login?next=${encodeURIComponent(req.originalUrl)}`);
+  const isAdmin = (req.originalUrl || '').startsWith('/admin');
+  return res.redirect(isAdmin ? `/admin/login?next=${encodeURIComponent(req.originalUrl)}` : `/auth/login?next=${encodeURIComponent(req.originalUrl)}`);
 }
 
 export function requireAdmin(req, res, next) {
