@@ -16,7 +16,8 @@ import {
   cancelFlightRequest,
   sendFlightNotification,
   getFlightNotifications,
-  postTransitionWorkflow
+  postTransitionWorkflow,
+  postRecordPNR
 } from '../controllers/flightController.js';
 
 const router = Router();
@@ -36,6 +37,7 @@ router.post('/:id/edit', postUpdateFlight);
 router.post('/:id/delete', postDeleteFlight);
 router.post('/:id/issue', issueTicket);
 router.post('/:id/transition', postTransitionWorkflow);
+router.post('/:id/record-pnr', postRecordPNR);
 router.post('/:id/share', generateShareToken);
 router.get('/:id/pdf', downloadETicketPDF);
 router.post('/:id/notify/:channel', sendFlightNotification);

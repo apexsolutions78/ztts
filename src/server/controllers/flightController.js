@@ -287,6 +287,11 @@ export async function issueTicket(req, res, next) {
       return res.status(400).json({ success: false, error: 'Payment not verified. Cannot issue ticket.' });
     }
 
+    // M6: Require PNR before ticketing
+    if (!flight.pnr) {
+      return res.redirect(`/admin/flights/${id}?error=Please+record+a+PNR+before+issuing+the+ticket`);
+    }
+
     await updateFlightTicketStatus(id, 'ticketed');
 
     // Log Audit Action
@@ -594,6 +599,39 @@ export async function postTransitionWorkflow(req, res, next) {
     });
 
     res.redirect(`/admin/flights/${id}?success=Workflow+updated+to+${result.to}`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function postRecordPNR(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { pnr, ticketing_deadline, reservation_date } = req.body;
+
+    if (!pnr || !pnr.trim()) {
+      return res.redirect(`/admin/flights/${id}?error=PNR+code+is+required`);
+    }
+
+    const flight = await findFlightBookingById(id);
+    if (!flight) return res.status(404).render('errors/404', { title: 'Flight Not Found' });
+
+    const updated = await updateFlightBooking(id, {
+      pnr: pnr.trim().toUpperCase(),
+      reservation_date: reservation_date || new Date().toISOString().slice(0, 19).replace('T', ' '),
+      ticketing_deadline: ticketing_deadline || null
+    });
+
+    await logAuditAction({
+      user_id: req.session.user.id,
+      user_name: req.session.user.name,
+      action: 'RECORD_PNR',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Recorded PNR ${pnr.trim().toUpperCase()} for ${flight.booking_ref}${ticketing_deadline ? ' — deadline: ' + ticketing_deadline : ''}`
+    });
+
+    res.redirect(`/admin/flights/${id}?success=PNR+recorded+successfully`);
   } catch (error) {
     next(error);
   }
