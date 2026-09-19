@@ -224,15 +224,27 @@ export async function findFlightBookingById(id) {
 export async function createFlightBooking({
   customer_id, airline, flight_number, origin, destination,
   departure_date, arrival_date, cabin_class = 'Economy', total_amount = 0, created_by = 1,
-  ticket_status = 'pending', passengers = null, notes = null
+  ticket_status = 'pending', passengers = null, notes = null,
+  trip_type = 'one_way', adults = 1, children = 0, infants = 0, return_date = null,
+  preferred_airline = null, flexible_dates = false, budget = null,
+  baggage_priority = false, direct_transit = 'any', customer_notes = null,
+  workflow_stage = 'inquiry'
 }) {
   const booking_ref = 'ZHB-' + Math.floor(1000 + Math.random() * 9000);
   if (isUsingMySQL()) {
     const [result] = await pool.query(
       `INSERT INTO flight_bookings 
-       (booking_ref, customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, ticket_status, total_amount, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [booking_ref, customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, ticket_status, total_amount, created_by]
+       (booking_ref, customer_id, airline, flight_number, origin, destination,
+        departure_date, arrival_date, cabin_class, ticket_status, total_amount, created_by,
+        passengers, workflow_stage, trip_type, adults, children, infants, return_date,
+        preferred_airline, flexible_dates, budget, baggage_priority, direct_transit, customer_notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [booking_ref, customer_id || null, airline || null, flight_number || null, origin, destination,
+       departure_date, arrival_date || null, cabin_class, ticket_status, total_amount, created_by,
+       passengers ? Number(passengers) : null, workflow_stage, trip_type,
+       adults, children, infants, return_date || null,
+       preferred_airline || null, flexible_dates ? 1 : 0, budget || null,
+       baggage_priority ? 1 : 0, direct_transit, customer_notes || notes || null]
     );
     return { id: result.insertId, booking_ref };
   }
@@ -312,18 +324,18 @@ export async function linkOrphanedFlightsToCustomer(customerId, email) {
   if (isUsingMySQL()) {
     try {
       const [result] = await pool.query(
-        "UPDATE flight_bookings SET customer_id = ? WHERE customer_id IS NULL AND notes LIKE ?",
+        "UPDATE flight_bookings SET customer_id = ? WHERE customer_id IS NULL AND (customer_notes LIKE ? OR customer_id IS NULL)",
         [customerId, `%${email}%`]
       );
       return result.affectedRows;
     } catch (err) {
-      console.warn('[FlightLink] Orphan linking skipped — notes column may not exist:', err.message);
+      console.warn('[FlightLink] Orphan linking skipped:', err.message);
       return 0;
     }
   }
   let linked = 0;
   memoryStore.flight_bookings.forEach(f => {
-    if (f.customer_id === null && f.notes && f.notes.includes(email)) {
+    if (f.customer_id === null && f.customer_notes && f.customer_notes.includes(email)) {
       f.customer_id = Number(customerId);
       linked++;
     }
@@ -1341,6 +1353,73 @@ export function getFlightLiveStatus(flight) {
     return { status: 'CHECK-IN OPEN', statusClass: 'active', gate: 'TBA', terminal: 'TBA', baggage: 'TBA' };
   }
   return { status: 'ON TIME / SCHEDULED', statusClass: 'ticketed', gate: 'TBA', terminal: 'TBA', baggage: 'TBA' };
+}
+
+// --- WORKFLOW STAGE MANAGEMENT ---
+
+const ALLOWED_WORKFLOW_TRANSITIONS = {
+  inquiry:                    ['search_details_complete', 'cancelled'],
+  search_details_complete:    ['quote_prepared', 'cancelled'],
+  quote_prepared:             ['quote_sent', 'cancelled'],
+  quote_sent:                 ['customer_approved', 'cancelled'],
+  customer_approved:          ['passenger_details_pending', 'cancelled'],
+  passenger_details_pending:  ['passenger_details_complete', 'cancelled'],
+  passenger_details_complete: ['reservation_pending', 'cancelled'],
+  reservation_pending:        ['reserved', 'cancelled', 'customer_approved'],
+  reserved:                   ['payment_pending', 'cancelled', 'customer_approved'],
+  payment_pending:            ['payment_under_review', 'cancelled'],
+  payment_under_review:       ['ready_for_ticketing', 'reserved', 'cancelled'],
+  ready_for_ticketing:        ['ticketed', 'cancelled'],
+  ticketed:                   ['completed'],
+  completed:                  [],
+  cancelled:                  [],
+  legacy:                     ['inquiry', 'cancelled']
+};
+
+export function getAllowedWorkflowTransitions(currentStage) {
+  return ALLOWED_WORKFLOW_TRANSITIONS[currentStage] || [];
+}
+
+export function canTransitionWorkflow(currentStage, targetStage) {
+  const allowed = ALLOWED_WORKFLOW_TRANSITIONS[currentStage];
+  if (!allowed) return false;
+  return allowed.includes(targetStage);
+}
+
+export async function transitionWorkflowStage(bookingId, newStage, reason = null) {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT workflow_stage FROM flight_bookings WHERE id = ?', [bookingId]);
+    const current = rows[0]?.workflow_stage;
+    if (!current) return { success: false, error: 'Booking not found' };
+    if (!canTransitionWorkflow(current, newStage)) {
+      return { success: false, error: `Cannot transition from '${current}' to '${newStage}'` };
+    }
+    await pool.query('UPDATE flight_bookings SET workflow_stage = ? WHERE id = ?', [newStage, bookingId]);
+    return { success: true, from: current, to: newStage };
+  }
+  const fb = memoryStore.flight_bookings.find(f => f.id === Number(bookingId));
+  if (!fb) return { success: false, error: 'Booking not found' };
+  const current = fb.workflow_stage || 'legacy';
+  if (!canTransitionWorkflow(current, newStage)) {
+    return { success: false, error: `Cannot transition from '${current}' to '${newStage}'` };
+  }
+  fb.workflow_stage = newStage;
+  return { success: true, from: current, to: newStage };
+}
+
+export async function getWorkflowStats() {
+  if (isUsingMySQL()) {
+    const [rows] = await pool.query('SELECT workflow_stage, COUNT(*) as count FROM flight_bookings GROUP BY workflow_stage');
+    const stats = {};
+    for (const row of rows) stats[row.workflow_stage] = row.count;
+    return stats;
+  }
+  const stats = {};
+  for (const fb of memoryStore.flight_bookings) {
+    const stage = fb.workflow_stage || 'legacy';
+    stats[stage] = (stats[stage] || 0) + 1;
+  }
+  return stats;
 }
 
 export async function getFlightRequests({ status } = {}) {

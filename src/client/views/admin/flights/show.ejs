@@ -76,7 +76,8 @@
           <h2 style="margin: 0; font-size: 1.3rem;">${isConfirmed ? 'Flight Confirmed — Awaiting Ticket' : 'Customer Flight Request'}</h2>
           <p class="muted" style="margin: 0.2rem 0 0; font-size: 0.85rem;">Request #${flight.id} — Submitted ${new Date(flight.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
         </div>
-        <div style="margin-left: auto;">
+        <div style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;">
+          ${flight.workflow_stage && flight.workflow_stage !== 'legacy' ? `<span style="font-size: 0.7rem; padding: 0.25rem 0.6rem; background: #e2e8f0; color: #4a5568; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">${flight.workflow_stage.replace(/_/g, ' ')}</span>` : ''}
           <span class="badge badge-${flight.ticket_status}" style="font-size: 0.85rem; padding: 0.4rem 1rem;">${flight.ticket_status.toUpperCase()}</span>
         </div>
       </div>

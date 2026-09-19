@@ -516,7 +516,7 @@ export async function postCancelTourBooking(req, res, next) {
 
 export async function postFlightRequest(req, res, next) {
   try {
-    const { origin, destination, departure_date, return_date, cabin_class, passengers, notes } = req.body;
+    const { origin, destination, departure_date, return_date, cabin_class, passengers, notes, adults, children, infants, budget } = req.body;
 
     if (!origin || !destination || !departure_date) {
       return res.status(400).render('customer/flight-request', {
@@ -531,8 +531,8 @@ export async function postFlightRequest(req, res, next) {
     const customer = await findCustomerById(req.session.customer.id);
     const booking = await createFlightBooking({
       customer_id: customer.id,
-      airline: 'Pending Assignment',
-      flight_number: 'PENDING',
+      airline: null,
+      flight_number: null,
       origin: origin.toUpperCase(),
       destination: destination.toUpperCase(),
       departure_date,
@@ -542,7 +542,18 @@ export async function postFlightRequest(req, res, next) {
       created_by: customer.id,
       ticket_status: 'pending',
       passengers: passengers || 1,
-      notes: notes || null
+      workflow_stage: 'inquiry',
+      trip_type: return_date ? 'round_trip' : 'one_way',
+      adults: adults || 1,
+      children: children || 0,
+      infants: infants || 0,
+      return_date: return_date || null,
+      preferred_airline: null,
+      flexible_dates: false,
+      budget: budget || null,
+      baggage_priority: false,
+      direct_transit: 'any',
+      customer_notes: notes || null
     });
 
     await logAuditAction({

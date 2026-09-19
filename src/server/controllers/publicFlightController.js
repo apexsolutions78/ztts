@@ -27,8 +27,8 @@ export async function postPublicFlightRequest(req, res, next) {
 
     const booking = await createFlightBooking({
       customer_id: null,
-      airline: preferred_airline || 'Any',
-      flight_number: 'PENDING',
+      airline: preferred_airline || null,
+      flight_number: null,
       origin: origin.toUpperCase(),
       destination: destination.toUpperCase(),
       departure_date,
@@ -38,7 +38,10 @@ export async function postPublicFlightRequest(req, res, next) {
       created_by: null,
       ticket_status: 'pending',
       passengers: passengers || 1,
-      notes: `Public request from ${full_name} (${email})${phone ? ' | Phone: ' + phone : ''}`
+      workflow_stage: 'inquiry',
+      trip_type: return_date ? 'round_trip' : 'one_way',
+      preferred_airline: preferred_airline || null,
+      customer_notes: `Public request from ${full_name} (${email})${phone ? ' | Phone: ' + phone : ''}`
     });
 
     await logAuditAction({
