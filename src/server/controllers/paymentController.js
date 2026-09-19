@@ -185,7 +185,10 @@ export async function postRefundPayment(req, res, next) {
     // Revert to pending if refund makes it no longer fully paid
     if (!summary.isFullyPaid) {
       if (refunded.booking_type === 'flight') {
-        await updateFlightTicketStatus(refunded.booking_id, 'pending');
+        // Preserve ticketed state — only revert to confirmed, not pending
+        const currentBooking = await findFlightBookingById(refunded.booking_id);
+        const revertTo = currentBooking && currentBooking.ticket_status === 'ticketed' ? 'confirmed' : 'pending';
+        await updateFlightTicketStatus(refunded.booking_id, revertTo);
       } else {
         await updateTourBookingStatus(refunded.booking_id, 'pending');
       }
