@@ -288,7 +288,8 @@ export async function updateFlightTicketStatus(id, ticket_status) {
 export async function updateFlightBooking(id, {
   customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount,
   trip_type, adults, children, infants, return_date, preferred_airline, flexible_dates, budget,
-  baggage_priority, direct_transit, customer_notes, pnr
+  baggage_priority, direct_transit, customer_notes, pnr, ticket_number,
+  reservation_date, ticketing_deadline, fare_change_reason
 }) {
   if (isUsingMySQL()) {
     await pool.query(
@@ -297,7 +298,8 @@ export async function updateFlightBooking(id, {
         departure_date=?, arrival_date=?, cabin_class=?, total_amount=?,
         trip_type=?, adults=?, children=?, infants=?, return_date=?,
         preferred_airline=?, flexible_dates=?, budget=?,
-        baggage_priority=?, direct_transit=?, customer_notes=?, pnr=?
+        baggage_priority=?, direct_transit=?, customer_notes=?, pnr=?,
+        ticket_number=?, reservation_date=?, ticketing_deadline=?, fare_change_reason=?
        WHERE id=?`,
       [
         customer_id || null, airline || null, flight_number || null,
@@ -306,6 +308,7 @@ export async function updateFlightBooking(id, {
         trip_type || 'one_way', adults || 1, children || 0, infants || 0, return_date || null,
         preferred_airline || null, flexible_dates ? 1 : 0, budget || null,
         baggage_priority ? 1 : 0, direct_transit || 'any', customer_notes || null, pnr || null,
+        ticket_number || null, reservation_date || null, ticketing_deadline || null, fare_change_reason || null,
         id
       ]
     );
@@ -327,7 +330,9 @@ export async function updateFlightBooking(id, {
     return_date: return_date || null, preferred_airline: preferred_airline || null,
     flexible_dates: !!flexible_dates, budget: budget ? Number(budget) : null,
     baggage_priority: !!baggage_priority, direct_transit: direct_transit || 'any',
-    customer_notes: customer_notes || null, pnr: pnr || null
+    customer_notes: customer_notes || null, pnr: pnr || null,
+    ticket_number: ticket_number || null, reservation_date: reservation_date || null,
+    ticketing_deadline: ticketing_deadline || null, fare_change_reason: fare_change_reason || null
   });
   return true;
 }

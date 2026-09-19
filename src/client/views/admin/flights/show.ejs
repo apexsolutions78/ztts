@@ -61,7 +61,8 @@
           <button onclick="sendNotification(${flight.id}, 'whatsapp')" id="sendWhatsAppBtn" class="btn btn-primary" style="background: #25d366;">💬 Send WhatsApp</button>
           <a href="/admin/flights/${flight.id}/pdf" target="_blank" class="btn btn-primary" style="background: #805ad5;">📄 Download PDF</a>
         ` : isConfirmed ? `
-          <form method="post" action="/admin/flights/${flight.id}/issue" style="margin: 0;">
+          <form method="post" action="/admin/flights/${flight.id}/issue" style="display: flex; gap: 0.5rem; align-items: center; margin: 0;" onsubmit="return confirm('Issue this e-ticket?')">
+            <input type="text" name="ticket_number" required placeholder="E-Ticket # from Amadeus" class="form-control" style="max-width: 200px; font-family: monospace; text-transform: uppercase;">
             <button type="submit" class="btn btn-primary">✔ Issue E-Ticket</button>
           </form>
           <button onclick="sendNotification(${flight.id}, 'email')" id="sendEmailBtn" class="btn btn-primary" style="background: #2563eb;">✉ Send Email</button>
@@ -297,6 +298,7 @@
         <div style="text-align: right;">
           <span style="font-size: 0.8rem; text-transform: uppercase; color: #a0aec0;">PNR Reference</span>
           <div style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--accent-gold);">${flight.booking_ref}</div>
+          ${flight.ticket_number ? '<div style="font-size: 0.85rem; color: var(--accent-gold); font-family: monospace; margin-top: 0.3rem;">E-Ticket: ' + flight.ticket_number + '</div>' : ''}
         </div>
       </div>
 
@@ -337,6 +339,14 @@
           <div class="ticket-field">
             <label>Passport Number</label>
             <val>${flight.passport_number || 'N/A'}</val>
+          </div>
+          <div class="ticket-field">
+            <label>E-Ticket Number</label>
+            <val style="font-family: monospace; font-weight: 700; color: var(--primary);">${flight.ticket_number || 'N/A'}</val>
+          </div>
+          <div class="ticket-field">
+            <label>PNR Code</label>
+            <val style="font-family: monospace;">${flight.pnr || flight.booking_ref}</val>
           </div>
           <div class="ticket-field">
             <label>Nationality</label>

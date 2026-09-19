@@ -270,6 +270,7 @@ export async function viewFlightDetail(req, res, next) {
 export async function issueTicket(req, res, next) {
   try {
     const { id } = req.params;
+    const { ticket_number } = req.body;
     const flight = await findFlightBookingById(id);
 
     if (!flight) {
@@ -292,6 +293,14 @@ export async function issueTicket(req, res, next) {
       return res.redirect(`/admin/flights/${id}?error=Please+record+a+PNR+before+issuing+the+ticket`);
     }
 
+    // M7: Require actual ticket number from Amadeus/GDS
+    const tn = ticket_number ? ticket_number.trim().toUpperCase() : null;
+    if (!tn) {
+      return res.redirect(`/admin/flights/${id}?error=Please+enter+the+actual+e-ticket+number+from+Amadeus`);
+    }
+
+    // Record ticket number and mark as ticketed
+    await updateFlightBooking(id, { ticket_number: tn });
     await updateFlightTicketStatus(id, 'ticketed');
 
     // Log Audit Action

@@ -101,6 +101,10 @@
               <val><%= flight.customer_name %></val>
             </div>
             <div class="ticket-field">
+              <label>E-Ticket Number</label>
+              <val style="font-family: monospace; font-weight: 700; color: var(--primary);"><%= flight.ticket_number || 'N/A' %></val>
+            </div>
+            <div class="ticket-field">
               <label>Passport Number</label>
               <val><%= flight.passport_number || 'N/A' %></val>
             </div>
