@@ -596,7 +596,155 @@ export async function postFlightRequest(req, res, next) {
       console.error('[Flight Request] Admin notification email failed:', emailErr.message);
     }
 
+    try {
+      await sendEmail({
+        to: customer.email,
+        subject: `[Zahabia] Flight Request Received — ${origin.toUpperCase()} → ${destination.toUpperCase()}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">FLIGHT REQUEST RECEIVED</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p>Dear ${customer.full_name},</p>
+              <p>Thank you for your flight request. Our travel experts are now searching for the best options for you.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Request #</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.booking_ref}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${origin.toUpperCase()} → ${destination.toUpperCase()}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Departure</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${departure_date}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Return</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${return_date || 'One-way'}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Class</td><td style="padding: 8px;">${cabin_class || 'Economy'}</td></tr>
+              </table>
+              <p>What happens next:</p>
+              <ol style="padding-left: 20px; color: #4a5568;">
+                <li style="margin-bottom: 6px;">Our team reviews available options</li>
+                <li style="margin-bottom: 6px;">You'll receive a quote via email and WhatsApp</li>
+                <li style="margin-bottom: 6px;">Once you approve, we process the booking</li>
+                <li style="margin-bottom: 6px;">Your e-ticket is delivered to your dashboard and email</li>
+              </ol>
+              <p style="margin-top: 20px; font-size: 0.9rem; color: #718096;">You can track your request from your <a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account" style="color: #1a3a2a; font-weight: bold;">dashboard</a>.</p>
+            </div>
+          </div>
+        `
+      });
+    } catch (custEmailErr) {
+      console.error('[Flight Request] Customer confirmation email failed:', custEmailErr.message);
+    }
+
     res.redirect('/account/flights/request/success');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postApproveFlight(req, res, next) {
+  try {
+    const { id } = req.params;
+    const customer = await findCustomerById(req.session.customer.id);
+    if (!customer) return res.redirect('/account/login');
+
+    const { findFlightBookingById, transitionWorkflowStage, updateFlightTicketStatus } = await import('../models/index.js');
+    const booking = await findFlightBookingById(id);
+    if (!booking || booking.customer_id !== customer.id) {
+      return res.redirect('/account');
+    }
+
+    const result = await transitionWorkflowStage(id, 'customer_approved');
+    if (!result.success) {
+      return res.redirect('/account?error=transition_failed');
+    }
+
+    await updateFlightTicketStatus(id, 'confirmed');
+
+    await logAuditAction({
+      user_id: customer.id,
+      user_name: customer.full_name,
+      action: 'CUSTOMER_APPROVE_FLIGHT',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Customer approved flight: ${booking.origin} → ${booking.destination} (Ref: ${booking.booking_ref})`
+    });
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'info@zahabiatravel.com';
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[Zahabia] Customer Approved Flight — ${booking.origin} → ${booking.destination}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">CUSTOMER APPROVED FLIGHT</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p><strong>${customer.full_name}</strong> has approved the flight option.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Ref</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.booking_ref}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.origin} → ${booking.destination}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Amount</td><td style="padding: 8px;">${booking.total_amount > 0 ? '$' + booking.total_amount : 'TBD'}</td></tr>
+              </table>
+              <p><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/admin/flights/${id}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Continue Booking →</a></p>
+            </div>
+          </div>
+        `
+      });
+    } catch (e) {
+      console.error('[Customer Approve] Admin email failed:', e.message);
+    }
+
+    res.redirect('/account?approved=true');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postDeclineFlight(req, res, next) {
+  try {
+    const { id } = req.params;
+    const customer = await findCustomerById(req.session.customer.id);
+    if (!customer) return res.redirect('/account/login');
+
+    const { findFlightBookingById, updateFlightTicketStatus } = await import('../models/index.js');
+    const booking = await findFlightBookingById(id);
+    if (!booking || booking.customer_id !== customer.id) {
+      return res.redirect('/account');
+    }
+
+    await updateFlightTicketStatus(id, 'cancelled');
+
+    await logAuditAction({
+      user_id: customer.id,
+      user_name: customer.full_name,
+      action: 'CUSTOMER_DECLINE_FLIGHT',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Customer declined flight: ${booking.origin} → ${booking.destination} (Ref: ${booking.booking_ref})`
+    });
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'info@zahabiatravel.com';
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[Zahabia] Customer Declined Flight — ${booking.origin} → ${booking.destination}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #c53030; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #fff;">CUSTOMER DECLINED FLIGHT</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p><strong>${customer.full_name}</strong> has declined the flight option.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Ref</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.booking_ref}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Route</td><td style="padding: 8px;">${booking.origin} → ${booking.destination}</td></tr>
+              </table>
+            </div>
+          </div>
+        `
+      });
+    } catch (e) {
+      console.error('[Customer Decline] Admin email failed:', e.message);
+    }
+
+    res.redirect('/account?declined=true');
   } catch (err) {
     next(err);
   }

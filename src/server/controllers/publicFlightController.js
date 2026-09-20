@@ -83,6 +83,39 @@ export async function postPublicFlightRequest(req, res, next) {
       console.error('[Public Flight Request] Admin email failed:', e.message);
     }
 
+    try {
+      await sendEmail({
+        to: email,
+        subject: `[Zahabia] Flight Request Received — ${origin.toUpperCase()} → ${destination.toUpperCase()}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">FLIGHT REQUEST RECEIVED</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p>Dear ${full_name},</p>
+              <p>Thank you for your flight request. Our travel experts are searching for the best options for you.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Request #</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.booking_ref}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${origin.toUpperCase()} → ${destination.toUpperCase()}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Departure</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${departure_date}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Class</td><td style="padding: 8px;">${cabin_class || 'Economy'}</td></tr>
+              </table>
+              <p>What happens next:</p>
+              <ol style="padding-left: 20px; color: #4a5568;">
+                <li style="margin-bottom: 6px;">Our team reviews available options</li>
+                <li style="margin-bottom: 6px;">You'll receive a quote via email</li>
+                <li style="margin-bottom: 6px;">Once you approve, we process the booking</li>
+                <li style="margin-bottom: 6px;">Your e-ticket is delivered to your email</li>
+              </ol>
+            </div>
+          </div>
+        `
+      });
+    } catch (custEmailErr) {
+      console.error('[Public Flight Request] Customer confirmation email failed:', custEmailErr.message);
+    }
+
     res.redirect('/flights/request/success');
   } catch (err) {
     next(err);

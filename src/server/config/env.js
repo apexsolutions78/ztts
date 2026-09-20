@@ -31,5 +31,7 @@ export const env = {
   whatsapp: {
     apiToken: process.env.WHATSAPP_API_TOKEN || '',
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || ''
-  }
+  },
+
+  adminEmail: process.env.ADMIN_EMAIL || 'info@zahabiatravel.com'
 };

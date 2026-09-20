@@ -248,20 +248,72 @@
             <% if (flightBookings && flightBookings.length > 0) { %>
               <div class="booking-list">
                 <% flightBookings.forEach(f => { %>
-                  <div class="booking-item">
-                    <div class="booking-info">
-                      <h4><%= f.origin %> → <%= f.destination %></h4>
-                      <p><%= f.airline %> &middot; <%= f.flight_number %> &middot; <%= f.cabin_class %> &middot; <%= new Date(f.departure_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %></p>
-                      <% if (f.portalToken) { %>
-                        <p style="margin-top: 0.3rem;"><a href="/t/<%= f.portalToken %>" target="_blank" style="color: var(--primary); font-weight: 600; font-size: 0.78rem;">🔗 View E-Ticket →</a></p>
-                      <% } %>
-                    </div>
-                    <div class="booking-meta">
-                      <div class="price"><%= f.total_amount > 0 ? formatPrice(f.total_amount) : 'Pending' %></div>
-                      <div class="status">
-                        <span class="badge badge-<%= f.ticket_status === 'ticketed' ? 'ticketed' : f.ticket_status === 'confirmed' ? 'confirmed' : 'pending' %>"><%= f.ticket_status %></span>
+                  <div class="booking-item" style="flex-direction: column; align-items: stretch;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                      <div class="booking-info" style="flex: 1; min-width: 200px;">
+                        <h4><%= f.origin %> → <%= f.destination %></h4>
+                        <p style="margin: 0.2rem 0; color: var(--text-muted); font-size: 0.85rem;">
+                          Ref: <strong><%= f.booking_ref %></strong>
+                          &middot; <%= f.trip_type === 'round_trip' ? 'Round Trip' : 'One Way' %>
+                        </p>
+                        <p style="margin: 0.2rem 0; font-size: 0.85rem;">
+                          <strong>Departure:</strong> <%= new Date(f.departure_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %>
+                          <% if (f.return_date) { %>
+                            &middot; <strong>Return:</strong> <%= new Date(f.return_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) %>
+                          <% } %>
+                        </p>
+                        <p style="margin: 0.2rem 0; font-size: 0.85rem;">
+                          <strong>Class:</strong> <%= f.cabin_class %>
+                          &middot; <strong>Passengers:</strong> <%= f.passengers || 1 %>
+                          <% if (f.adults || f.children || f.infants) { %>
+                            (<%= f.adults || 1 %>A<% if (f.children) { %>/<%= f.children %>C<% } %><% if (f.infants) { %>/<%= f.infants %>I<% } %>)
+                          <% } %>
+                        </p>
+                        <% if (f.airline || f.preferred_airline) { %>
+                          <p style="margin: 0.2rem 0; font-size: 0.85rem;">
+                            <strong>Airline:</strong> <%= f.airline || f.preferred_airline || 'Any' %>
+                            <% if (f.flight_number) { %> &middot; <strong>Flight:</strong> <%= f.flight_number %><% } %>
+                          </p>
+                        <% } %>
+                        <% if (f.pnr) { %>
+                          <p style="margin: 0.2rem 0; font-size: 0.85rem;"><strong>PNR:</strong> <span style="font-family: monospace; color: var(--primary);"><%= f.pnr %></span></p>
+                        <% } %>
+                        <% if (f.ticket_number) { %>
+                          <p style="margin: 0.2rem 0; font-size: 0.85rem;"><strong>E-Ticket:</strong> <span style="font-family: monospace;"><%= f.ticket_number %></span></p>
+                        <% } %>
+                        <% if (f.portalToken) { %>
+                          <p style="margin-top: 0.4rem;"><a href="/t/<%= f.portalToken %>" target="_blank" style="color: var(--primary); font-weight: 600; font-size: 0.8rem; text-decoration: underline;">🔗 View E-Ticket Portal →</a></p>
+                        <% } %>
+                      </div>
+                      <div class="booking-meta" style="text-align: right; min-width: 120px;">
+                        <div class="price"><%= f.total_amount > 0 ? formatPrice(f.total_amount) : 'Pending' %></div>
+                        <div class="status" style="margin-top: 0.3rem;">
+                          <span class="badge badge-<%= f.ticket_status === 'ticketed' ? 'ticketed' : f.ticket_status === 'confirmed' ? 'confirmed' : 'pending' %>"><%= f.ticket_status %></span>
+                        </div>
+                        <% if (f.workflow_stage && f.workflow_stage !== 'legacy') { %>
+                          <div style="margin-top: 0.3rem; font-size: 0.72rem; color: var(--text-muted);"><%= f.workflow_stage.replace(/_/g, ' ') %></div>
+                        <% } %>
                       </div>
                     </div>
+                    <% if (f.ticket_status === 'pending' && f.workflow_stage === 'quote_sent') { %>
+                      <div style="margin-top: 1rem; padding: 1rem; background: #fffff0; border: 1px solid #d69e2e; border-radius: 8px;">
+                        <p style="margin: 0 0 0.5rem; font-weight: 700; color: #975a16;">✈ Quote Available — Your flight options are ready!</p>
+                        <p style="margin: 0 0 0.75rem; font-size: 0.85rem; color: #744210;">Please review the flight options sent to your email or contact us for details.</p>
+                        <div style="display: flex; gap: 0.5rem;">
+                          <form method="post" action="/account/flights/<%= f.id %>/approve" style="margin: 0;">
+                            <button type="submit" class="btn btn-sm" style="background: #38a169; color: #fff; padding: 0.5rem 1.2rem; font-weight: 600;">✓ Approve & Confirm</button>
+                          </form>
+                          <form method="post" action="/account/flights/<%= f.id %>/decline" style="margin: 0;" onsubmit="return confirm('Decline this flight option?')">
+                            <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.5rem 1.2rem;">✕ Decline</button>
+                          </form>
+                        </div>
+                      </div>
+                    <% } %>
+                    <% if (f.customer_notes && f.ticket_status === 'pending' && (!f.airline || f.workflow_stage === 'inquiry')) { %>
+                      <div style="margin-top: 0.75rem; padding: 0.75rem; background: #f7fafc; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted);">
+                        <strong>Status:</strong> Your request is being reviewed. Our team is searching for the best options.
+                      </div>
+                    <% } %>
                   </div>
                 <% }); %>
               </div>

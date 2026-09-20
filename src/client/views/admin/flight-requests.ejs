@@ -56,14 +56,14 @@
                 <td>${r.cabin_class}</td>
                 <td><span class="badge badge-${r.ticket_status}">${r.ticket_status}</span></td>
                 <td>${new Date(r.created_at).toLocaleDateString()}</td>
-                <td>
+                <td style="white-space: nowrap;">
                   <a href="/admin/flights/${r.id}" class="btn btn-primary btn-sm">Review</a>
                   ${r.ticket_status === 'pending' ? `
                     <form method="post" action="/admin/flights/requests/${r.id}/confirm" style="display: inline;">
                       <button type="submit" class="btn btn-sm" style="background: #38a169; color: #fff;">Confirm</button>
                     </form>
                     <form method="post" action="/admin/flights/requests/${r.id}/cancel" style="display: inline;" onsubmit="return confirm('Cancel this request?')">
-                      <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Cancel</button>
+                      <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
                     </form>
                   ` : ''}
                 </td>
