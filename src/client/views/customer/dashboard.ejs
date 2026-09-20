@@ -172,6 +172,13 @@
     <% if (typeof cancelled !== 'undefined' && cancelled) { %>
       <div style="background: #fef3cd; color: #975a16; padding: 0.8rem 1.2rem; border-radius: var(--radius-sm); border-left: 4px solid #d69e2e; margin-bottom: 1rem; font-size: 0.88rem; font-weight: 600;">Booking cancelled successfully.</div>
     <% } %>
+    <% if (customer.is_guest) { %>
+      <div style="background: #fffff0; border: 2px solid #d69e2e; border-radius: 8px; padding: 1.2rem; margin-bottom: 1.5rem;">
+        <strong style="color: #975a16; font-size: 1rem;">⚠ Complete Your Registration</strong>
+        <p style="margin: 0.4rem 0; font-size: 0.88rem; color: #744210;">You're browsing as a guest. Please complete your registration to access all features, receive e-tickets, and manage your bookings.</p>
+        <a href="/account/login" style="display: inline-block; margin-top: 0.5rem; background: #d4a843; color: #1a3a2a; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 0.88rem;">Complete Registration →</a>
+      </div>
+    <% } %>
     <div class="account-grid">
       <div>
         <div class="sidebar-card">

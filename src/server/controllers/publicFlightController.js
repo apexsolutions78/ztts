@@ -1,4 +1,4 @@
-import { createFlightBooking, logAuditAction } from '../models/index.js';
+import { createFlightBooking, createGuestCustomer, logAuditAction } from '../models/index.js';
 import { sendEmail } from '../services/emailService.js';
 
 export async function getPublicFlightRequest(req, res, next) {
@@ -25,8 +25,11 @@ export async function postPublicFlightRequest(req, res, next) {
       });
     }
 
+    // Auto-create or find guest customer from public request
+    const guestCustomer = await createGuestCustomer({ full_name, email, phone });
+
     const booking = await createFlightBooking({
-      customer_id: null,
+      customer_id: guestCustomer.id,
       airline: preferred_airline || null,
       flight_number: null,
       origin: origin.toUpperCase(),

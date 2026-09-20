@@ -119,10 +119,43 @@ export async function createCustomer({ full_name, passport_number, nationality, 
     email,
     phone,
     password_hash,
+    is_guest: 0,
     created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
   };
   memoryStore.customers.push(newCustomer);
   return newCustomer;
+}
+
+export async function createGuestCustomer({ full_name, email, phone }) {
+  if (isUsingMySQL()) {
+    const [existing] = await pool.query('SELECT id FROM customers WHERE email = ?', [email]);
+    if (existing[0]) return existing[0];
+    const [result] = await pool.query(
+      'INSERT INTO customers (full_name, email, phone, is_guest) VALUES (?, ?, ?, 1)',
+      [full_name, email, phone || null]
+    );
+    return { id: result.insertId, full_name, email, phone, is_guest: 1 };
+  }
+  const existing = memoryStore.customers.find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
+  if (existing) return existing;
+  const newCustomer = {
+    id: memoryStore.customers.length + 1,
+    full_name, email, phone: phone || null,
+    password_hash: null, is_guest: 1,
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  memoryStore.customers.push(newCustomer);
+  return newCustomer;
+}
+
+export async function upgradeGuestToRegistered(customerId, passwordHash) {
+  if (isUsingMySQL()) {
+    await pool.query('UPDATE customers SET password_hash = ?, is_guest = 0 WHERE id = ?', [passwordHash, customerId]);
+    return true;
+  }
+  const c = memoryStore.customers.find(c => c.id === Number(customerId));
+  if (c) { c.password_hash = passwordHash; c.is_guest = 0; return true; }
+  return false;
 }
 
 export async function updateCustomer(id, { full_name, passport_number, nationality, email, phone }) {
@@ -201,7 +234,7 @@ export async function getAllFlightBookings() {
 export async function findFlightBookingById(id) {
   if (isUsingMySQL()) {
     const [rows] = await pool.query(`
-      SELECT fb.*, c.full_name AS customer_name, c.passport_number, c.nationality, c.email AS customer_email, c.phone AS customer_phone
+      SELECT fb.*, c.full_name AS customer_name, c.passport_number, c.nationality, c.email AS customer_email, c.phone AS customer_phone, c.is_guest AS customer_is_guest
       FROM flight_bookings fb
       LEFT JOIN customers c ON fb.customer_id = c.id
       WHERE fb.id = ?

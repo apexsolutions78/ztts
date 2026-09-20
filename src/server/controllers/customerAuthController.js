@@ -1,4 +1,4 @@
-import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction, getDateRangesByTourId, findTourPackageById, createTourBooking, createPortalToken, findPortalTokenByTourBooking, logNotificationRecord, linkOrphanedFlightsToCustomer, findUserByEmail } from '../models/index.js';
+import { findCustomerByEmail, createCustomer, findCustomerById, updateCustomer, getAllTourPackages, getTourBookingsByCustomerId, getAllFlightBookings, createFlightBooking, createAuthCode, verifyAuthCode, peekAuthCode, cleanupExpiredCodes, logAuditAction, getDateRangesByTourId, findTourPackageById, createTourBooking, createPortalToken, findPortalTokenByTourBooking, logNotificationRecord, linkOrphanedFlightsToCustomer, findUserByEmail, upgradeGuestToRegistered } from '../models/index.js';
 import { hashPassword } from '../config/db.js';
 import { sendEmail, buildAuthCodeEmail } from '../services/emailService.js';
 
@@ -115,6 +115,23 @@ export async function postVerify(req, res) {
     }
 
     if (record.purpose === 'register') {
+      // Check if a guest customer already exists with this email (from public flight request)
+      const existingGuest = await findCustomerByEmail(email);
+      if (existingGuest && existingGuest.is_guest) {
+        // Upgrade the guest: set name, phone, nationality — keep the same customer_id
+        const { pool, isUsingMySQL } = await import('../config/db.js');
+        if (isUsingMySQL()) {
+          await pool.query(
+            'UPDATE customers SET full_name = ?, phone = ?, nationality = ? WHERE id = ?',
+            [full_name, phone || null, nationality || null, existingGuest.id]
+          );
+        }
+        return res.render('customer/login', {
+          title: 'Create Password', error: null, step: 'create-password', email, code,
+          message: 'Account linked! Now create a password to access your bookings.', purpose: 'register'
+        });
+      }
+      // No existing guest — create new customer
       const customer = await createCustomer({
         full_name, email, password: null,
         phone: phone || null, nationality: nationality || null, passport_number: null
@@ -168,13 +185,17 @@ export async function postCreatePassword(req, res) {
     const customer = await findCustomerByEmail(email);
 
     if (record.purpose === 'register') {
-      // Customer was already created in postVerify — just set the password
+      // Customer was already created in postVerify — set password and upgrade guest status
       if (customer) {
-        const { pool, isUsingMySQL } = await import('../config/db.js');
-        if (isUsingMySQL()) {
-          await pool.query('UPDATE customers SET password_hash = ? WHERE id = ?', [passwordHash, customer.id]);
+        if (customer.is_guest) {
+          await upgradeGuestToRegistered(customer.id, passwordHash);
         } else {
-          customer.password_hash = passwordHash;
+          const { pool, isUsingMySQL } = await import('../config/db.js');
+          if (isUsingMySQL()) {
+            await pool.query('UPDATE customers SET password_hash = ? WHERE id = ?', [passwordHash, customer.id]);
+          } else {
+            customer.password_hash = passwordHash;
+          }
         }
         req.session.customer = { id: customer.id, name: customer.full_name, email: customer.email };
         try { await linkOrphanedFlightsToCustomer(customer.id, customer.email); } catch (e) { console.error('[CustomerAuth] linkOrphanedFlights failed:', e.message); }

@@ -303,6 +303,18 @@ export async function issueTicket(req, res, next) {
       return res.status(404).render('errors/404', { title: 'Flight Booking Not Found' });
     }
 
+    // Block ticketing if no customer linked
+    if (!flight.customer_id) {
+      return res.redirect(`/admin/flights/${id}?error=Cannot+issue+ticket:+No+customer+linked+to+this+booking`);
+    }
+
+    // Block ticketing if customer is a guest (not registered)
+    const { findCustomerById } = await import('../models/index.js');
+    const customer = await findCustomerById(flight.customer_id);
+    if (customer && customer.is_guest) {
+      return res.redirect(`/admin/flights/${id}?error=Cannot+issue+ticket:+Customer+has+not+registered+yet.+Ask+them+to+create+an+account+at+${encodeURIComponent('/account/login')}+first`);
+    }
+
     // Only allow ticketing if booking is confirmed (fully paid)
     if (flight.ticket_status !== 'confirmed') {
       return res.status(400).json({ success: false, error: 'Booking must be fully paid before issuing a ticket.' });
@@ -758,6 +770,13 @@ export async function sendFlightNotification(req, res, next) {
                 <tr><td style="padding: 8px; font-weight: bold;">Class</td><td style="padding: 8px;">${flight.cabin_class || 'Economy'}</td></tr>
               </table>
               <p>We will send you a detailed quote with available flight options shortly. You can also check the status from your dashboard.</p>
+              ${flight.customer_is_guest ? `
+              <div style="background: #fffff0; border: 2px solid #d69e2e; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <strong style="color: #975a16;">⚠ Important: Please create an account to continue</strong>
+                <p style="margin: 5px 0; color: #744210; font-size: 14px;">To receive your e-ticket and manage your booking, you must register first. It only takes a minute:</p>
+                <p style="margin: 10px 0;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account/login" style="display: inline-block; background: #d4a843; color: #1a3a2a; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Create Your Account</a></p>
+              </div>
+              ` : ''}
               <p style="margin-top: 20px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Dashboard</a></p>
             </div>
           </div>
@@ -779,6 +798,13 @@ export async function sendFlightNotification(req, res, next) {
                 ${flight.total_amount > 0 ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Fare</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${Number(flight.total_amount).toFixed(2)}</td></tr>` : ''}
                 <tr><td style="padding: 8px; font-weight: bold;">Status</td><td style="padding: 8px;">${flight.ticket_status.toUpperCase()}</td></tr>
               </table>
+              ${flight.customer_is_guest ? `
+              <div style="background: #fffff0; border: 2px solid #d69e2e; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <strong style="color: #975a16;">⚠ Please create an account to receive your e-ticket</strong>
+                <p style="margin: 5px 0; color: #744210; font-size: 14px;">Register now to manage your booking and receive your e-ticket:</p>
+                <p style="margin: 10px 0;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account/login" style="display: inline-block; background: #d4a843; color: #1a3a2a; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Create Your Account</a></p>
+              </div>
+              ` : ''}
               <p style="margin-top: 20px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Dashboard</a></p>
             </div>
           </div>

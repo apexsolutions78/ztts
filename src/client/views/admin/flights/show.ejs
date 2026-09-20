@@ -97,6 +97,30 @@
       </div>
     </div>
 
+    ${flight.customer_is_guest ? `
+    <div style="background: #fff5f5; border: 2px solid #fc8181; border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="font-size: 1.5rem;">⚠</div>
+        <div>
+          <strong style="color: #c53030; font-size: 0.95rem;">Unregistered Customer — Ticketing Blocked</strong>
+          <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: #742a2a;">${flight.customer_name || 'Customer'} (${flight.customer_email || 'no email'}) has not created an account yet. Ask them to register at <strong>/account/login</strong> with their email <strong>${flight.customer_email || ''}</strong> before you can issue the ticket.</p>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    ${!flight.customer_id ? `
+    <div style="background: #fff5f5; border: 2px solid #fc8181; border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="font-size: 1.5rem;">⚠</div>
+        <div>
+          <strong style="color: #c53030; font-size: 0.95rem;">No Customer Linked</strong>
+          <p style="margin: 0.2rem 0 0; font-size: 0.85rem; color: #742a2a;">This booking has no customer assigned. Edit the booking to assign a customer before issuing a ticket.</p>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
     ${!isCancelled && !isTicketed && nextStages.length > 0 ? `
     <!-- ========== WORKFLOW STAGE PROGRESSION ========== -->
     <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #f8fafb 0%, #edf4f2 100%);">
