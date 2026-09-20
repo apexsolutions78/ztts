@@ -138,7 +138,17 @@
             </div>
             <div class="ticket-field">
               <label>Total Fare</label>
-              <val><%= formatPrice(flight.total_amount) %></val>
+              <val>
+                <%= formatPrice(flight.total_amount) %>
+                <% if (flight.price_per_adult > 0 || flight.price_per_child > 0 || flight.price_per_infant > 0) { %>
+                <span style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">
+                  <% if (flight.price_per_adult > 0) { %>A: <%= formatPrice(flight.price_per_adult) %>×<%= flight.adults %><% } %>
+                  <% if (flight.price_per_child > 0) { %> | C: <%= formatPrice(flight.price_per_child) %>×<%= flight.children %><% } %>
+                  <% if (flight.price_per_infant > 0) { %> | I: <%= formatPrice(flight.price_per_infant) %>×<%= flight.infants %><% } %>
+                  <% if (flight.baggage_fee > 0) { %> | BG: <%= formatPrice(flight.baggage_fee) %><% } %>
+                </span>
+                <% } %>
+              </val>
             </div>
           </div>
 
@@ -212,6 +222,35 @@
             <div style="font-weight: 600;"><%= flight.cabin_class %></div>
           </div>
         </div>
+        <% if (flight.price_per_adult > 0 || flight.price_per_child > 0 || flight.price_per_infant > 0) { %>
+        <div style="margin-top: 1rem; padding: 1rem; background: #f8fafb; border: 1px solid var(--border-light); border-radius: var(--radius-sm);">
+          <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Fare Breakdown</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+            <thead>
+              <tr style="background: #edf4f2;">
+                <th style="padding: 0.4rem 0.6rem; text-align: left; font-weight: 600;">Category</th>
+                <th style="padding: 0.4rem 0.6rem; text-align: center; font-weight: 600;">Qty</th>
+                <th style="padding: 0.4rem 0.6rem; text-align: right; font-weight: 600;">Each</th>
+                <th style="padding: 0.4rem 0.6rem; text-align: right; font-weight: 600;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (flight.adults > 0 && flight.price_per_adult > 0) { %>
+              <tr><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light);">Adults</td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: center;"><%= flight.adults %></td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: right;"><%= formatPrice(flight.price_per_adult) %></td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: right; font-weight: 600;"><%= formatPrice(flight.price_per_adult * flight.adults) %></td></tr>
+              <% } %>
+              <% if (flight.children > 0 && flight.price_per_child > 0) { %>
+              <tr><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light);">Children</td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: center;"><%= flight.children %></td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: right;"><%= formatPrice(flight.price_per_child) %></td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: right; font-weight: 600;"><%= formatPrice(flight.price_per_child * flight.children) %></td></tr>
+              <% } %>
+              <% if (flight.infants > 0 && flight.price_per_infant > 0) { %>
+              <tr><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light);">Infants</td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: center;"><%= flight.infants %></td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: right;"><%= formatPrice(flight.price_per_infant) %></td><td style="padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-light); text-align: right; font-weight: 600;"><%= formatPrice(flight.price_per_infant * flight.infants) %></td></tr>
+              <% } %>
+              <% if (flight.baggage_fee > 0) { %>
+              <tr><td style="padding: 0.4rem 0.6rem;">Extra Baggage</td><td style="padding: 0.4rem 0.6rem; text-align: center;">—</td><td style="padding: 0.4rem 0.6rem; text-align: right;">—</td><td style="padding: 0.4rem 0.6rem; text-align: right; font-weight: 600;"><%= formatPrice(flight.baggage_fee) %></td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
         <% if (typeof paymentSummary !== 'undefined' && paymentSummary && paymentSummary.totalAmount > 0) { %>
         <div style="margin-top: 1.5rem; padding: 1rem; background: #f0f4f8; border-radius: var(--radius-sm);">
           <div style="display: flex; justify-content: space-around; text-align: center;">

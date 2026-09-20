@@ -144,17 +144,41 @@
         </div>
 
         <div style="background: #f8fafb; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-light); margin-top: 1rem;">
-          <h4 style="margin-bottom: 0.75rem; font-size: 0.95rem;">Fare & PNR</h4>
+          <h4 style="margin-bottom: 0.75rem; font-size: 0.95rem;">Fare Breakdown (per-passenger pricing)</h4>
           <div class="form-row">
             <div class="form-group">
-              <label for="total_amount">Total Fare (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
-              <input type="number" step="0.01" id="total_amount" name="total_amount" value="${flight.total_amount ? (flight.total_amount * (exchangeRates[activeCurrency]?.rate || 1)).toFixed(2) : ''}" class="form-control">
-              <input type="hidden" id="total_amount_usd" name="total_amount_usd">
-              <p class="muted" style="margin-top: 0.3rem; font-size: 0.8rem;">Exchange rate: 1 USD = ${exchangeRates[activeCurrency]?.rate || 1} ${activeCurrency}</p>
+              <label for="price_per_adult">Price per Adult (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
+              <input type="number" step="0.01" id="price_per_adult" name="price_per_adult" value="${flight.price_per_adult ? (flight.price_per_adult * (exchangeRates[activeCurrency]?.rate || 1)).toFixed(2) : ''}" class="form-control" oninput="calcTotal()">
             </div>
             <div class="form-group">
-              <label for="pnr">PNR Code</label>
-              <input type="text" id="pnr" name="pnr" value="${flight.pnr || ''}" placeholder="e.g. ABC123" class="form-control">
+              <label for="price_per_child">Price per Child (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
+              <input type="number" step="0.01" id="price_per_child" name="price_per_child" value="${flight.price_per_child ? (flight.price_per_child * (exchangeRates[activeCurrency]?.rate || 1)).toFixed(2) : ''}" class="form-control" oninput="calcTotal()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="price_per_infant">Price per Infant (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
+              <input type="number" step="0.01" id="price_per_infant" name="price_per_infant" value="${flight.price_per_infant ? (flight.price_per_infant * (exchangeRates[activeCurrency]?.rate || 1)).toFixed(2) : ''}" class="form-control" oninput="calcTotal()">
+            </div>
+            <div class="form-group">
+              <label for="baggage_fee">Extra Baggage Fee (${exchangeRates[activeCurrency]?.symbol || '$'} ${activeCurrency})</label>
+              <input type="number" step="0.01" id="baggage_fee" name="baggage_fee" value="${flight.baggage_fee ? (flight.baggage_fee * (exchangeRates[activeCurrency]?.rate || 1)).toFixed(2) : ''}" class="form-control" oninput="calcTotal()">
+            </div>
+          </div>
+          <div style="margin-top: 0.75rem; padding: 0.75rem; background: #edf4f2; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; font-size: 0.9rem;">Calculated Total:</span>
+            <span id="calcTotalDisplay" style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">${exchangeRates[activeCurrency]?.symbol || '$'} 0</span>
+          </div>
+          <input type="hidden" id="total_amount" name="total_amount">
+          <input type="hidden" id="total_amount_usd" name="total_amount_usd">
+
+          <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pnr">PNR Code</label>
+                <input type="text" id="pnr" name="pnr" value="${flight.pnr || ''}" placeholder="e.g. ABC123" class="form-control">
+              </div>
+              <div class="form-group"></div>
             </div>
           </div>
         </div>
@@ -170,9 +194,23 @@
       const EXCHANGE_RATES = ${JSON.stringify(exchangeRates)};
       const ACTIVE_CURRENCY = '${activeCurrency}';
       const CURRENCY_RATE = EXCHANGE_RATES[ACTIVE_CURRENCY]?.rate || 1;
+      const CURRENCY_SYMBOL = EXCHANGE_RATES[ACTIVE_CURRENCY]?.symbol || '$';
 
       function toUSD(localAmount) {
         return (Number(localAmount) / CURRENCY_RATE).toFixed(6);
+      }
+
+      function calcTotal() {
+        const adults = Number(document.getElementById('adults')?.value) || 0;
+        const children = Number(document.getElementById('children')?.value) || 0;
+        const infants = Number(document.getElementById('infants')?.value) || 0;
+        const ppa = Number(document.getElementById('price_per_adult')?.value) || 0;
+        const ppch = Number(document.getElementById('price_per_child')?.value) || 0;
+        const ppin = Number(document.getElementById('price_per_infant')?.value) || 0;
+        const bg = Number(document.getElementById('baggage_fee')?.value) || 0;
+        const total = (adults * ppa) + (children * ppch) + (infants * ppin) + bg;
+        document.getElementById('calcTotalDisplay').textContent = CURRENCY_SYMBOL + ' ' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('total_amount').value = total > 0 ? total : '';
       }
 
       function toggleReturnDate() {
@@ -186,6 +224,8 @@
         const budget = document.getElementById('budget').value;
         if (budget) document.getElementById('budget_usd').value = toUSD(budget);
       });
+
+      calcTotal();
     </script>
   ` }) %>
 </body>

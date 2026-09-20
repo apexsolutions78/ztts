@@ -778,14 +778,22 @@ export async function postPassengerDetails(req, res, next) {
     const children = Number(booking.children) || 0;
     const infants = Number(booking.infants) || 0;
     const totalPax = adults + children + infants;
+    const ppa = Number(booking.price_per_adult) || 0;
+    const ppch = Number(booking.price_per_child) || 0;
+    const ppin = Number(booking.price_per_infant) || 0;
 
     const passengers = [];
+    let paxType;
     for (let i = 0; i < totalPax; i++) {
       const fullName = (req.body[`pax_name_${i}`] || '').trim();
       const passport = (req.body[`pax_passport_${i}`] || '').trim();
       const nationality = (req.body[`pax_nationality_${i}`] || '').trim();
       const dob = req.body[`pax_dob_${i}`] || null;
       const gender = req.body[`pax_gender_${i}`] || null;
+
+      if (i < adults) paxType = 'adult';
+      else if (i < adults + children) paxType = 'child';
+      else paxType = 'infant';
 
       if (!fullName || !passport) {
         return res.redirect('/account?error=passenger_incomplete');
@@ -796,7 +804,9 @@ export async function postPassengerDetails(req, res, next) {
         passport_number: passport.toUpperCase(),
         nationality: nationality || null,
         date_of_birth: dob || null,
-        gender: gender || null
+        gender: gender || null,
+        type: paxType,
+        fare: paxType === 'adult' ? ppa : paxType === 'child' ? ppch : ppin
       });
     }
 

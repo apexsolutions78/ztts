@@ -380,6 +380,37 @@
                       <div style="margin-top: 1rem; padding: 1.25rem; background: #fffff0; border: 2px solid #d69e2e; border-radius: 8px;">
                         <p style="margin: 0 0 0.5rem; font-weight: 700; color: #975a16;">💳 Payment Required</p>
                         <p style="margin: 0 0 1rem; font-size: 0.85rem; color: #744210;">Please transfer the amount below and upload your payment receipt/screenshot.</p>
+
+                        <% if (f.price_per_adult > 0 || f.price_per_child > 0 || f.price_per_infant > 0) { %>
+                        <div style="background: #fff; border: 1px solid #ecc94b; border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem;">
+                          <p style="margin: 0 0 0.5rem; font-weight: 700; color: #744210; font-size: 0.85rem;">Fare Breakdown:</p>
+                          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <thead>
+                              <tr style="background: #fffff0;">
+                                <th style="padding: 0.3rem 0.5rem; text-align: left; font-weight: 600; color: #975a16;">Category</th>
+                                <th style="padding: 0.3rem 0.5rem; text-align: center; font-weight: 600; color: #975a16;">Qty</th>
+                                <th style="padding: 0.3rem 0.5rem; text-align: right; font-weight: 600; color: #975a16;">Each</th>
+                                <th style="padding: 0.3rem 0.5rem; text-align: right; font-weight: 600; color: #975a16;">Subtotal</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <% if (f.adults > 0 && f.price_per_adult > 0) { %>
+                              <tr><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b;">Adults</td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: center;"><%= f.adults %></td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: right;"><%= formatPrice(f.price_per_adult) %></td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: right; font-weight: 600;"><%= formatPrice(f.price_per_adult * f.adults) %></td></tr>
+                              <% } %>
+                              <% if (f.children > 0 && f.price_per_child > 0) { %>
+                              <tr><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b;">Children</td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: center;"><%= f.children %></td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: right;"><%= formatPrice(f.price_per_child) %></td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: right; font-weight: 600;"><%= formatPrice(f.price_per_child * f.children) %></td></tr>
+                              <% } %>
+                              <% if (f.infants > 0 && f.price_per_infant > 0) { %>
+                              <tr><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b;">Infants</td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: center;"><%= f.infants %></td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: right;"><%= formatPrice(f.price_per_infant) %></td><td style="padding: 0.3rem 0.5rem; border-bottom: 1px solid #ecc94b; text-align: right; font-weight: 600;"><%= formatPrice(f.price_per_infant * f.infants) %></td></tr>
+                              <% } %>
+                              <% if (f.baggage_fee > 0) { %>
+                              <tr><td style="padding: 0.3rem 0.5rem;">Extra Baggage</td><td style="padding: 0.3rem 0.5rem; text-align: center;">—</td><td style="padding: 0.3rem 0.5rem; text-align: right;">—</td><td style="padding: 0.3rem 0.5rem; text-align: right; font-weight: 600;"><%= formatPrice(f.baggage_fee) %></td></tr>
+                              <% } %>
+                            </tbody>
+                          </table>
+                        </div>
+                        <% } %>
+
                         <div style="background: #fff; border: 1px solid #ecc94b; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
                           <p style="margin: 0 0 0.75rem; font-weight: 700; color: #975a16; font-size: 0.95rem;">Amount to Pay: <span style="font-size: 1.1rem; color: #744210;"><%= f.total_amount > 0 ? formatPrice(f.total_amount) : 'Contact us for amount' %></span></p>
                           <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">

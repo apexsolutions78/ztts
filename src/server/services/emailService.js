@@ -62,8 +62,22 @@ export async function sendEmail({ to, subject, html, text }) {
   }
 }
 
-export function buildETicketEmail({ customerName, bookingRef, airline, flightNumber, origin, destination, departureDate, arrivalDate, cabinClass, totalAmount, portalUrl }) {
+export function buildETicketEmail({ customerName, bookingRef, airline, flightNumber, origin, destination, departureDate, arrivalDate, cabinClass, totalAmount, portalUrl, pricePerAdult, pricePerChild, pricePerInfant, baggageFee, adults, children, infants }) {
   const subject = `E-Ticket Confirmation: PNR ${bookingRef}`;
+  const hasPricing = (pricePerAdult > 0 || pricePerChild > 0 || pricePerInfant > 0);
+  let fareBreakdown = '';
+  if (hasPricing) {
+    fareBreakdown = `
+      <table style="width: 100%; border-collapse: collapse; margin: 10px 0; background: #f8fafb; border: 1px solid #e2e8f0; border-radius: 6px;">
+        <tr style="background: #edf4f2;">
+          <td style="padding: 8px; font-weight: bold;">Category</td><td style="padding: 8px; font-weight: bold; text-align: center;">Qty</td><td style="padding: 8px; font-weight: bold; text-align: right;">Each</td><td style="padding: 8px; font-weight: bold; text-align: right;">Subtotal</td>
+        </tr>
+        ${pricePerAdult > 0 ? `<tr><td style="padding: 6px 8px;">Adults</td><td style="padding: 6px 8px; text-align: center;">${adults || 1}</td><td style="padding: 6px 8px; text-align: right;">$${Number(pricePerAdult).toFixed(2)}</td><td style="padding: 6px 8px; text-align: right;">$${(Number(pricePerAdult) * (adults || 1)).toFixed(2)}</td></tr>` : ''}
+        ${pricePerChild > 0 ? `<tr style="background: #f8fafb;"><td style="padding: 6px 8px;">Children</td><td style="padding: 6px 8px; text-align: center;">${children || 0}</td><td style="padding: 6px 8px; text-align: right;">$${Number(pricePerChild).toFixed(2)}</td><td style="padding: 6px 8px; text-align: right;">$${(Number(pricePerChild) * (children || 0)).toFixed(2)}</td></tr>` : ''}
+        ${pricePerInfant > 0 ? `<tr><td style="padding: 6px 8px;">Infants</td><td style="padding: 6px 8px; text-align: center;">${infants || 0}</td><td style="padding: 6px 8px; text-align: right;">$${Number(pricePerInfant).toFixed(2)}</td><td style="padding: 6px 8px; text-align: right;">$${(Number(pricePerInfant) * (infants || 0)).toFixed(2)}</td></tr>` : ''}
+        ${baggageFee > 0 ? `<tr style="background: #f8fafb;"><td style="padding: 6px 8px;">Extra Baggage</td><td style="padding: 6px 8px; text-align: center;">—</td><td style="padding: 6px 8px; text-align: right;">—</td><td style="padding: 6px 8px; text-align: right;">$${Number(baggageFee).toFixed(2)}</td></tr>` : ''}
+      </table>`;
+  }
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
       <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
@@ -81,8 +95,10 @@ export function buildETicketEmail({ customerName, bookingRef, airline, flightNum
           <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Departure</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(departureDate).toLocaleString()}</td></tr>
           <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Arrival</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date(arrivalDate).toLocaleString()}</td></tr>
           <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Cabin Class</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${cabinClass}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold;">Total Fare</td><td style="padding: 8px;">$${Number(totalAmount).toFixed(2)}</td></tr>
+          ${hasPricing ? '' : `<tr><td style="padding: 8px; font-weight: bold;">Total Fare</td><td style="padding: 8px;">$${Number(totalAmount).toFixed(2)}</td></tr>`}
         </table>
+        ${fareBreakdown}
+        ${hasPricing ? `<div style="background: #edf4f2; padding: 10px; border-radius: 6px; margin: 10px 0; text-align: right;"><span style="font-weight: bold; font-size: 16px;">Total: $${Number(totalAmount).toFixed(2)}</span></div>` : ''}
         <p style="margin: 15px 0;">View your full e-ticket and itinerary online:</p>
         <a href="${portalUrl}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View E-Ticket Portal</a>
         <p style="margin-top: 20px; font-size: 12px; color: #718096;">For support, contact us at support@zahabiatravel.com</p>

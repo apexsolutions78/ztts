@@ -88,7 +88,8 @@ export async function postCreateFlight(req, res, next) {
       pay_now, pay_amount, pay_amount_usd, pay_reference, pay_notes,
       trip_type, adults, children, infants, return_date,
       preferred_airline, flexible_dates, budget, budget_usd,
-      baggage_priority, direct_transit, customer_notes
+      baggage_priority, direct_transit, customer_notes,
+      price_per_adult, price_per_child, price_per_infant, baggage_fee
     } = req.body;
 
     if (!origin || !destination) {
@@ -104,8 +105,25 @@ export async function postCreateFlight(req, res, next) {
     }
 
     // Convert fare amount from local currency to USD
+    // Auto-calculate from per-category prices if provided, otherwise use manual total
     let finalAmount = 0;
-    if (total_amount_usd && Number(total_amount_usd) > 0) {
+    const adultCount = Number(adults) || 1;
+    const childCount = Number(children) || 0;
+    const infantCount = Number(infants) || 0;
+    const ppa = Number(price_per_adult) || 0;
+    const ppch = Number(price_per_child) || 0;
+    const ppin = Number(price_per_infant) || 0;
+    const bgFee = Number(baggage_fee) || 0;
+
+    if (ppa > 0 || ppch > 0 || ppin > 0 || bgFee > 0) {
+      // Auto-calculate from per-category prices (already in local currency, convert to USD)
+      const { getExchangeRates } = await import('../models/index.js');
+      const rates = await getExchangeRates();
+      const activeCurrency = req.session?.currency || 'PKR';
+      const rate = rates[activeCurrency]?.rate || 1;
+      const localTotal = (adultCount * ppa) + (childCount * ppch) + (infantCount * ppin) + bgFee;
+      finalAmount = localTotal / rate;
+    } else if (total_amount_usd && Number(total_amount_usd) > 0) {
       finalAmount = Number(total_amount_usd);
     } else if (total_amount && Number(total_amount) > 0) {
       const { getExchangeRates } = await import('../models/index.js');
@@ -155,7 +173,11 @@ export async function postCreateFlight(req, res, next) {
       budget: budgetUSD,
       baggage_priority: !!baggage_priority,
       direct_transit: direct_transit || 'any',
-      customer_notes: customer_notes || null
+      customer_notes: customer_notes || null,
+      price_per_adult: ppa,
+      price_per_child: ppch,
+      price_per_infant: ppin,
+      baggage_fee: bgFee
     });
 
     // Record initial payment if provided
@@ -213,7 +235,9 @@ export async function postCreateFlight(req, res, next) {
           arrivalDate: arrival_date,
           cabinClass: cabin_class,
           totalAmount: total_amount,
-          portalUrl
+          portalUrl,
+          pricePerAdult: ppa, pricePerChild: ppch, pricePerInfant: ppin, baggageFee: bgFee,
+          adults: Number(adults) || 1, children: Number(children) || 0, infants: Number(infants) || 0
         });
         const emailResult = await sendEmail({ to: customer.email, subject: emailContent.subject, html: emailContent.html, text: emailContent.text });
         await logNotificationRecord({ customer_id: customer.id, flight_booking_id: booking.id, channel: 'email', recipient: customer.email, subject: emailContent.subject, content: emailContent.text, status: emailResult.success ? 'delivered' : 'failed' });
@@ -334,7 +358,12 @@ export async function issueTicket(req, res, next) {
           arrivalDate: flight.arrival_date,
           cabinClass: flight.cabin_class,
           totalAmount: flight.total_amount,
-          portalUrl
+          portalUrl,
+          pricePerAdult: flight.price_per_adult || 0,
+          pricePerChild: flight.price_per_child || 0,
+          pricePerInfant: flight.price_per_infant || 0,
+          baggageFee: flight.baggage_fee || 0,
+          adults: flight.adults || 1, children: flight.children || 0, infants: flight.infants || 0
         });
 
         const emailResult = await sendEmail({
@@ -433,7 +462,8 @@ export async function postUpdateFlight(req, res, next) {
       departure_date, arrival_date, cabin_class, total_amount,
       trip_type, adults, children, infants, return_date,
       preferred_airline, flexible_dates, budget,
-      baggage_priority, direct_transit, customer_notes, pnr
+      baggage_priority, direct_transit, customer_notes, pnr,
+      price_per_adult, price_per_child, price_per_infant, baggage_fee
     } = req.body;
 
     if (!origin || !destination) {
@@ -448,8 +478,24 @@ export async function postUpdateFlight(req, res, next) {
     }
 
     // Convert fare from local currency to USD for storage
+    // Auto-calculate from per-category prices if provided, otherwise use manual total
     let finalAmount = 0;
-    if (total_amount && Number(total_amount) > 0) {
+    const adultCount = Number(adults) || 1;
+    const childCount = Number(children) || 0;
+    const infantCount = Number(infants) || 0;
+    const ppa = Number(price_per_adult) || 0;
+    const ppch = Number(price_per_child) || 0;
+    const ppin = Number(price_per_infant) || 0;
+    const bgFee = Number(baggage_fee) || 0;
+
+    if (ppa > 0 || ppch > 0 || ppin > 0 || bgFee > 0) {
+      const { getExchangeRates } = await import('../models/index.js');
+      const rates = await getExchangeRates();
+      const activeCurrency = req.session?.currency || 'PKR';
+      const rate = rates[activeCurrency]?.rate || 1;
+      const localTotal = (adultCount * ppa) + (childCount * ppch) + (infantCount * ppin) + bgFee;
+      finalAmount = localTotal / rate;
+    } else if (total_amount && Number(total_amount) > 0) {
       const { getExchangeRates } = await import('../models/index.js');
       const rates = await getExchangeRates();
       const activeCurrency = req.session?.currency || 'PKR';
@@ -475,7 +521,8 @@ export async function postUpdateFlight(req, res, next) {
       preferred_airline: preferred_airline || null, flexible_dates: !!flexible_dates,
       budget: budgetUSD,
       baggage_priority: !!baggage_priority, direct_transit: direct_transit || 'any',
-      customer_notes: customer_notes || null, pnr: pnr || null
+      customer_notes: customer_notes || null, pnr: pnr || null,
+      price_per_adult: ppa, price_per_child: ppch, price_per_infant: ppin, baggage_fee: bgFee
     });
 
     await logAuditAction({

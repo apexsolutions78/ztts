@@ -325,8 +325,31 @@
       ` : ''}
 
       <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
-        <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Total Fare</h4>
-        <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">${flight.total_amount > 0 ? formatPrice(flight.total_amount) : '<span style="color: var(--text-muted); font-size: 1rem;">To be determined</span>'}</div>
+        <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; letter-spacing: 0.5px;">Fare Breakdown</h4>
+        ${(flight.price_per_adult > 0 || flight.price_per_child > 0 || flight.price_per_infant > 0) ? `
+        <div style="background: #f8fafb; border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden;">
+          <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #edf4f2;">
+                <th style="padding: 0.5rem 0.75rem; text-align: left; font-weight: 600;">Category</th>
+                <th style="padding: 0.5rem 0.75rem; text-align: center; font-weight: 600;">Qty</th>
+                <th style="padding: 0.5rem 0.75rem; text-align: right; font-weight: 600;">Unit Price</th>
+                <th style="padding: 0.5rem 0.75rem; text-align: right; font-weight: 600;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${flight.adults > 0 && flight.price_per_adult > 0 ? `<tr><td style="padding: 0.5rem 0.75rem;">Adults</td><td style="padding: 0.5rem 0.75rem; text-align: center;">${flight.adults}</td><td style="padding: 0.5rem 0.75rem; text-align: right;">${formatPrice(flight.price_per_adult)}</td><td style="padding: 0.5rem 0.75rem; text-align: right; font-weight: 600;">${formatPrice(flight.price_per_adult * flight.adults)}</td></tr>` : ''}
+              ${flight.children > 0 && flight.price_per_child > 0 ? `<tr style="background: #f8fafb;"><td style="padding: 0.5rem 0.75rem;">Children</td><td style="padding: 0.5rem 0.75rem; text-align: center;">${flight.children}</td><td style="padding: 0.5rem 0.75rem; text-align: right;">${formatPrice(flight.price_per_child)}</td><td style="padding: 0.5rem 0.75rem; text-align: right; font-weight: 600;">${formatPrice(flight.price_per_child * flight.children)}</td></tr>` : ''}
+              ${flight.infants > 0 && flight.price_per_infant > 0 ? `<tr><td style="padding: 0.5rem 0.75rem;">Infants</td><td style="padding: 0.5rem 0.75rem; text-align: center;">${flight.infants}</td><td style="padding: 0.5rem 0.75rem; text-align: right;">${formatPrice(flight.price_per_infant)}</td><td style="padding: 0.5rem 0.75rem; text-align: right; font-weight: 600;">${formatPrice(flight.price_per_infant * flight.infants)}</td></tr>` : ''}
+              ${flight.baggage_fee > 0 ? `<tr style="background: #f8fafb;"><td style="padding: 0.5rem 0.75rem;">Extra Baggage</td><td style="padding: 0.5rem 0.75rem; text-align: center;">—</td><td style="padding: 0.5rem 0.75rem; text-align: right;">—</td><td style="padding: 0.5rem 0.75rem; text-align: right; font-weight: 600;">${formatPrice(flight.baggage_fee)}</td></tr>` : ''}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; padding: 0.75rem; background: linear-gradient(135deg, #edf4f2 0%, #e2ece8 100%); border-radius: var(--radius-sm);">
+          <span style="font-weight: 700; font-size: 0.9rem;">Total Fare</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">${flight.total_amount > 0 ? formatPrice(flight.total_amount) : '<span style="color: var(--text-muted); font-size: 1rem;">To be determined</span>'}</div>
+        </div>
       </div>
     </div>
     ` : isCancelled ? `
@@ -444,7 +467,16 @@
           </div>
           <div class="ticket-field">
             <label>Total Fare</label>
-            <val>${formatPrice(flight.total_amount)}</val>
+            <val>
+              ${formatPrice(flight.total_amount)}
+              ${(flight.price_per_adult > 0 || flight.price_per_child > 0 || flight.price_per_infant > 0) ? `
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+                ${flight.price_per_adult > 0 ? `A: ${formatPrice(flight.price_per_adult)}×${flight.adults}` : ''}
+                ${flight.price_per_child > 0 ? ` | C: ${formatPrice(flight.price_per_child)}×${flight.children}` : ''}
+                ${flight.price_per_infant > 0 ? ` | I: ${formatPrice(flight.price_per_infant)}×${flight.infants}` : ''}
+                ${flight.baggage_fee > 0 ? ` | BG: ${formatPrice(flight.baggage_fee)}` : ''}
+              </span>` : ''}
+            </val>
           </div>
           <div class="ticket-field">
             <label>Ticket Status</label>
