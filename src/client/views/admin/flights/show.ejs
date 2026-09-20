@@ -203,11 +203,11 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
         <div>
           <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Route</h4>
-          <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${flight.origin} → ${flight.destination}</div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${flight.origin || 'TBA'} → ${flight.destination || 'TBA'}</div>
         </div>
         <div>
           <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Travel Date</h4>
-          <div style="font-size: 1.1rem; font-weight: 600;">${new Date(flight.departure_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+          <div style="font-size: 1.1rem; font-weight: 600;">${flight.departure_date ? new Date(flight.departure_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : 'TBA'}</div>
         </div>
         <div>
           <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Cabin Class</h4>
@@ -248,7 +248,7 @@
       ${flight.notes ? `
       <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
         <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Customer Notes / Preferred Airline</h4>
-        <div style="background: #f8fafb; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;">${flight.notes}</div>
+        <div style="background: #f8fafb; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;">${flight.notes || ''}</div>
       </div>
       ` : ''}
 
@@ -414,16 +414,16 @@
 
         <div class="flight-route">
           <div>
-            <div class="airport-code">${flight.origin}</div>
+            <div class="airport-code">${flight.origin || 'TBA'}</div>
             <div class="airport-name">Origin Departure</div>
           </div>
           <div class="route-divider">
-            <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary);">${flight.airline} (${flight.flight_number})</div>
+            <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary);">${flight.airline || 'TBA'} (${flight.flight_number || 'TBA'})</div>
             <div class="route-line"></div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">${flight.cabin_class} Class</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">${flight.cabin_class || 'Economy'} Class</div>
           </div>
           <div style="text-align: right;">
-            <div class="airport-code">${flight.destination}</div>
+            <div class="airport-code">${flight.destination || 'TBA'}</div>
             <div class="airport-name">Destination Arrival</div>
           </div>
         </div>
@@ -431,7 +431,7 @@
         <div class="ticket-grid">
           <div class="ticket-field">
             <label>Passenger Name</label>
-            <val>${flight.customer_name}</val>
+            <val>${flight.customer_name || 'Not Assigned'}</val>
           </div>
           <div class="ticket-field">
             <label>Passport Number</label>
@@ -459,7 +459,7 @@
           </div>
           <div class="ticket-field">
             <label>Departure Time</label>
-            <val>${new Date(flight.departure_date).toLocaleString()}</val>
+            <val>${flight.departure_date ? new Date(flight.departure_date).toLocaleString() : 'TBA'}</val>
           </div>
           <div class="ticket-field">
             <label>Arrival Time</label>
