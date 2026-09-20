@@ -32,7 +32,7 @@ export async function sendEmail({ to, subject, html, text }) {
     subject,
     html,
     text: text || subject,
-    from: env.email.from || 'Zahabia Travel & Tourism <noreply@zahabiatravel.com>'
+    from: env.email.from || `Zahabia Travel & Tourism <${env.email.user || 'noreply@zahabiatravel.com'}>`
   };
 
   if (!mail) {

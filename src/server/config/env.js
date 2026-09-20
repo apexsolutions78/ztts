@@ -25,7 +25,7 @@ export const env = {
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
-    from: process.env.SMTP_FROM || 'Zahabia Travel & Tourism <noreply@zahabiatravel.com>'
+    from: process.env.SMTP_FROM || `Zahabia Travel & Tourism <${process.env.SMTP_USER || 'noreply@zahabiatravel.com'}>`
   },
 
   whatsapp: {

@@ -714,13 +714,16 @@ export async function sendFlightNotification(req, res, next) {
       }
 
       const sendResult = await sendEmail({ to: customerEmail, subject: emailSubject, html: emailHtml });
+      console.log('[FlightNotification] sendEmail result:', JSON.stringify(sendResult));
       try {
         await logNotificationRecord({ customer_id: flight.customer_id, flight_booking_id: flight.id, channel: 'email', recipient: customerEmail, subject: emailSubject, content: emailSubject, status: sendResult?.success ? 'sent' : 'failed' });
       } catch (_) {}
       if (sendResult?.success && !sendResult?.simulated) {
         return res.json({ success: true, message: 'Email sent to ' + customerEmail });
+      } else if (sendResult?.success && sendResult?.simulated) {
+        return res.json({ success: true, message: 'Email logged (SMTP not configured) to ' + customerEmail, simulated: true });
       } else {
-        return res.json({ success: true, message: sendResult?.error ? 'Email failed: ' + sendResult.error : 'Email sent (simulated)', simulated: true });
+        return res.json({ success: false, message: 'Email failed: ' + (sendResult?.error || 'Unknown error'), error: sendResult?.error });
       }
     } else {
       return res.json({ success: true, message: 'WhatsApp integration not yet configured', simulated: true });
