@@ -294,6 +294,36 @@
       </div>
       ` : ''}
 
+      ${flight.payment_proof ? `
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+        <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; letter-spacing: 0.5px;">📄 Payment Proof</h4>
+        <div style="background: #ebf8ff; border: 1px solid #3182ce; border-radius: var(--radius-sm); padding: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+              <p style="margin: 0 0 0.3rem; font-weight: 600; color: #2b6cb0;">Payment receipt uploaded by customer</p>
+              ${flight.payment_proof_uploaded_at ? `<p style="margin: 0 0 0.5rem; font-size: 0.8rem; color: #718096;">Uploaded: ${new Date(flight.payment_proof_uploaded_at).toLocaleString()}</p>` : ''}
+              <a href="${flight.payment_proof}" target="_blank" style="display: inline-block; background: #2b6cb0; color: #fff; padding: 0.4rem 1rem; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">View Receipt →</a>
+            </div>
+            ${currentStage === 'payment_under_review' ? `
+            <div>
+              <form method="post" action="/admin/flights/${flight.id}/transition" style="margin: 0;" onsubmit="return confirm('Confirm that payment has been received and verified?')">
+                <input type="hidden" name="target_stage" value="ready_for_ticketing">
+                <button type="submit" class="btn btn-accent btn-sm" style="padding: 0.5rem 1.2rem; font-weight: 600;">✔ Confirm Payment Received</button>
+              </form>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+      ` : (flight.workflow_stage === 'payment_pending' || flight.workflow_stage === 'payment_under_review') ? `
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+        <div style="background: #fffff0; border: 1px solid #d69e2e; border-radius: var(--radius-sm); padding: 1rem;">
+          <strong style="color: #975a16;">⏳ Waiting for payment proof from customer</strong>
+          <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: #975a16;">The customer has not yet uploaded their payment receipt.</p>
+        </div>
+      </div>
+      ` : ''}
+
       <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
         <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Total Fare</h4>
         <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">${flight.total_amount > 0 ? formatPrice(flight.total_amount) : '<span style="color: var(--text-muted); font-size: 1rem;">To be determined</span>'}</div>

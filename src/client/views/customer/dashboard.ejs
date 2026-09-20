@@ -376,6 +376,43 @@
                         </table>
                       </div>
                     <% } %>
+                    <% if (f.workflow_stage === 'payment_pending' && !f.payment_proof) { %>
+                      <div style="margin-top: 1rem; padding: 1.25rem; background: #fffff0; border: 2px solid #d69e2e; border-radius: 8px;">
+                        <p style="margin: 0 0 0.5rem; font-weight: 700; color: #975a16;">💳 Payment Required</p>
+                        <p style="margin: 0 0 1rem; font-size: 0.85rem; color: #744210;">Please transfer the amount below and upload your payment receipt/screenshot.</p>
+                        <div style="background: #fff; border: 1px solid #ecc94b; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
+                          <p style="margin: 0 0 0.75rem; font-weight: 700; color: #975a16; font-size: 0.95rem;">Amount to Pay: <span style="font-size: 1.1rem; color: #744210;"><%= f.total_amount > 0 ? formatPrice(f.total_amount) : 'Contact us for amount' %></span></p>
+                          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <tr><td style="padding: 0.3rem 0; font-weight: 600; color: #4a5568; width: 140px;">Bank Name</td><td style="padding: 0.3rem 0; color: #2d3748;"><%= payment.bankName %></td></tr>
+                            <tr><td style="padding: 0.3rem 0; font-weight: 600; color: #4a5568;">Account Name</td><td style="padding: 0.3rem 0; color: #2d3748;"><%= payment.accountName %></td></tr>
+                            <% if (payment.accountNumber) { %>
+                              <tr><td style="padding: 0.3rem 0; font-weight: 600; color: #4a5568;">Account Number</td><td style="padding: 0.3rem 0; color: #2d3748; font-family: monospace;"><%= payment.accountNumber %></td></tr>
+                            <% } %>
+                            <% if (payment.iban) { %>
+                              <tr><td style="padding: 0.3rem 0; font-weight: 600; color: #4a5568;">IBAN</td><td style="padding: 0.3rem 0; color: #2d3748; font-family: monospace;"><%= payment.iban %></td></tr>
+                            <% } %>
+                            <% if (payment.swift) { %>
+                              <tr><td style="padding: 0.3rem 0; font-weight: 600; color: #4a5568;">SWIFT Code</td><td style="padding: 0.3rem 0; color: #2d3748; font-family: monospace;"><%= payment.swift %></td></tr>
+                            <% } %>
+                          </table>
+                          <% if (payment.notes) { %>
+                            <p style="margin: 0.75rem 0 0; font-size: 0.8rem; color: #744210; background: #fffff0; padding: 0.5rem 0.75rem; border-radius: 4px;"><%= payment.notes %></p>
+                          <% } %>
+                        </div>
+                        <form method="post" action="/account/flights/<%= f.id %>/payment-proof" enctype="multipart/form-data" style="margin: 0;">
+                          <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #4a5568; margin-bottom: 0.5rem;">Upload Payment Receipt / Screenshot *</label>
+                          <input type="file" name="payment_proof" accept="image/*,application/pdf" required style="display: block; margin-bottom: 0.75rem; font-size: 0.85rem;">
+                          <button type="submit" class="btn btn-sm" style="background: #1a3a2a; color: #d4a843; padding: 0.6rem 1.5rem; font-weight: 600;" onclick="return confirm('Upload payment proof and submit for review?')">Upload & Submit for Review</button>
+                        </form>
+                      </div>
+                    <% } %>
+                    <% if (f.payment_proof) { %>
+                      <div style="margin-top: 1rem; padding: 1rem; background: #ebf8ff; border: 1px solid #3182ce; border-radius: 8px;">
+                        <p style="margin: 0 0 0.5rem; font-weight: 700; color: #2b6cb0;">📄 Payment Proof Uploaded</p>
+                        <p style="margin: 0 0 0.5rem; font-size: 0.85rem; color: #2c5282;">Your payment proof is under review. We will confirm your payment shortly.</p>
+                        <a href="<%= f.payment_proof %>" target="_blank" style="display: inline-block; font-size: 0.85rem; color: #2b6cb0; font-weight: 600; text-decoration: underline;">View uploaded receipt →</a>
+                      </div>
+                    <% } %>
                     <% if (f.customer_notes && f.ticket_status === 'pending' && (!f.airline || f.workflow_stage === 'inquiry')) { %>
                       <div style="margin-top: 0.75rem; padding: 0.75rem; background: #f7fafc; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted);">
                         <strong>Status:</strong> Your request is being reviewed. Our team is searching for the best options.

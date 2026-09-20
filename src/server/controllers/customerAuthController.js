@@ -251,7 +251,19 @@ export async function getDashboard(req, res, next) {
       formatPrice: res.locals.formatPrice,
       activeCurrency: res.locals.activeCurrency,
       updated: req.query.updated === 'true',
-      cancelled: req.query.cancelled === 'true'
+      cancelled: req.query.cancelled === 'true',
+      approved: req.query.approved === 'true',
+      declined: req.query.declined === 'true',
+      passengersSubmitted: req.query.passengers_submitted === 'true',
+      paymentUploaded: req.query.payment_uploaded === 'true',
+      payment: {
+        bankName: process.env.PAYMENT_BANK_NAME || 'Emirates NBD',
+        accountName: process.env.PAYMENT_ACCOUNT_NAME || 'Zahabia Travel & Tourism LLC',
+        accountNumber: process.env.PAYMENT_ACCOUNT_NUMBER || '',
+        iban: process.env.PAYMENT_IBAN || '',
+        swift: process.env.PAYMENT_SWIFT || '',
+        notes: process.env.PAYMENT_NOTES || ''
+      }
     });
   } catch (err) {
     next(err);
@@ -832,6 +844,70 @@ export async function postPassengerDetails(req, res, next) {
     }
 
     res.redirect('/account?passengers_submitted=true');
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function postUploadPaymentProof(req, res, next) {
+  try {
+    const { id } = req.params;
+    const customer = await findCustomerById(req.session.customer.id);
+    if (!customer) return res.redirect('/account/login');
+
+    const { findFlightBookingById, savePaymentProof, transitionWorkflowStage, logAuditAction: logAudit } = await import('../models/index.js');
+    const booking = await findFlightBookingById(id);
+    if (!booking || booking.customer_id !== customer.id) {
+      return res.redirect('/account');
+    }
+
+    if (!req.file) {
+      return res.redirect('/account?error=no_file');
+    }
+
+    const proofPath = `/uploads/${req.file.filename}`;
+    await savePaymentProof(id, proofPath);
+
+    if (booking.workflow_stage === 'payment_pending') {
+      await transitionWorkflowStage(id, 'payment_under_review');
+    }
+
+    await logAudit({
+      user_id: customer.id,
+      user_name: customer.full_name,
+      action: 'CUSTOMER_PAYMENT_PROOF',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Customer uploaded payment proof for ${booking.booking_ref}`
+    });
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'ztts@apexsol.pk';
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[Zahabia] Payment Proof Received — ${booking.booking_ref}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">PAYMENT PROOF RECEIVED</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p><strong>${customer.full_name}</strong> has uploaded payment proof for flight <strong>${booking.booking_ref}</strong>.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.origin} → ${booking.destination}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Amount</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.total_amount > 0 ? '$' + Number(booking.total_amount).toFixed(2) : 'TBD'}</td></tr>
+              </table>
+              <p style="font-size: 0.85rem; color: #718096;">Payment proof has been uploaded. Please review and confirm the payment.</p>
+              <p style="margin-top: 15px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/admin/flights/${id}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review Payment →</a></p>
+            </div>
+          </div>
+        `
+      });
+    } catch (e) {
+      console.error('[Payment Proof] Admin email failed:', e.message);
+    }
+
+    res.redirect('/account?payment_uploaded=true');
   } catch (err) {
     next(err);
   }

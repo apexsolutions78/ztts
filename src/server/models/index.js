@@ -299,6 +299,20 @@ export async function savePassengerDetails(flightBookingId, passengers) {
   return false;
 }
 
+export async function savePaymentProof(flightBookingId, proofPath) {
+  if (isUsingMySQL()) {
+    await pool.query('UPDATE flight_bookings SET payment_proof = ?, payment_proof_uploaded_at = NOW() WHERE id = ?', [proofPath, flightBookingId]);
+    return true;
+  }
+  const fb = memoryStore.flight_bookings.find(f => f.id === Number(flightBookingId));
+  if (fb) {
+    fb.payment_proof = proofPath;
+    fb.payment_proof_uploaded_at = new Date().toISOString();
+    return true;
+  }
+  return false;
+}
+
 export async function updateFlightBooking(id, {
   customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount,
   trip_type, adults, children, infants, return_date, preferred_airline, flexible_dates, budget,

@@ -33,5 +33,15 @@ export const env = {
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || ''
   },
 
-  adminEmail: process.env.ADMIN_EMAIL || 'ztts@apexsol.pk'
+  adminEmail: process.env.ADMIN_EMAIL || 'ztts@apexsol.pk',
+
+  payment: {
+    bankName: process.env.PAYMENT_BANK_NAME || 'Emirates NBD',
+    accountName: process.env.PAYMENT_ACCOUNT_NAME || 'Zahabia Travel & Tourism LLC',
+    accountNumber: process.env.PAYMENT_ACCOUNT_NUMBER || '',
+    iban: process.env.PAYMENT_IBAN || '',
+    swift: process.env.PAYMENT_SWIFT || '',
+    routing: process.env.PAYMENT_ROUTING || '',
+    notes: process.env.PAYMENT_NOTES || 'Please include your booking reference in the transfer description.'
+  }
 };
