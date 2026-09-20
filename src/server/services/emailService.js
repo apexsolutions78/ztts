@@ -6,8 +6,17 @@ let transporter = null;
 function getTransporter() {
   if (transporter) return transporter;
 
+  console.log('[Email] SMTP config check:', {
+    host: env.email.host,
+    port: env.email.port,
+    secure: env.email.secure,
+    user: env.email.user ? env.email.user.substring(0, 3) + '***' : '(empty)',
+    pass: env.email.pass ? '***set***' : '(empty)',
+    from: env.email.from
+  });
+
   if (!env.email.host || !env.email.host.trim() || !env.email.user || !env.email.user.trim()) {
-    console.warn('[Apex Solutions Email] SMTP not configured – emails will be logged only');
+    console.warn('[Email] SMTP not configured – emails will be logged only');
     return null;
   }
 
@@ -21,6 +30,7 @@ function getTransporter() {
     }
   });
 
+  console.log('[Email] Transporter created successfully');
   return transporter;
 }
 
@@ -30,22 +40,24 @@ export async function sendEmail({ to, subject, html, text }) {
   const record = {
     to,
     subject,
-    html,
+    html: html || '',
     text: text || subject,
     from: env.email.from || `Zahabia Travel & Tourism <${env.email.user || 'noreply@zahabiatravel.com'}>`
   };
 
   if (!mail) {
-    console.log('[Apex Solutions Email] SMTP unavailable – logging email only:', { to, subject });
+    console.log('[Email] SMTP unavailable – logging email only:', { to, subject });
     return { success: true, simulated: true, record };
   }
 
   try {
+    console.log('[Email] Sending:', { from: record.from, to: record.to, subject: record.subject });
     const info = await mail.sendMail(record);
-    console.log('[Apex Solutions Email] Sent:', info.messageId);
+    console.log('[Email] Sent OK:', info.messageId, info.response);
     return { success: true, simulated: false, messageId: info.messageId, record };
   } catch (error) {
-    console.error('[Apex Solutions Email] Send failed:', error.message);
+    console.error('[Email] Send FAILED:', error.message);
+    console.error('[Email] Full error:', JSON.stringify(error, null, 2));
     return { success: false, error: error.message, record };
   }
 }
