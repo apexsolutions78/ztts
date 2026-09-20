@@ -252,6 +252,48 @@
       </div>
       ` : ''}
 
+      ${flight.passenger_details ? `
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+        <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; letter-spacing: 0.5px;">Passenger Details (${(() => { try { const pd = typeof flight.passenger_details === 'string' ? JSON.parse(flight.passenger_details) : flight.passenger_details; return pd.length; } catch(e) { return '?'; } })()} pax)</h4>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="background: #f0f4f8;">
+                <th style="padding: 0.6rem 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: var(--text-dark);">#</th>
+                <th style="padding: 0.6rem 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: var(--text-dark);">Full Name</th>
+                <th style="padding: 0.6rem 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: var(--text-dark);">Passport #</th>
+                <th style="padding: 0.6rem 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: var(--text-dark);">Nationality</th>
+                <th style="padding: 0.6rem 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: var(--text-dark);">DOB</th>
+                <th style="padding: 0.6rem 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: var(--text-dark);">Gender</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(() => { try {
+                const pax = typeof flight.passenger_details === 'string' ? JSON.parse(flight.passenger_details) : flight.passenger_details;
+                return pax.map((p, i) => `
+                  <tr style="${i % 2 === 0 ? 'background: #fff;' : 'background: #f8fafb;'}">
+                    <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-weight: 600;">${i + 1}</td>
+                    <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-weight: 600;">${p.full_name}</td>
+                    <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-family: monospace; font-weight: 600;">${p.passport_number}</td>
+                    <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0;">${p.nationality || '-'}</td>
+                    <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0;">${p.date_of_birth || '-'}</td>
+                    <td style="padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-transform: capitalize;">${p.gender || '-'}</td>
+                  </tr>
+                `).join('');
+              } catch(e) { return '<tr><td colspan="6" style="padding: 0.6rem 0.75rem; color: #e53e3e;">Error parsing passenger data</td></tr>'; } })()}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ` : (flight.workflow_stage === 'customer_approved' || flight.workflow_stage === 'passenger_details_pending') ? `
+      <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+        <div style="background: #fffff0; border: 1px solid #d69e2e; border-radius: var(--radius-sm); padding: 1rem;">
+          <strong style="color: #975a16;">⏳ Waiting for passenger details from customer</strong>
+          <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: #975a16;">The customer has approved this flight but has not yet submitted passenger details.</p>
+        </div>
+      </div>
+      ` : ''}
+
       <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
         <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Total Fare</h4>
         <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">${flight.total_amount > 0 ? formatPrice(flight.total_amount) : '<span style="color: var(--text-muted); font-size: 1rem;">To be determined</span>'}</div>

@@ -309,6 +309,73 @@
                         </div>
                       </div>
                     <% } %>
+                    <% if (f.workflow_stage === 'customer_approved') { %>
+                      <% var paxCount = (Number(f.adults) || 1) + (Number(f.children) || 0) + (Number(f.infants) || 0); %>
+                      <div style="margin-top: 1rem; padding: 1.25rem; background: #ebf8ff; border: 1px solid #3182ce; border-radius: 8px;">
+                        <p style="margin: 0 0 0.5rem; font-weight: 700; color: #2b6cb0;">✈ Please Provide Passenger Details</p>
+                        <p style="margin: 0 0 1rem; font-size: 0.85rem; color: #2c5282;">Enter details for all <strong><%= paxCount %></strong> traveler(s) exactly as printed on their passports. This is required to issue your e-ticket.</p>
+                        <form method="post" action="/account/flights/<%= f.id %>/passengers">
+                          <% for (var i = 0; i < paxCount; i++) { %>
+                            <div style="background: #fff; border: 1px solid #bee3f8; border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem;">
+                              <p style="margin: 0 0 0.75rem; font-weight: 600; color: #2b6cb0; font-size: 0.9rem;">Passenger <%= i + 1 %><%= i === 0 ? ' (Lead Passenger)' : (i < (Number(f.adults) || 1) ? '' : (i < (Number(f.adults) || 1) + (Number(f.children) || 0) ? ' (Child)' : ' (Infant)')) %></p>
+                              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                                <div style="grid-column: 1 / -1;">
+                                  <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #4a5568; margin-bottom: 0.25rem;">Full Name (as on passport) *</label>
+                                  <input type="text" name="pax_name_<%= i %>" required maxlength="100" class="form-control" style="text-transform: uppercase;" placeholder="e.g. AHMAD HAMAD ALI" value="<%= i === 0 ? (f.customer_name || '') : '' %>">
+                                </div>
+                                <div>
+                                  <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #4a5568; margin-bottom: 0.25rem;">Passport Number *</label>
+                                  <input type="text" name="pax_passport_<%= i %>" required maxlength="20" class="form-control" style="text-transform: uppercase;" placeholder="e.g. AB1234567" value="<%= i === 0 ? (f.passport_number || '') : '' %>">
+                                </div>
+                                <div>
+                                  <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #4a5568; margin-bottom: 0.25rem;">Nationality</label>
+                                  <input type="text" name="pax_nationality_<%= i %>" maxlength="50" class="form-control" placeholder="e.g. Pakistani" value="<%= i === 0 ? (f.nationality || '') : '' %>">
+                                </div>
+                                <div>
+                                  <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #4a5568; margin-bottom: 0.25rem;">Date of Birth</label>
+                                  <input type="date" name="pax_dob_<%= i %>" class="form-control">
+                                </div>
+                                <div>
+                                  <label style="display: block; font-size: 0.78rem; font-weight: 600; color: #4a5568; margin-bottom: 0.25rem;">Gender</label>
+                                  <select name="pax_gender_<%= i %>" class="form-control">
+                                    <option value="">Select</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          <% } %>
+                          <button type="submit" class="btn btn-sm" style="background: #1a3a2a; color: #d4a843; padding: 0.6rem 1.5rem; font-weight: 600; margin-top: 0.5rem;" onclick="return confirm('Submit passenger details for all <%= paxCount %> traveler(s)?')">Submit Passenger Details</button>
+                        </form>
+                      </div>
+                    <% } %>
+                    <% if (f.passenger_details) { %>
+                      <% var parsedPax = typeof f.passenger_details === 'string' ? JSON.parse(f.passenger_details) : f.passenger_details; %>
+                      <div style="margin-top: 1rem; padding: 1rem; background: #f0fff4; border: 1px solid #38a169; border-radius: 8px;">
+                        <p style="margin: 0 0 0.5rem; font-weight: 700; color: #276749;">✓ Passenger Details Submitted</p>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                          <thead>
+                            <tr style="background: #c6f6d5;">
+                              <th style="padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid #9ae6b4;">#</th>
+                              <th style="padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid #9ae6b4;">Name</th>
+                              <th style="padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid #9ae6b4;">Passport</th>
+                              <th style="padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid #9ae6b4;">Nationality</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% parsedPax.forEach(function(p, idx) { %>
+                              <tr>
+                                <td style="padding: 0.4rem 0.5rem; border-bottom: 1px solid #e2e8f0;"><%= idx + 1 %></td>
+                                <td style="padding: 0.4rem 0.5rem; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><%= p.full_name %></td>
+                                <td style="padding: 0.4rem 0.5rem; border-bottom: 1px solid #e2e8f0; font-family: monospace;"><%= p.passport_number %></td>
+                                <td style="padding: 0.4rem 0.5rem; border-bottom: 1px solid #e2e8f0;"><%= p.nationality || '-' %></td>
+                              </tr>
+                            <% }); %>
+                          </tbody>
+                        </table>
+                      </div>
+                    <% } %>
                     <% if (f.customer_notes && f.ticket_status === 'pending' && (!f.airline || f.workflow_stage === 'inquiry')) { %>
                       <div style="margin-top: 0.75rem; padding: 0.75rem; background: #f7fafc; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted);">
                         <strong>Status:</strong> Your request is being reviewed. Our team is searching for the best options.

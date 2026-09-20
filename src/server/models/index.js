@@ -285,6 +285,20 @@ export async function updateFlightTicketStatus(id, ticket_status) {
   return false;
 }
 
+export async function savePassengerDetails(flightBookingId, passengers) {
+  const json = JSON.stringify(passengers);
+  if (isUsingMySQL()) {
+    await pool.query('UPDATE flight_bookings SET passenger_details = ? WHERE id = ?', [json, flightBookingId]);
+    return true;
+  }
+  const fb = memoryStore.flight_bookings.find(f => f.id === Number(flightBookingId));
+  if (fb) {
+    fb.passenger_details = json;
+    return true;
+  }
+  return false;
+}
+
 export async function updateFlightBooking(id, {
   customer_id, airline, flight_number, origin, destination, departure_date, arrival_date, cabin_class, total_amount,
   trip_type, adults, children, infants, return_date, preferred_airline, flexible_dates, budget,

@@ -749,3 +749,90 @@ export async function postDeclineFlight(req, res, next) {
     next(err);
   }
 }
+
+export async function postPassengerDetails(req, res, next) {
+  try {
+    const { id } = req.params;
+    const customer = await findCustomerById(req.session.customer.id);
+    if (!customer) return res.redirect('/account/login');
+
+    const { findFlightBookingById, savePassengerDetails, transitionWorkflowStage, logAuditAction: logAudit } = await import('../models/index.js');
+    const booking = await findFlightBookingById(id);
+    if (!booking || booking.customer_id !== customer.id) {
+      return res.redirect('/account');
+    }
+
+    const adults = Number(booking.adults) || 1;
+    const children = Number(booking.children) || 0;
+    const infants = Number(booking.infants) || 0;
+    const totalPax = adults + children + infants;
+
+    const passengers = [];
+    for (let i = 0; i < totalPax; i++) {
+      const fullName = (req.body[`pax_name_${i}`] || '').trim();
+      const passport = (req.body[`pax_passport_${i}`] || '').trim();
+      const nationality = (req.body[`pax_nationality_${i}`] || '').trim();
+      const dob = req.body[`pax_dob_${i}`] || null;
+      const gender = req.body[`pax_gender_${i}`] || null;
+
+      if (!fullName || !passport) {
+        return res.redirect('/account?error=passenger_incomplete');
+      }
+
+      passengers.push({
+        full_name: fullName.toUpperCase(),
+        passport_number: passport.toUpperCase(),
+        nationality: nationality || null,
+        date_of_birth: dob || null,
+        gender: gender || null
+      });
+    }
+
+    await savePassengerDetails(id, passengers);
+
+    if (booking.workflow_stage === 'customer_approved') {
+      await transitionWorkflowStage(id, 'passenger_details_pending');
+      await transitionWorkflowStage(id, 'passenger_details_complete');
+    }
+
+    await logAudit({
+      user_id: customer.id,
+      user_name: customer.full_name,
+      action: 'CUSTOMER_PASSENGER_DETAILS',
+      entity_type: 'flight',
+      entity_id: id,
+      details: `Customer submitted ${passengers.length} passenger details for ${booking.booking_ref}`
+    });
+
+    const adminEmail = process.env.ADMIN_EMAIL || 'ztts@apexsol.pk';
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[Zahabia] Passenger Details Received — ${booking.booking_ref}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">PASSENGER DETAILS RECEIVED</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p><strong>${customer.full_name}</strong> has submitted passenger details for flight <strong>${booking.booking_ref}</strong>.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${booking.origin} → ${booking.destination}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Passengers</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${passengers.length}</td></tr>
+                ${passengers.map((p, i) => `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Pax ${i + 1}</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${p.full_name} — ${p.passport_number}</td></tr>`).join('')}
+              </table>
+              <p style="font-size: 0.85rem; color: #718096;">Passenger details are now complete. You can proceed with reservation.</p>
+              <p style="margin-top: 15px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/admin/flights/${id}" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Booking →</a></p>
+            </div>
+          </div>
+        `
+      });
+    } catch (e) {
+      console.error('[Passenger Details] Admin email failed:', e.message);
+    }
+
+    res.redirect('/account?passengers_submitted=true');
+  } catch (err) {
+    next(err);
+  }
+}
