@@ -37,7 +37,7 @@
               <a href="/admin/tours/${p.id}" class="btn btn-primary btn-sm">Book →</a>
               <a href="/admin/tours/${p.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
               <form method="post" action="/admin/tours/${p.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this tour package?')">
-                <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Delete</button>
+                <button type="submit" class="btn btn-sm" style="background: #c05621; color: #fff;">Delete</button>
               </form>
             </div>
           </div>
@@ -73,7 +73,7 @@
                 <td>
                   <div style="display: flex; gap: 0.4rem;">
                     <a href="/admin/tours/bookings/${tb.id}" class="btn btn-primary btn-sm">View</a>
-                    ${tb.status !== 'cancelled' ? '<form method="post" action="/admin/tours/bookings/' + tb.id + '/cancel" style="margin: 0;" onsubmit="return confirm(\'Cancel this tour booking?\')"><button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Cancel</button></form>' : '<span class="muted">Cancelled</span>'}
+                    ${tb.status !== 'cancelled' ? '<form method="post" action="/admin/tours/bookings/' + tb.id + '/cancel" style="margin: 0;" onsubmit="return confirm(\'Cancel this tour booking?\')"><button type="submit" class="btn btn-sm" style="background: #c05621; color: #fff;">Cancel</button></form>' : '<span class="muted">Cancelled</span>'}
                   </div>
                 </td>
               </tr>

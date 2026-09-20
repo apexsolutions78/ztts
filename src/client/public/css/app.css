@@ -510,12 +510,12 @@ h3 { font-size: 1.2rem; font-weight: 600; }
 }
 
 .btn-danger {
-  background: #e53e3e;
+  background: #c05621;
   color: #fff;
 }
 
 .btn-danger:hover {
-  background: #c53030;
+  background: #9c4221;
 }
 
 .btn-sm {

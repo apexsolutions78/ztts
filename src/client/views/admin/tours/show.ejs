@@ -17,7 +17,7 @@
       <div style="display: flex; gap: 0.5rem;">
         <a href="/admin/tours/${package.id}/edit" class="btn btn-primary btn-sm">✏ Edit Package</a>
         <form method="post" action="/admin/tours/${package.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this tour package?')">
-          <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">🗑 Delete</button>
+          <button type="submit" class="btn btn-sm" style="background: #c05621; color: #fff;">🗑 Delete</button>
         </form>
       </div>
     </div>
@@ -56,7 +56,7 @@
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="badge badge-${r.status}">${r.status}</span>
                 <form method="post" action="/admin/tours/${package.id}/daterange/${r.id}/delete" style="margin: 0;" onsubmit="return confirm('Delete this date range?')">
-                  <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">✕</button>
+                  <button type="submit" class="btn btn-sm" style="background: #c05621; color: #fff;">✕</button>
                 </form>
               </div>
             </div>
@@ -115,7 +115,7 @@
                     <div style="font-size: 0.82rem; color: var(--text-muted);">${new Date(r.start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })} — ${new Date(r.end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                   </div>
                   <div style="text-align: right; font-size: 0.82rem;">
-                    ${r.max_capacity ? (isFull ? '<span style="color: #e53e3e; font-weight: 700;">FULL</span>' : '<span style="color: #38a169; font-weight: 700;">' + remaining + ' seats left</span>') : '<span style="color: var(--text-muted);">Open</span>'}
+                    ${r.max_capacity ? (isFull ? '<span style="color: #c05621; font-weight: 700;">FULL</span>' : '<span style="color: #38a169; font-weight: 700;">' + remaining + ' seats left</span>') : '<span style="color: var(--text-muted);">Open</span>'}
                   </div>
                 </label>`;
               }).join('')}

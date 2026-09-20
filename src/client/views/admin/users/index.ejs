@@ -43,7 +43,7 @@
                 <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
                 <td style="display: flex; gap: 0.5rem;">
                   <a href="/admin/users/${u.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
-                  ${u.id !== 1 ? '<form method="post" action="/admin/users/' + u.id + '/delete" style="margin: 0;" onsubmit="return confirm(\'Delete this user?\')"><button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">Delete</button></form>' : ''}
+                  ${u.id !== 1 ? '<form method="post" action="/admin/users/' + u.id + '/delete" style="margin: 0;" onsubmit="return confirm(\'Delete this user?\')"><button type="submit" class="btn btn-sm" style="background: #c05621; color: #fff;">Delete</button></form>' : ''}
                 </td>
               </tr>
             `).join('')}

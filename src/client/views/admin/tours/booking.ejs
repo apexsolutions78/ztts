@@ -19,7 +19,7 @@
         <button id="shareBtn" onclick="generateShareLink(${booking.id})" class="btn btn-accent">🔗 Share Portal Link</button>
         ${booking.status !== 'cancelled' ? `
           <form method="post" action="/admin/tours/bookings/${booking.id}/cancel" style="margin: 0;" onsubmit="return confirm('Cancel this tour booking? This action cannot be undone.')">
-            <button type="submit" class="btn btn-sm" style="background: #e53e3e; color: #fff;">✖ Cancel Booking</button>
+            <button type="submit" class="btn btn-sm" style="background: #c05621; color: #fff;">✖ Cancel Booking</button>
           </form>
         ` : `<span class="badge" style="background: #fed7d7; color: #c53030; padding: 0.6rem 1.2rem; font-size: 0.9rem;">✖ CANCELLED</span>`}
       </div>
@@ -190,7 +190,7 @@
             </div>
             <div>
               <label style="font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">&nbsp;</label>
-              <button onclick="removePaymentRow(this)" class="btn btn-sm" style="background: #e53e3e; color: #fff; width: 100%;" disabled title="Remove row">✕</button>
+              <button onclick="removePaymentRow(this)" class="btn btn-sm" style="background: #c05621; color: #fff; width: 100%;" disabled title="Remove row">✕</button>
             </div>
           </div>
         </div>
@@ -346,7 +346,7 @@
             statusEl.style.color = '#d69e2e';
           } else {
             statusEl.textContent = 'UNPAID';
-            statusEl.style.color = '#e53e3e';
+            statusEl.style.color = '#c05621';
           }
           const tbody = document.getElementById('paymentTableBody');
           if (!s.payments || s.payments.length === 0) {
@@ -364,7 +364,7 @@
             '<td><div style="display: flex; gap: 0.3rem;">' +
               (p.payment_status !== 'refunded' ? '<button onclick="refundPayment(' + p.id + ')" class="btn btn-sm btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Refund</button>' : '') +
               '<a href="/admin/payments/record/' + p.id + '/receipt" target="_blank" class="btn btn-sm btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Receipt</a>' +
-              (p.payment_status !== 'refunded' ? '<button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #e53e3e; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Delete</button>' : '') +
+              (p.payment_status !== 'refunded' ? '<button onclick="voidPayment(' + p.id + ')" class="btn btn-sm" style="background: #c05621; color: #fff; padding: 0.3rem 0.6rem; font-size: 0.75rem;">Delete</button>' : '') +
             '</div></td>' +
             '</tr>').join('');
         } catch (err) {
@@ -398,7 +398,7 @@
         row.innerHTML = '<div><input type="number" step="0.01" min="0.01" class="form-control pay-amount" placeholder="0.00" style="width: 100%;"></div>' +
           '<div><select class="form-control pay-method" style="width: 100%;"><option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option><option value="cheque">Cheque</option><option value="credit_card">Credit Card</option><option value="debit_card">Debit Card</option><option value="online">Online</option><option value="other">Other</option></select></div>' +
           '<div><input type="text" class="form-control pay-reference" placeholder="Ref / Cheque #" style="width: 100%;"></div>' +
-          '<div><button onclick="removePaymentRow(this)" class="btn btn-sm" style="background: #e53e3e; color: #fff; width: 100%;">✕</button></div>';
+          '<div><button onclick="removePaymentRow(this)" class="btn btn-sm" style="background: #c05621; color: #fff; width: 100%;">✕</button></div>';
         container.appendChild(row);
         updateAllocatedAmount();
       }

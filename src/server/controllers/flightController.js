@@ -668,65 +668,66 @@ export async function sendFlightNotification(req, res, next) {
     }
 
     if (channel === 'email') {
-      try {
-        let emailHtml, emailSubject;
-        if (flight.ticket_status === 'pending' && (!flight.airline || !flight.flight_number)) {
-          emailSubject = `[Zahabia] Your Flight Request is Being Processed — ${flight.origin} → ${flight.destination}`;
-          emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
-              <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-                <h1 style="margin: 0; color: #d4a843;">YOUR FLIGHT REQUEST</h1>
-              </div>
-              <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
-                <p>Dear ${customerName || 'Customer'},</p>
-                <p>We have received your flight request and our team is working on finding the best options for you.</p>
-                <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
-                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Request #</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.booking_ref}</td></tr>
-                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.origin} → ${flight.destination}</td></tr>
-                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Departure</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.departure_date ? new Date(flight.departure_date).toLocaleDateString() : 'TBA'}</td></tr>
-                  <tr><td style="padding: 8px; font-weight: bold;">Class</td><td style="padding: 8px;">${flight.cabin_class || 'Economy'}</td></tr>
-                </table>
-                <p>We will send you a detailed quote with available flight options shortly. You can also check the status from your dashboard.</p>
-                <p style="margin-top: 20px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Dashboard</a></p>
-              </div>
+      let emailHtml, emailSubject;
+      if (flight.ticket_status === 'pending' && (!flight.airline || !flight.flight_number)) {
+        emailSubject = `[Zahabia] Your Flight Request is Being Processed — ${flight.origin} → ${flight.destination}`;
+        emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">YOUR FLIGHT REQUEST</h1>
             </div>
-          `;
-        } else {
-          emailSubject = `[Zahabia] Flight Booking Update — ${flight.origin} → ${flight.destination}`;
-          emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
-              <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-                <h1 style="margin: 0; color: #d4a843;">FLIGHT BOOKING UPDATE</h1>
-              </div>
-              <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
-                <p>Dear ${customerName || 'Customer'},</p>
-                <p>Your flight booking has been updated:</p>
-                <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
-                  <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.origin} → ${flight.destination}</td></tr>
-                  ${flight.airline ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Airline</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.airline}</td></tr>` : ''}
-                  ${flight.flight_number ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Flight</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.flight_number}</td></tr>` : ''}
-                  ${flight.total_amount > 0 ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Fare</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${Number(flight.total_amount).toFixed(2)}</td></tr>` : ''}
-                  <tr><td style="padding: 8px; font-weight: bold;">Status</td><td style="padding: 8px;">${flight.ticket_status.toUpperCase()}</td></tr>
-                </table>
-                <p style="margin-top: 20px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Dashboard</a></p>
-              </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p>Dear ${customerName || 'Customer'},</p>
+              <p>We have received your flight request and our team is working on finding the best options for you.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Request #</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.booking_ref}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.origin} → ${flight.destination}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Departure</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.departure_date ? new Date(flight.departure_date).toLocaleDateString() : 'TBA'}</td></tr>
+                <tr><td style="padding: 8px; font-weight: bold;">Class</td><td style="padding: 8px;">${flight.cabin_class || 'Economy'}</td></tr>
+              </table>
+              <p>We will send you a detailed quote with available flight options shortly. You can also check the status from your dashboard.</p>
+              <p style="margin-top: 20px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Dashboard</a></p>
             </div>
-          `;
-        }
+          </div>
+        `;
+      } else {
+        emailSubject = `[Zahabia] Flight Booking Update — ${flight.origin} → ${flight.destination}`;
+        emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+            <div style="background: #1a3a2a; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; color: #d4a843;">FLIGHT BOOKING UPDATE</h1>
+            </div>
+            <div style="background: #fff; padding: 20px; border: 1px solid #e2e8f0;">
+              <p>Dear ${customerName || 'Customer'},</p>
+              <p>Your flight booking has been updated:</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Route</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.origin} → ${flight.destination}</td></tr>
+                ${flight.airline ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Airline</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.airline}</td></tr>` : ''}
+                ${flight.flight_number ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Flight</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${flight.flight_number}</td></tr>` : ''}
+                ${flight.total_amount > 0 ? `<tr><td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Fare</td><td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">$${Number(flight.total_amount).toFixed(2)}</td></tr>` : ''}
+                <tr><td style="padding: 8px; font-weight: bold;">Status</td><td style="padding: 8px;">${flight.ticket_status.toUpperCase()}</td></tr>
+              </table>
+              <p style="margin-top: 20px;"><a href="${process.env.APP_URL || 'https://ztts.apexsol.pk'}/account" style="display: inline-block; background: #1a3a2a; color: #d4a843; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Dashboard</a></p>
+            </div>
+          </div>
+        `;
+      }
 
-        const { sendEmail } = await import('../services/emailService.js');
-        await sendEmail({ to: customerEmail, subject: emailSubject, html: emailHtml });
-        await logNotificationRecord({ booking_type: 'flight', booking_id: flight.id, channel: 'email', recipient: customerEmail, status: 'sent' });
-        res.json({ success: true, message: 'Email sent to ' + customerEmail });
-      } catch (e) {
-        await logNotificationRecord({ booking_type: 'flight', booking_id: flight.id, channel: 'email', recipient: customerEmail, status: 'failed', error: e.message });
-        res.json({ success: true, message: 'Email failed: ' + e.message, simulated: true });
+      const sendResult = await sendEmail({ to: customerEmail, subject: emailSubject, html: emailHtml });
+      try {
+        await logNotificationRecord({ customer_id: flight.customer_id, flight_booking_id: flight.id, channel: 'email', recipient: customerEmail, subject: emailSubject, content: emailSubject, status: sendResult?.success ? 'sent' : 'failed' });
+      } catch (_) {}
+      if (sendResult?.success && !sendResult?.simulated) {
+        return res.json({ success: true, message: 'Email sent to ' + customerEmail });
+      } else {
+        return res.json({ success: true, message: sendResult?.error ? 'Email failed: ' + sendResult.error : 'Email sent (simulated)', simulated: true });
       }
     } else {
-      res.json({ success: true, message: 'WhatsApp integration not yet configured', simulated: true });
+      return res.json({ success: true, message: 'WhatsApp integration not yet configured', simulated: true });
     }
   } catch (error) {
-    next(error);
+    console.error('[SendNotification Error]', error.message, error.stack);
+    return res.json({ success: false, message: 'Server error: ' + error.message });
   }
 }
 
