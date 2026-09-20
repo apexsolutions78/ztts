@@ -83,24 +83,34 @@
 
           <div class="flight-route">
             <div>
-              <div class="airport-code"><%= flight.origin %></div>
+              <div class="airport-code"><%= flight.origin || '---' %></div>
               <div class="airport-name">Departure Airport</div>
             </div>
             <div class="route-divider">
-              <div style="font-weight: 700; font-size: 1rem; color: var(--primary);"><%= flight.flight_number %></div>
+              <div style="font-weight: 700; font-size: 1rem; color: var(--primary);"><%= flight.flight_number || flight.airline || 'TBA' %></div>
               <div class="route-line"></div>
-              <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;"><%= flight.cabin_class %> Class</div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;"><%= flight.cabin_class || 'Economy' %> Class</div>
             </div>
             <div style="text-align: right;">
-              <div class="airport-code"><%= flight.destination %></div>
+              <div class="airport-code"><%= flight.destination || '---' %></div>
               <div class="airport-name">Destination Airport</div>
             </div>
           </div>
 
           <div class="ticket-grid">
+            <% 
+              let leadPassenger = null;
+              let passengerList = [];
+              if (flight.passenger_details) {
+                try { passengerList = typeof flight.passenger_details === 'string' ? JSON.parse(flight.passenger_details) : flight.passenger_details; } catch(e) { passengerList = []; }
+                leadPassenger = passengerList[0] || null;
+              }
+              const pName = leadPassenger?.full_name || flight.customer_name || 'Passport Holder';
+              const pPassport = leadPassenger?.passport_number || flight.passport_number || 'N/A';
+            %>
             <div class="ticket-field">
               <label>Passenger Name</label>
-              <val><%= flight.customer_name %></val>
+              <val><%= pName %></val>
             </div>
             <div class="ticket-field">
               <label>E-Ticket Number</label>
@@ -108,11 +118,15 @@
             </div>
             <div class="ticket-field">
               <label>Passport Number</label>
-              <val><%= flight.passport_number || 'N/A' %></val>
+              <val><%= pPassport %></val>
+            </div>
+            <div class="ticket-field">
+              <label>Nationality</label>
+              <val><%= leadPassenger?.nationality || flight.nationality || 'N/A' %></val>
             </div>
             <div class="ticket-field">
               <label>Departure Date & Time</label>
-              <val><%= new Date(flight.departure_date).toLocaleString() %></val>
+              <val><%= flight.departure_date ? new Date(flight.departure_date).toLocaleString() : 'TBA' %></val>
             </div>
             <div class="ticket-field">
               <label>Arrival Date & Time</label>
@@ -123,10 +137,36 @@
               <val><span class="badge badge-<%= flight.ticket_status %>"><%= flight.ticket_status %></span></val>
             </div>
             <div class="ticket-field">
-              <label>Total Fare Paid</label>
+              <label>Total Fare</label>
               <val><%= formatPrice(flight.total_amount) %></val>
             </div>
           </div>
+
+          <% if (passengerList.length > 1) { %>
+          <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">All Passengers (<%= passengerList.length %>)</div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+              <thead>
+                <tr style="background: #f0f4f8;">
+                  <th style="padding: 0.5rem; text-align: left; border-bottom: 2px solid #e2e8f0;">#</th>
+                  <th style="padding: 0.5rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Name</th>
+                  <th style="padding: 0.5rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Passport</th>
+                  <th style="padding: 0.5rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Nationality</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% passengerList.forEach(function(p, idx) { %>
+                  <tr style="<%= idx % 2 === 0 ? 'background: #fff;' : 'background: #f8fafb;' %>">
+                    <td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;"><%= idx + 1 %></td>
+                    <td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><%= p.full_name %></td>
+                    <td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0; font-family: monospace;"><%= p.passport_number %></td>
+                    <td style="padding: 0.5rem; border-bottom: 1px solid #e2e8f0;"><%= p.nationality || 'N/A' %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
 
           <% if (flight.customer_notes) { %>
           <div style="margin-top: 1rem; padding: 0.85rem 1.25rem; background: #fefcbf; border-radius: var(--radius-sm); border: 1px solid #d69e2e;">
