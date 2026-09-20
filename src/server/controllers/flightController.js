@@ -110,26 +110,28 @@ export async function postCreateFlight(req, res, next) {
     const adultCount = Number(adults) || 1;
     const childCount = Number(children) || 0;
     const infantCount = Number(infants) || 0;
-    const ppa = Number(price_per_adult) || 0;
-    const ppch = Number(price_per_child) || 0;
-    const ppin = Number(price_per_infant) || 0;
-    const bgFee = Number(baggage_fee) || 0;
+    const ppaLocal = Number(price_per_adult) || 0;
+    const ppchLocal = Number(price_per_child) || 0;
+    const ppinLocal = Number(price_per_infant) || 0;
+    const bgFeeLocal = Number(baggage_fee) || 0;
 
-    if (ppa > 0 || ppch > 0 || ppin > 0 || bgFee > 0) {
-      // Auto-calculate from per-category prices (already in local currency, convert to USD)
-      const { getExchangeRates } = await import('../models/index.js');
-      const rates = await getExchangeRates();
-      const activeCurrency = req.session?.currency || 'PKR';
-      const rate = rates[activeCurrency]?.rate || 1;
-      const localTotal = (adultCount * ppa) + (childCount * ppch) + (infantCount * ppin) + bgFee;
+    const { getExchangeRates } = await import('../models/index.js');
+    const rates = await getExchangeRates();
+    const activeCurrency = req.session?.currency || 'PKR';
+    const rate = rates[activeCurrency]?.rate || 1;
+
+    // Convert per-category prices from local currency to USD
+    const ppa = ppaLocal / rate;
+    const ppch = ppchLocal / rate;
+    const ppin = ppinLocal / rate;
+    const bgFee = bgFeeLocal / rate;
+
+    if (ppaLocal > 0 || ppchLocal > 0 || ppinLocal > 0 || bgFeeLocal > 0) {
+      const localTotal = (adultCount * ppaLocal) + (childCount * ppchLocal) + (infantCount * ppinLocal) + bgFeeLocal;
       finalAmount = localTotal / rate;
     } else if (total_amount_usd && Number(total_amount_usd) > 0) {
       finalAmount = Number(total_amount_usd);
     } else if (total_amount && Number(total_amount) > 0) {
-      const { getExchangeRates } = await import('../models/index.js');
-      const rates = await getExchangeRates();
-      const activeCurrency = req.session?.currency || 'PKR';
-      const rate = rates[activeCurrency]?.rate || 1;
       finalAmount = Number(total_amount) / rate;
     }
 
@@ -483,23 +485,26 @@ export async function postUpdateFlight(req, res, next) {
     const adultCount = Number(adults) || 1;
     const childCount = Number(children) || 0;
     const infantCount = Number(infants) || 0;
-    const ppa = Number(price_per_adult) || 0;
-    const ppch = Number(price_per_child) || 0;
-    const ppin = Number(price_per_infant) || 0;
-    const bgFee = Number(baggage_fee) || 0;
+    const ppaLocal = Number(price_per_adult) || 0;
+    const ppchLocal = Number(price_per_child) || 0;
+    const ppinLocal = Number(price_per_infant) || 0;
+    const bgFeeLocal = Number(baggage_fee) || 0;
 
-    if (ppa > 0 || ppch > 0 || ppin > 0 || bgFee > 0) {
-      const { getExchangeRates } = await import('../models/index.js');
-      const rates = await getExchangeRates();
-      const activeCurrency = req.session?.currency || 'PKR';
-      const rate = rates[activeCurrency]?.rate || 1;
-      const localTotal = (adultCount * ppa) + (childCount * ppch) + (infantCount * ppin) + bgFee;
+    const { getExchangeRates } = await import('../models/index.js');
+    const rates = await getExchangeRates();
+    const activeCurrency = req.session?.currency || 'PKR';
+    const rate = rates[activeCurrency]?.rate || 1;
+
+    // Convert per-category prices from local currency to USD
+    const ppa = ppaLocal / rate;
+    const ppch = ppchLocal / rate;
+    const ppin = ppinLocal / rate;
+    const bgFee = bgFeeLocal / rate;
+
+    if (ppaLocal > 0 || ppchLocal > 0 || ppinLocal > 0 || bgFeeLocal > 0) {
+      const localTotal = (adultCount * ppaLocal) + (childCount * ppchLocal) + (infantCount * ppinLocal) + bgFeeLocal;
       finalAmount = localTotal / rate;
     } else if (total_amount && Number(total_amount) > 0) {
-      const { getExchangeRates } = await import('../models/index.js');
-      const rates = await getExchangeRates();
-      const activeCurrency = req.session?.currency || 'PKR';
-      const rate = rates[activeCurrency]?.rate || 1;
       finalAmount = Number(total_amount) / rate;
     }
 
