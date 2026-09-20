@@ -447,13 +447,33 @@ export async function postUpdateFlight(req, res, next) {
       });
     }
 
+    // Convert fare from local currency to USD for storage
+    let finalAmount = 0;
+    if (total_amount && Number(total_amount) > 0) {
+      const { getExchangeRates } = await import('../models/index.js');
+      const rates = await getExchangeRates();
+      const activeCurrency = req.session?.currency || 'PKR';
+      const rate = rates[activeCurrency]?.rate || 1;
+      finalAmount = Number(total_amount) / rate;
+    }
+
+    // Convert budget from local currency to USD
+    let budgetUSD = null;
+    if (budget && Number(budget) > 0) {
+      const { getExchangeRates } = await import('../models/index.js');
+      const rates = await getExchangeRates();
+      const activeCurrency = req.session?.currency || 'PKR';
+      const rate = rates[activeCurrency]?.rate || 1;
+      budgetUSD = Number(budget) / rate;
+    }
+
     await updateFlightBooking(id, {
       customer_id: customer_id || null, airline: airline || null, flight_number: flight_number || null,
       origin, destination, departure_date, arrival_date: arrival_date || null,
-      cabin_class, total_amount: Number(total_amount) || 0,
+      cabin_class, total_amount: finalAmount,
       trip_type, adults, children, infants, return_date: return_date || null,
       preferred_airline: preferred_airline || null, flexible_dates: !!flexible_dates,
-      budget: budget ? Number(budget) : null,
+      budget: budgetUSD,
       baggage_priority: !!baggage_priority, direct_transit: direct_transit || 'any',
       customer_notes: customer_notes || null, pnr: pnr || null
     });
