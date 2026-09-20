@@ -51,7 +51,7 @@ export async function postPublicFlightRequest(req, res, next) {
       details: `Public flight request: ${full_name} — ${origin.toUpperCase()} → ${destination.toUpperCase()} on ${departure_date}`
     });
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'info@zahabiatravel.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'ztts@apexsol.pk';
     try {
       await sendEmail({
         to: adminEmail,

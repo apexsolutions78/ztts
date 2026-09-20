@@ -565,7 +565,7 @@ export async function postFlightRequest(req, res, next) {
       details: `Customer requested flight: ${origin.toUpperCase()} → ${destination.toUpperCase()} on ${departure_date} (${cabin_class || 'Economy'}, ${passengers || 1} pax)`
     });
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'info@zahabiatravel.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'ztts@apexsol.pk';
     try {
       await sendEmail({
         to: adminEmail,
@@ -665,7 +665,7 @@ export async function postApproveFlight(req, res, next) {
       details: `Customer approved flight: ${booking.origin} → ${booking.destination} (Ref: ${booking.booking_ref})`
     });
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'info@zahabiatravel.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'ztts@apexsol.pk';
     try {
       await sendEmail({
         to: adminEmail,
@@ -720,7 +720,7 @@ export async function postDeclineFlight(req, res, next) {
       details: `Customer declined flight: ${booking.origin} → ${booking.destination} (Ref: ${booking.booking_ref})`
     });
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'info@zahabiatravel.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'ztts@apexsol.pk';
     try {
       await sendEmail({
         to: adminEmail,

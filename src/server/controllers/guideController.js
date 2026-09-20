@@ -172,7 +172,7 @@ export async function postAdminMessage(req, res, next) {
     }
 
     if (message && message.trim()) {
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@zahabiatravel.com';
+      const adminEmail = process.env.ADMIN_EMAIL || 'ztts@apexsol.pk';
       const { sendEmail } = await import('../services/emailService.js');
       try {
         await sendEmail({

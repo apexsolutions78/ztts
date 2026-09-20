@@ -33,5 +33,5 @@ export const env = {
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || ''
   },
 
-  adminEmail: process.env.ADMIN_EMAIL || 'info@zahabiatravel.com'
+  adminEmail: process.env.ADMIN_EMAIL || 'ztts@apexsol.pk'
 };
