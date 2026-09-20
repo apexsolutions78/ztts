@@ -240,7 +240,7 @@ export async function createFlightBooking({
         passengers, workflow_stage, trip_type, adults, children, infants, return_date,
         preferred_airline, flexible_dates, budget, baggage_priority, direct_transit, customer_notes,
         price_per_adult, price_per_child, price_per_infant, baggage_fee)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [booking_ref, customer_id || null, airline || null, flight_number || null, origin, destination,
        departure_date, arrival_date || null, cabin_class, ticket_status, total_amount, created_by,
        passengers ? Number(passengers) : null, workflow_stage, trip_type,
