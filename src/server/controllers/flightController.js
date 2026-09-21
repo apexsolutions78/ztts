@@ -458,10 +458,14 @@ export async function getEditFlightForm(req, res, next) {
     const flight = await findFlightBookingById(req.params.id);
     if (!flight) return res.status(404).render('errors/404', { title: 'Flight Not Found' });
     const customers = await getAllCustomers();
+    const { activeCurrency, exchangeRates } = res.locals;
     res.render('admin/flights/edit', {
       title: `Edit Flight: ${flight.booking_ref}`,
       flight,
-      customers
+      customers,
+      activeCurrency,
+      exchangeRates,
+      formatPrice: res.locals.formatPrice
     });
   } catch (error) {
     next(error);
@@ -674,6 +678,18 @@ export async function postTransitionWorkflow(req, res, next) {
 
     if (!target_stage) {
       return res.redirect(`/admin/flights/${id}?error=No+target+stage+specified`);
+    }
+
+    // Block progression to confirmed/ticketed without a registered customer
+    if (target_stage === 'confirmed' || target_stage === 'ticketed') {
+      const flight = await findFlightBookingById(id);
+      if (!flight) return res.redirect(`/admin/flights/${id}?error=Booking+not+found`);
+      if (!flight.customer_id) {
+        return res.redirect(`/admin/flights/${id}?error=Cannot+proceed:+No+customer+linked+to+this+booking.+Assign+a+customer+first`);
+      }
+      if (flight.customer_is_guest) {
+        return res.redirect(`/admin/flights/${id}?error=Cannot+proceed:+Customer+has+not+registered+yet.+Ask+them+to+create+an+account+first`);
+      }
     }
 
     const result = await transitionWorkflowStage(id, target_stage, reason || null);
